@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sisal FC 2021 · Analisi Pro Clubs FC 27</title>
+<title>Sisal FC 2021 · Analisi Pro Clubs</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -14,12 +14,10 @@
   --ink: #EAF0FF;
   --mut: #97A3C7;
   --acc: #4DE1FF;
-  --on: #04202A;
   --acc2: #8B9BFF;
   --good: #34D399;
   --bad: #FB7185;
   --warn: #FBBF24;
-  box-sizing: border-box;
 }
 :root[data-theme="light"] {
   --bg: #F4F6FB;
@@ -29,7 +27,6 @@
   --ink: #0F1730;
   --mut: #5A6688;
   --acc: #0A7EA4;
-  --on: #fff;
   --acc2: #4F5BD5;
   --good: #0F9F6E;
   --bad: #E0435A;
@@ -58,9 +55,6 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 .k span { font-size: 11px; color: var(--mut); }
 
 .card { background: var(--s); border: 1px solid var(--line); border-radius: 18px; padding: 18px; margin-bottom: 14px; }
-.search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
-.search-bar input { flex: 1; background: var(--s2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; color: var(--ink); font: 500 14px Manrope; }
-
 .btn { background: var(--ink); color: var(--bg); border: none; padding: 10px 18px; border-radius: 99px; font: 700 13px Manrope; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .btn-sec { background: var(--s2); color: var(--ink); border: 1px solid var(--line); }
 
@@ -87,9 +81,6 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
-
-.add-player-box { display: flex; gap: 8px; margin-top: 12px; }
-.add-player-box input { flex: 1; background: var(--s2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; color: var(--ink); }
 </style>
 </head>
 <body>
@@ -97,7 +88,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 <div class="w">
   <header>
     <div>
-      <small>PRO CLUBS FC 27</small>
+      <small>PRO CLUBS · GEN 5</small>
       <h1 id="app-title">Sisal FC 2021</h1>
     </div>
     <button class="btn btn-sec" onclick="toggleTheme()" style="padding: 6px 12px; font-size: 12px;">🌓 Tema</button>
@@ -106,35 +97,37 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
   <nav class="tabs">
     <button aria-current="page" onclick="switchTab('squadra', this)">Squadra</button>
     <button onclick="switchTab('formazione', this)">Formazione</button>
-    <button onclick="switchTab('giocatori', this)">Giocatori</button>
+    <button onclick="switchTab('giocatori', this)">Giocatori Reali</button>
     <button onclick="switchTab('ia', this)">Assistente IA</button>
   </nav>
 
   <!-- SEZIONE SQUADRA -->
   <div id="tab-squadra" class="tab-content active">
     <div class="card">
-      <div class="search-bar">
-        <input type="text" id="club-search-input" placeholder="Cerca club per nome..." value="Sisal FC 2021">
-        <button class="btn" onclick="fetchClubData()">Carica Dati EA</button>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong style="color: var(--acc);">Sisal FC 2021 (ID: 328794)</strong>
+          <div id="sync-status" style="font-size: 12px; color: var(--mut);">Sincronizzazione API EA in corso...</div>
+        </div>
+        <button class="btn" onclick="syncEaData()">🔄 Aggiorna</button>
       </div>
-      <small style="color: var(--mut);" id="status-label">Stato sync EA: In attesa di caricamento...</small>
     </div>
 
     <div class="hero">
-      <small>PANORAMICA STAGIONE EA SPORTS</small>
-      <h1 id="hero-club-name">Sisal FC 2021</h1>
+      <small>STATISTICHE CAMPIONATO REALI</small>
+      <h1>Sisal FC 2021</h1>
       <div class="k">
+        <div><b id="stat-matches">0</b><span>Partite Tot.</span></div>
         <div><b id="stat-wins">0</b><span>Vittorie</span></div>
         <div><b id="stat-draws">0</b><span>Pareggi</span></div>
         <div><b id="stat-losses">0</b><span>Sconfitte</span></div>
-        <div><b id="stat-goals">0</b><span>Gol Fatti</span></div>
       </div>
     </div>
 
     <div class="card">
-      <h3>Ultime Partite Giocate</h3>
-      <div id="recent-matches-list">
-        <div style="color: var(--mut); padding: 10px 0;" id="matches-status">Premere 'Carica Dati EA' per sincronizzare le ultime sfide.</div>
+      <h3>Ultime Partite di Campionato (EA API)</h3>
+      <div id="recent-matches-list" style="margin-top: 10px;">
+        <div style="color: var(--mut);">Caricamento partite da EA Sports...</div>
       </div>
     </div>
   </div>
@@ -142,9 +135,9 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
   <!-- SEZIONE FORMAZIONE -->
   <div id="tab-formazione" class="tab-content">
     <div class="card">
-      <h2>Modulo & Assegnazione Ruoli</h2>
+      <h2>Modulo & Assegnazione Giocatori</h2>
       <p style="font-size: 12px; color: var(--mut); margin-bottom: 10px;">
-        Assegna i vostri gamertag reali. I Bot vengono inviati solo in Difesa o Porta.
+        Assegna i vostri Gamertag ufficiali sincronizzati da EA Sports. I Bot vengono spostati esclusivamente in Difesa/Porta.
       </p>
 
       <div style="margin-bottom: 12px;">
@@ -169,7 +162,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     </div>
 
     <div class="card">
-      <h3>Disposizione Tattica Campo</h3>
+      <h3>Disposizione Tattica in Campo</h3>
       <div class="pitch">
         <div class="pitch-col">
           <h4>Difesa & POR</h4>
@@ -190,16 +183,10 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
   <!-- SEZIONE GIOCATORI -->
   <div id="tab-giocatori" class="tab-content">
     <div class="card">
-      <h2>Rosa Giocatori Sisal FC 2021</h2>
+      <h2>Membri Rosa Ufficiali (Sisal FC 2021)</h2>
       <p style="font-size: 12px; color: var(--mut);">
-        Puoi aggiungere manualmente i vostri Gamertag/ID o importarli direttamente dai server EA.
+        Elenco scaricato direttamente dall'endpoint EA Sports per il club 328794.
       </p>
-
-      <div class="add-player-box">
-        <input type="text" id="new-player-name" placeholder="Inserisci Gamertag/Nickname giocatore...">
-        <button class="btn" onclick="addCustomPlayer()">+ Aggiungi</button>
-      </div>
-
       <div id="players-list" style="margin-top: 14px;"></div>
     </div>
   </div>
@@ -209,16 +196,16 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     <div class="card">
       <h2>Assistente IA · Sisal FC 2021</h2>
       <p style="font-size: 12px; color: var(--mut); margin-bottom: 10px;">
-        Chiedi consigli tattici tarati sul meta di FC 27 Pro Clubs e sulle statistiche reali dei tuoi giocatori.
+        I consigli dell'IA terranno conto dei nomi reali dei tuoi compagni di squadra e delle partite disputate.
       </p>
 
       <div style="margin-bottom: 10px;">
-        <label style="font: 700 12px Sora; display: block; margin-bottom: 4px;">Come volete giocare? (Stile / Note):</label>
-        <input type="text" id="playstyle-input" placeholder="Es. Possesso palla, difendiamo a 3, pressing alto..." style="width: 100%; background: var(--s2); border: 1px solid var(--line); border-radius: 8px; padding: 8px; color: var(--ink); font-size: 13px;">
+        <label style="font: 700 12px Sora; display: block; margin-bottom: 4px;">Come volete giocare stasera?</label>
+        <input type="text" id="playstyle-input" placeholder="Es. Vogliamo giocare con difesa a 3 e pressing alto..." style="width: 100%; background: var(--s2); border: 1px solid var(--line); border-radius: 8px; padding: 8px; color: var(--ink); font-size: 13px;">
       </div>
 
       <div class="chat-box" id="chat-box">
-        <div class="msg ai">Ciao! Sono l'assistente tattico di Sisal FC 2021. Chiedimi un consiglio sul modulo o sulle posizioni dei tuoi giocatori!</div>
+        <div class="msg ai">Ciao! Ho scaricato la rosa del Sisal FC 2021 da EA Sports. Chiedimi consigli sulla disposizione della squadra o sui ruoli dei tuoi amici!</div>
       </div>
 
       <div style="display: flex; gap: 8px;">
@@ -231,6 +218,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 </div>
 
 <script>
+  const CLUB_ID = "328794";
   const formationsMap = {
     "4-3-3": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Centrocampista 1", "Centrocampista 2", "Trequartista", "Ala destra", "Attaccante", "Ala sinistra"],
     "4-4-2": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Attaccante 1", "Attaccante 2"],
@@ -241,16 +229,13 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     "5-3-2": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Difensore centrale 3", "Terzino sinistro", "Centrocampista 1", "Centrocampista 2", "Centrocampista 3", "Attaccante 1", "Attaccante 2"]
   };
 
-  // Caricamento lista rosa da LocalStorage o lista base
-  let realPlayers = JSON.parse(localStorage.getItem("sisal_fc_players") || '["Giocatore 1", "Giocatore 2", "Giocatore 3"]');
-  let playerStats = {};
+  let realPlayers = [];
+  let playersStatsMap = {};
   let savedLineup = {};
-  let cachedClubStats = {};
 
   window.onload = () => {
     loadSavedFormation();
-    renderPlayersList();
-    fetchClubData();
+    syncEaData();
   };
 
   function switchTab(tabId, btn) {
@@ -269,52 +254,100 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     }
   }
 
-  // GESTIONE ROSA GIOCATORI
-  function renderPlayersList() {
-    const container = document.getElementById("players-list");
-    container.innerHTML = "";
+  async function syncEaData() {
+    const statusLbl = document.getElementById("sync-status");
+    statusLbl.innerText = "Sincronizzazione API EA in corso...";
 
-    if (realPlayers.length === 0) {
-      container.innerHTML = `<div style="color: var(--mut);">Nessun giocatore inserito. Aggiungi i vostri Gamertag qui sopra!</div>`;
-      return;
-    }
+    await Promise.all([fetchMembers(), fetchMatches()]);
 
-    realPlayers.forEach((p, idx) => {
-      const stats = playerStats[p] || {};
-      container.innerHTML += `
-        <div style="padding: 10px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <strong>${p}</strong>
-            <div style="font-size: 11px; color: var(--mut);">
-              Presenze: ${stats.gamesPlayed || 0} | Gol: ${stats.goals || 0} | Assist: ${stats.assists || 0}
+    statusLbl.innerText = "✅ Sincronizzato con EA Sports Pro Clubs!";
+  }
+
+  // 1. Giocatori reali tramite API EA: members/stats?platform=common-gen5&clubId=328794
+  async function fetchMembers() {
+    try {
+      const res = await fetch(`/api/ea?path=members/stats&clubId=${CLUB_ID}`);
+      const data = await res.json();
+      const list = document.getElementById("players-list");
+      list.innerHTML = "";
+      realPlayers = [];
+
+      if (data && data.members) {
+        data.members.forEach(m => {
+          const pName = m.name || m.proName;
+          realPlayers.push(pName);
+          playersStatsMap[pName] = m;
+
+          list.innerHTML += `
+            <div style="padding: 10px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>${pName}</strong>
+                <div style="font-size: 11px; color: var(--mut);">
+                  Presenze: ${m.gamesPlayed || 0} | Gol: ${m.goals || 0} | Assist: ${m.assists || 0} | Voto Medio: ${m.ratingGiven || 'N/D'}
+                </div>
+              </div>
+              <span class="badge v">${m.proPos || 'Giocatore'}</span>
             </div>
-          </div>
-          <button class="btn btn-sec" style="padding: 4px 10px; font-size: 11px; color: var(--bad);" onclick="removePlayer(${idx})">Elimina</button>
-        </div>
-      `;
-    });
+          `;
+        });
 
-    changeFormation();
-  }
-
-  function addCustomPlayer() {
-    const input = document.getElementById("new-player-name");
-    const name = input.value.trim();
-    if (name && !realPlayers.includes(name)) {
-      realPlayers.push(name);
-      localStorage.setItem("sisal_fc_players", JSON.stringify(realPlayers));
-      input.value = "";
-      renderPlayersList();
+        changeFormation();
+      } else {
+        list.innerHTML = `<div style="color: var(--mut);">Nessun giocatore trovato o risposta server vuota.</div>`;
+      }
+    } catch (e) {
+      document.getElementById("players-list").innerHTML = `<div style="color: var(--bad);">Errore nel recupero della rosa da EA Sports.</div>`;
     }
   }
 
-  function removePlayer(idx) {
-    realPlayers.splice(idx, 1);
-    localStorage.setItem("sisal_fc_players", JSON.stringify(realPlayers));
-    renderPlayersList();
+  // 2. Partite di Campionato reali tramite API EA: clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794
+  async function fetchMatches() {
+    const list = document.getElementById("recent-matches-list");
+    try {
+      const res = await fetch(`/api/ea?path=clubs/matches&matchType=leagueMatch&clubIds=${CLUB_ID}`);
+      const data = await res.json();
+
+      let wins = 0, draws = 0, losses = 0;
+
+      if (data && data.length > 0) {
+        list.innerHTML = "";
+        data.forEach(m => {
+          const clubInfo = Object.values(m.clubs).find(c => c.id == CLUB_ID);
+          const oppInfo = Object.values(m.clubs).find(c => c.id != CLUB_ID);
+
+          if (clubInfo && oppInfo) {
+            const goalsFor = parseInt(clubInfo.goals);
+            const goalsAgainst = parseInt(oppInfo.goals);
+            let outcome = "N";
+
+            if (goalsFor > goalsAgainst) { wins++; outcome = "V"; }
+            else if (goalsFor === goalsAgainst) { draws++; outcome = "N"; }
+            else { losses++; outcome = "P"; }
+
+            list.innerHTML += `
+              <div class="match-item">
+                <div><strong>vs ${oppInfo.details?.name || 'Avversario'}</strong></div>
+                <div>
+                  <span style="font-weight: 700; margin-right: 8px;">${goalsFor} - ${goalsAgainst}</span>
+                  <span class="badge ${outcome === 'V' ? 'v' : 'p'}">${outcome === 'V' ? 'VITTORIA' : (outcome === 'N' ? 'PAREGGIO' : 'SCONFITTA')}</span>
+                </div>
+              </div>
+            `;
+          }
+        });
+
+        document.getElementById("stat-matches").innerText = data.length;
+        document.getElementById("stat-wins").innerText = wins;
+        document.getElementById("stat-draws").innerText = draws;
+        document.getElementById("stat-losses").innerText = losses;
+      } else {
+        list.innerHTML = `<div style="color: var(--mut);">Nessuna partita recente di campionato registrata nei server EA.</div>`;
+      }
+    } catch (e) {
+      list.innerHTML = `<div style="color: var(--bad);">Errore nel caricamento delle ultime partite.</div>`;
+    }
   }
 
-  // FORMAZIONE E SCHERMO CAMPO
   function changeFormation() {
     const scheme = document.getElementById("formation-select").value;
     const roles = formationsMap[scheme];
@@ -385,7 +418,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     });
 
     localStorage.setItem("sisal_fc_formation_data", JSON.stringify({ scheme, lineup }));
-    alert("Formazione salvata con successo!");
+    alert("Formazione di Sisal FC 2021 salvata sul dispositivo!");
   }
 
   function loadSavedFormation() {
@@ -431,99 +464,6 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     renderPitch();
   }
 
-  // SINCRONIZZAZIONE DATI REALI DA EA SPORTS
-  async function fetchClubData() {
-    const clubName = document.getElementById("club-search-input").value.trim();
-    const statusLbl = document.getElementById("status-label");
-    statusLbl.innerText = "Sincronizzazione con EA Sports in corso...";
-
-    try {
-      // 1. Cerca Club
-      const res = await fetch(`/api/ea?path=allTimeLeaderboard/search&clubName=${encodeURIComponent(clubName)}`);
-      const data = await res.json();
-
-      if (data && data.length > 0) {
-        const club = data[0];
-        cachedClubStats = club;
-        document.getElementById("hero-club-name").innerText = club.name || clubName;
-        document.getElementById("app-title").innerText = club.name || clubName;
-        document.getElementById("stat-wins").innerText = club.wins || "0";
-        document.getElementById("stat-draws").innerText = club.ties || "0";
-        document.getElementById("stat-losses").innerText = club.losses || "0";
-        document.getElementById("stat-goals").innerText = club.goals || "0";
-
-        // 2. Recupera Membri Reali se disponibili tramite ID Club
-        if (club.clubId) {
-          fetchMembers(club.clubId);
-          fetchMatches(club.clubId);
-        }
-
-        statusLbl.innerText = "✅ Dati sincronizzati con EA Sports FC Pro Clubs!";
-      } else {
-        statusLbl.innerText = "Club non trovato nei server EA. Inserisci i dati manualmente.";
-      }
-    } catch (e) {
-      statusLbl.innerText = "Impossibile contattare i server EA. Modalità offline attiva.";
-    }
-  }
-
-  async function fetchMembers(clubId) {
-    try {
-      const res = await fetch(`/api/ea?path=members/stats&clubId=${clubId}`);
-      const data = await res.json();
-      if (data && data.members) {
-        const eaPlayers = [];
-        data.members.forEach(m => {
-          eaPlayers.push(m.name);
-          playerStats[m.name] = {
-            gamesPlayed: m.gamesPlayed || 0,
-            goals: m.goals || 0,
-            assists: m.assists || 0
-          };
-        });
-
-        if (eaPlayers.length > 0) {
-          realPlayers = eaPlayers;
-          localStorage.setItem("sisal_fc_players", JSON.stringify(realPlayers));
-          renderPlayersList();
-        }
-      }
-    } catch (e) {
-      console.log("Membri EA non recuperabili.");
-    }
-  }
-
-  async function fetchMatches(clubId) {
-    const list = document.getElementById("recent-matches-list");
-    try {
-      const res = await fetch(`/api/ea?path=clubs/matches&clubIds=${clubId}&matchType=leagueMatch`);
-      const data = await res.json();
-
-      if (data && data.length > 0) {
-        list.innerHTML = "";
-        data.slice(0, 5).forEach(m => {
-          const clubInfo = Object.values(m.clubs).find(c => c.id == clubId);
-          const oppInfo = Object.values(m.clubs).find(c => c.id != clubId);
-
-          if (clubInfo && oppInfo) {
-            const isWin = clubInfo.goals > oppInfo.goals;
-            list.innerHTML += `
-              <div class="match-item">
-                <div><strong>vs ${oppInfo.details.name}</strong></div>
-                <div>
-                  <span>${clubInfo.goals} - ${oppInfo.goals}</span>
-                  <span class="badge ${isWin ? 'v' : 'p'}">${isWin ? 'VITTORIA' : 'SCONFITTA'}</span>
-                </div>
-              </div>
-            `;
-          }
-        });
-      }
-    } catch (e) {
-      document.getElementById("matches-status").innerText = "Storico partite non disponibile al momento.";
-    }
-  }
-
   async function sendGeminiMessage() {
     const input = document.getElementById("chat-input");
     const playstyle = document.getElementById("playstyle-input").value;
@@ -548,10 +488,9 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messaggio: txt,
-          clubData: cachedClubStats,
           formazioneData: savedLineup,
           comeGiochiamo: playstyle,
-          rosaGiocatori: realPlayers
+          rosaGiocatori: playersStatsMap
         })
       });
 
