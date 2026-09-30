@@ -106,7 +106,7 @@ textarea { width: 100%; height: 90px; background: var(--s2); border: 1px solid v
     <div class="card">
       <h3>Ultime Partite di Campionato</h3>
       <div id="recent-matches-list" style="margin-top: 10px; color: var(--mut);">
-        Usa la scheda "Importa Dati" per caricare le partite recenti o attendi il caricamento automatico.
+        Incolla il testo nella scheda "Importa Dati" per aggiornare la lista delle ultime partite.
       </div>
     </div>
   </div>
@@ -159,7 +159,7 @@ textarea { width: 100%; height: 90px; background: var(--s2); border: 1px solid v
     <div class="card">
       <h2>Membri Rosa Ufficiali</h2>
       <div id="players-list" style="margin-top: 14px; color: var(--mut);">
-        Nessun giocatore caricato. Importa i dati per vedere la rosa.
+        Incolla i dati nella scheda "Importa Dati" per visualizzare i giocatori.
       </div>
     </div>
   </div>
@@ -168,15 +168,15 @@ textarea { width: 100%; height: 90px; background: var(--s2); border: 1px solid v
   <div id="tab-importa" class="tab-content">
     <div class="card">
       <h2>Importazione Rapida Dati EA</h2>
-      <p style="font-size: 13px; color: var(--mut);">Apri i link, copia tutto il testo e incollalo nei riquadri sottostanti:</p>
+      <p style="font-size: 13px; color: var(--mut);">Copia il testo dai due link e incollalo nei riquadri qui sotto:</p>
       
-      <label style="font-weight: 700; font-size: 13px;">1. JSON Giocatori (<a href="https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=328794" target="_blank" style="color: var(--acc);">Apri Link</a>)</label>
-      <textarea id="json-members" placeholder="Incolla qui il testo dei Giocatori..."></textarea>
+      <label style="font-weight: 700; font-size: 13px;">1. Testo Giocatori (<a href="https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=328794" target="_blank" style="color: var(--acc);">Apri Link Giocatori</a>)</label>
+      <textarea id="json-members" placeholder="Incolla il testo qui..."></textarea>
 
       <div style="height: 12px;"></div>
 
-      <label style="font-weight: 700; font-size: 13px;">2. JSON Partite (<a href="https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794" target="_blank" style="color: var(--acc);">Apri Link</a>)</label>
-      <textarea id="json-matches" placeholder="Incolla qui il testo delle Partite..."></textarea>
+      <label style="font-weight: 700; font-size: 13px;">2. Testo Partite (<a href="https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794" target="_blank" style="color: var(--acc);">Apri Link Partite</a>)</label>
+      <textarea id="json-matches" placeholder="Incolla il testo qui..."></textarea>
 
       <div style="margin-top: 14px;">
         <button class="btn" onclick="parseAndSaveData()">💾 Salva e Aggiorna App</button>
@@ -202,7 +202,6 @@ textarea { width: 100%; height: 90px; background: var(--s2); border: 1px solid v
 
   window.onload = () => {
     loadSavedData();
-    autoFetchProxy();
   };
 
   function switchTab(tabId, btn) {
@@ -218,52 +217,62 @@ textarea { width: 100%; height: 90px; background: var(--s2); border: 1px solid v
     else document.documentElement.setAttribute('data-theme', 'light');
   }
 
-  async function autoFetchProxy() {
-    const proxy = (t) => `https://api.allorigins.win/raw?url=${encodeURIComponent(t)}`;
-    try {
-      const resM = await fetch(proxy(`https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=${CLUB_ID}`));
-      if(resM.ok) { renderMembers(await resM.json()); }
-      const resX = await fetch(proxy(`https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=${CLUB_ID}`));
-      if(resX.ok) { renderMatches(await resX.json()); }
-    } catch(e) { console.log("Proxy in attesa di dati manuali..."); }
-  }
-
+  // Estrazione intelligente con Espressioni Regolari (tollerante agli errori di copia-incolla)
   function parseAndSaveData() {
-    const rawM = document.getElementById("json-members").value.trim();
-    const rawX = document.getElementById("json-matches").value.trim();
+    const rawM = document.getElementById("json-members").value;
+    const rawX = document.getElementById("json-matches").value;
 
-    let count = 0;
-    if (rawM) {
-      try {
-        const dataM = JSON.parse(rawM);
-        renderMembers(dataM);
-        localStorage.setItem("ea_members_cache", rawM);
-        count++;
-      } catch(e) { console.error("Errore parse membri:", e); }
+    let foundPlayers = [];
+    let foundMatches = [];
+
+    // Estrai i nomi dei giocatori tramite regex cerca "name":"..." o "proName":"..."
+    const nameRegex = /"(?:name|proName|nameRaw)"\s*:\s*"([^"]+)"/g;
+    let match;
+    while ((match = nameRegex.exec(rawM)) !== null) {
+      if (match[1] && !foundPlayers.includes(match[1])) {
+        foundPlayers.push(match[1]);
+      }
     }
 
-    if (rawX) {
-      try {
-        const dataX = JSON.parse(rawX);
-        renderMatches(dataX);
-        localStorage.setItem("ea_matches_cache", rawX);
-        count++;
-      } catch(e) { console.error("Errore parse partite:", e); }
+    // Se JSON.parse funziona normalmente, usa quello per maggiore accuratezza
+    try {
+      const parsedM = JSON.parse(rawM);
+      const membersArr = Array.isArray(parsedM) ? parsedM : (parsedM.members || Object.values(parsedM));
+      if (membersArr && membersArr.length > 0) {
+        renderMembers(membersArr);
+        localStorage.setItem("ea_members_cache", JSON.stringify(membersArr));
+      }
+    } catch(e) {
+      // Se JSON.parse fallisce ma la Regex ha trovato giocatori, usiamo quelli!
+      if (foundPlayers.length > 0) {
+        const dummyMembers = foundPlayers.map(name => ({ name: name, gamesPlayed: "-", goals: "-", assists: "-", proPos: "Giocatore" }));
+        renderMembers(dummyMembers);
+        localStorage.setItem("ea_members_cache", JSON.stringify(dummyMembers));
+      }
     }
 
-    if (count > 0) {
-      alert("✅ Dati caricati e salvati con successo!");
+    // Parsing Partite
+    try {
+      const parsedX = JSON.parse(rawX);
+      renderMatches(parsedX);
+      localStorage.setItem("ea_matches_cache", JSON.stringify(parsedX));
+    } catch(e) {
+      console.log("Errore parsing partite:", e);
+    }
+
+    if (foundPlayers.length > 0 || localStorage.getItem("ea_matches_cache")) {
+      alert("✅ Dati importati e salvati con successo!");
       switchTab('squadra', document.querySelectorAll('.tabs button')[0]);
     } else {
-      alert("❌ Impossibile leggere i testi incollati. Assicurati di aver copiato l'intero contenuto delle pagine JSON.");
+      alert("⚠️ Impossibile rilevare i dati del club. Assicurati di aver copiato il testo della pagina aperta dai link.");
     }
   }
 
   function loadSavedData() {
     const cM = localStorage.getItem("ea_members_cache");
     const cX = localStorage.getItem("ea_matches_cache");
-    if(cM) try { renderMembers(JSON.parse(cM)); }catch(e){}
-    if(cX) try { renderMatches(JSON.parse(cX)); }catch(e){}
+    if(cM) try { renderMembers(JSON.parse(cM)); } catch(e){}
+    if(cX) try { renderMatches(JSON.parse(cX)); } catch(e){}
     
     const rawF = localStorage.getItem("sisal_fc_formation_data");
     if (rawF) {
@@ -273,21 +282,15 @@ textarea { width: 100%; height: 90px; background: var(--s2); border: 1px solid v
     }
   }
 
-  function renderMembers(data) {
+  function renderMembers(members) {
     const list = document.getElementById("players-list");
     list.innerHTML = "";
     realPlayers = [];
 
-    let members = [];
-    if (Array.isArray(data)) members = data;
-    else if (data && data.members) members = data.members;
-    else if (data && typeof data === 'object') members = Object.values(data);
-
-    if (members.length > 0) {
+    if (Array.isArray(members) && members.length > 0) {
       members.forEach(m => {
-        if(!m || typeof m !== 'object') return;
-        const pName = m.name || m.proName || m.nameRaw || "Giocatore";
-        if(pName && !realPlayers.includes(pName)) realPlayers.push(pName);
+        const pName = m.name || m.proName || "Giocatore";
+        if (pName && !realPlayers.includes(pName)) realPlayers.push(pName);
         
         list.innerHTML += `
           <div style="padding: 10px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
