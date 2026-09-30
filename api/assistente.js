@@ -2,7 +2,7 @@ module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ error: "metodo non valido" });
   const key = process.env.GEMINI_API_KEY;
   if (!key) return res.status(500).json({ error: "Manca la chiave GEMINI_API_KEY su Vercel." });
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const model = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
   let body = req.body;
   if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   const msgs = Array.isArray(body && body.messages) ? body.messages.slice(-8) : [];
@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 1200, temperature: 0.6 } }),
+      body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 1500, temperature: 0.6 } }),
     });
     const j = await r.json();
     if (!r.ok) return res.status(502).json({ error: (j.error && j.error.message) || "Gemini ha risposto con un errore." });
