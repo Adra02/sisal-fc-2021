@@ -69,11 +69,6 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 .role-item label { display: block; font: 700 11px Sora; color: var(--acc); margin-bottom: 4px; }
 .role-item select { width: 100%; background: var(--s); border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: 6px; font: 600 12px Manrope; }
 
-.chat-box { height: 260px; overflow-y: auto; background: var(--s2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
-.msg { padding: 8px 12px; border-radius: 12px; max-width: 85%; font-size: 13px; line-height: 1.4; }
-.msg.user { background: var(--acc2); color: #fff; align-self: flex-end; }
-.msg.ai { background: var(--s); border: 1px solid var(--line); color: var(--ink); align-self: flex-start; }
-
 .match-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 .badge { padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 11px; }
 .badge.v { background: color-mix(in srgb, var(--good) 20%, transparent); color: var(--good); }
@@ -89,7 +84,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
   <header>
     <div>
       <small>PRO CLUBS · GEN 5</small>
-      <h1 id="app-title">Sisal FC 2021</h1>
+      <h1>Sisal FC 2021</h1>
     </div>
     <button class="btn btn-sec" onclick="toggleTheme()" style="padding: 6px 12px; font-size: 12px;">🌓 Tema</button>
   </header>
@@ -97,8 +92,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
   <nav class="tabs">
     <button aria-current="page" onclick="switchTab('squadra', this)">Squadra</button>
     <button onclick="switchTab('formazione', this)">Formazione</button>
-    <button onclick="switchTab('giocatori', this)">Giocatori Reali</button>
-    <button onclick="switchTab('ia', this)">Assistente IA</button>
+    <button onclick="switchTab('giocatori', this)">Giocatori</button>
   </nav>
 
   <!-- SEZIONE SQUADRA -->
@@ -107,14 +101,14 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
           <strong style="color: var(--acc);">Sisal FC 2021 (ID: 328794)</strong>
-          <div id="sync-status" style="font-size: 12px; color: var(--mut);">Sincronizzazione API EA in corso...</div>
+          <div id="status-msg" style="font-size: 12px; color: var(--mut);">Sincronizzazione in corso...</div>
         </div>
-        <button class="btn" onclick="syncEaData()">🔄 Aggiorna</button>
+        <button class="btn" onclick="fetchAutoData()">⚡ Aggiorna Dati</button>
       </div>
     </div>
 
     <div class="hero">
-      <small>STATISTICHE CAMPIONATO REALI</small>
+      <small>STATISTICHE CLUB REALI</small>
       <h1>Sisal FC 2021</h1>
       <div class="k">
         <div><b id="stat-matches">0</b><span>Partite Tot.</span></div>
@@ -125,9 +119,9 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     </div>
 
     <div class="card">
-      <h3>Ultime Partite di Campionato (EA API)</h3>
+      <h3>Ultime Partite di Campionato</h3>
       <div id="recent-matches-list" style="margin-top: 10px;">
-        <div style="color: var(--mut);">Caricamento partite da EA Sports...</div>
+        <div style="color: var(--mut);">Sincronizzazione in corso dai server EA...</div>
       </div>
     </div>
   </div>
@@ -137,7 +131,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     <div class="card">
       <h2>Modulo & Assegnazione Giocatori</h2>
       <p style="font-size: 12px; color: var(--mut); margin-bottom: 10px;">
-        Assegna i vostri Gamertag ufficiali sincronizzati da EA Sports. I Bot vengono spostati esclusivamente in Difesa/Porta.
+        Assegna i ruoli usando i nomi scaricati in automatico. I Bot vengono spostati esclusivamente in Difesa/Porta.
       </p>
 
       <div style="margin-bottom: 12px;">
@@ -183,34 +177,9 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
   <!-- SEZIONE GIOCATORI -->
   <div id="tab-giocatori" class="tab-content">
     <div class="card">
-      <h2>Membri Rosa Ufficiali (Sisal FC 2021)</h2>
-      <p style="font-size: 12px; color: var(--mut);">
-        Elenco scaricato direttamente dall'endpoint EA Sports per il club 328794.
-      </p>
-      <div id="players-list" style="margin-top: 14px;"></div>
-    </div>
-  </div>
-
-  <!-- SEZIONE ASSISTENTE IA -->
-  <div id="tab-ia" class="tab-content">
-    <div class="card">
-      <h2>Assistente IA · Sisal FC 2021</h2>
-      <p style="font-size: 12px; color: var(--mut); margin-bottom: 10px;">
-        I consigli dell'IA terranno conto dei nomi reali dei tuoi compagni di squadra e delle partite disputate.
-      </p>
-
-      <div style="margin-bottom: 10px;">
-        <label style="font: 700 12px Sora; display: block; margin-bottom: 4px;">Come volete giocare stasera?</label>
-        <input type="text" id="playstyle-input" placeholder="Es. Vogliamo giocare con difesa a 3 e pressing alto..." style="width: 100%; background: var(--s2); border: 1px solid var(--line); border-radius: 8px; padding: 8px; color: var(--ink); font-size: 13px;">
-      </div>
-
-      <div class="chat-box" id="chat-box">
-        <div class="msg ai">Ciao! Ho scaricato la rosa del Sisal FC 2021 da EA Sports. Chiedimi consigli sulla disposizione della squadra o sui ruoli dei tuoi amici!</div>
-      </div>
-
-      <div style="display: flex; gap: 8px;">
-        <input type="text" id="chat-input" placeholder="Chiedi un consiglio tattico..." style="flex: 1; background: var(--s2); border: 1px solid var(--line); border-radius: 99px; padding: 10px 16px; color: var(--ink); font-size: 13px;" onkeypress="if(event.key==='Enter') sendGeminiMessage()">
-        <button class="btn" onclick="sendGeminiMessage()">Invia</button>
+      <h2>Membri Rosa Ufficiali</h2>
+      <div id="players-list" style="margin-top: 14px;">
+        <div style="color: var(--mut);">Caricamento giocatori in corso...</div>
       </div>
     </div>
   </div>
@@ -230,12 +199,11 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
   };
 
   let realPlayers = [];
-  let playersStatsMap = {};
   let savedLineup = {};
 
   window.onload = () => {
     loadSavedFormation();
-    syncEaData();
+    fetchAutoData();
   };
 
   function switchTab(tabId, btn) {
@@ -247,104 +215,116 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 
   function toggleTheme() {
     const current = document.documentElement.getAttribute('data-theme');
-    if (current === 'light') {
-      document.documentElement.removeAttribute('data-theme');
+    if (current === 'light') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', 'light');
+  }
+
+  // Chiamata automatica con sistema Fallback Proxy
+  async function fetchAutoData() {
+    const statusMsg = document.getElementById("status-msg");
+    statusMsg.innerText = "Sincronizzazione automatica in corso...";
+
+    const membersUrl = `https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=${CLUB_ID}`;
+    const matchesUrl = `https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=${CLUB_ID}`;
+
+    const proxyList = [
+      url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+      url => `https://corsproxy.io/?${encodeURIComponent(url)}`
+    ];
+
+    let membersData = null;
+    let matchesData = null;
+
+    for (const proxyFn of proxyList) {
+      try {
+        if (!membersData) {
+          const res = await fetch(proxyFn(membersUrl));
+          if (res.ok) membersData = await res.json();
+        }
+        if (!matchesData) {
+          const res = await fetch(proxyFn(matchesUrl));
+          if (res.ok) matchesData = await res.json();
+        }
+      } catch (e) {}
+
+      if (membersData && matchesData) break;
+    }
+
+    if (membersData) {
+      renderMembers(membersData);
+      statusMsg.innerText = "✅ Rosa sincronizzata automaticamente!";
     } else {
-      document.documentElement.setAttribute('data-theme', 'light');
+      statusMsg.innerText = "⚠️ Impossibile scaricare la rosa da EA.";
+    }
+
+    if (matchesData) {
+      renderMatches(matchesData);
     }
   }
 
-  async function syncEaData() {
-    const statusLbl = document.getElementById("sync-status");
-    statusLbl.innerText = "Sincronizzazione API EA in corso...";
+  function renderMembers(data) {
+    const list = document.getElementById("players-list");
+    list.innerHTML = "";
+    realPlayers = [];
 
-    await Promise.all([fetchMembers(), fetchMatches()]);
-
-    statusLbl.innerText = "✅ Sincronizzato con EA Sports Pro Clubs!";
+    const members = data.members || (Array.isArray(data) ? data : []);
+    if (members.length > 0) {
+      members.forEach(m => {
+        const pName = m.name || m.proName || "Giocatore";
+        realPlayers.push(pName);
+        list.innerHTML += `
+          <div style="padding: 10px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>${pName}</strong>
+              <div style="font-size: 11px; color: var(--mut);">
+                Presenze: ${m.gamesPlayed || 0} | Gol: ${m.goals || 0} | Assist: ${m.assists || 0}
+              </div>
+            </div>
+            <span class="badge v">${m.proPos || 'Giocatore'}</span>
+          </div>
+        `;
+      });
+      changeFormation();
+    }
   }
 
-  // 1. Giocatori reali tramite API EA: members/stats?platform=common-gen5&clubId=328794
-  async function fetchMembers() {
-    try {
-      const res = await fetch(`/api/ea?path=members/stats&clubId=${CLUB_ID}`);
-      const data = await res.json();
-      const list = document.getElementById("players-list");
-      list.innerHTML = "";
-      realPlayers = [];
+  function renderMatches(data) {
+    const list = document.getElementById("recent-matches-list");
+    list.innerHTML = "";
+    let wins = 0, draws = 0, losses = 0;
 
-      if (data && data.members) {
-        data.members.forEach(m => {
-          const pName = m.name || m.proName;
-          realPlayers.push(pName);
-          playersStatsMap[pName] = m;
+    if (Array.isArray(data) && data.length > 0) {
+      data.forEach(m => {
+        const clubInfo = Object.values(m.clubs).find(c => c.id == CLUB_ID);
+        const oppInfo = Object.values(m.clubs).find(c => c.id != CLUB_ID);
+
+        if (clubInfo && oppInfo) {
+          const goalsFor = parseInt(clubInfo.goals);
+          const goalsAgainst = parseInt(oppInfo.goals);
+          let outcome = "N";
+
+          if (goalsFor > goalsAgainst) { wins++; outcome = "V"; }
+          else if (goalsFor === goalsAgainst) { draws++; outcome = "N"; }
+          else { losses++; outcome = "P"; }
 
           list.innerHTML += `
-            <div style="padding: 10px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+            <div class="match-item">
+              <div><strong>vs ${oppInfo.details?.name || 'Avversario'}</strong></div>
               <div>
-                <strong>${pName}</strong>
-                <div style="font-size: 11px; color: var(--mut);">
-                  Presenze: ${m.gamesPlayed || 0} | Gol: ${m.goals || 0} | Assist: ${m.assists || 0} | Voto Medio: ${m.ratingGiven || 'N/D'}
-                </div>
+                <span style="font-weight: 700; margin-right: 8px;">${goalsFor} - ${goalsAgainst}</span>
+                <span class="badge ${outcome === 'V' ? 'v' : 'p'}">${outcome === 'V' ? 'VITTORIA' : (outcome === 'N' ? 'PAREGGIO' : 'SCONFITTA')}</span>
               </div>
-              <span class="badge v">${m.proPos || 'Giocatore'}</span>
             </div>
           `;
-        });
+        }
+      });
 
-        changeFormation();
-      } else {
-        list.innerHTML = `<div style="color: var(--mut);">Nessun giocatore trovato o risposta server vuota.</div>`;
-      }
-    } catch (e) {
-      document.getElementById("players-list").innerHTML = `<div style="color: var(--bad);">Errore nel recupero della rosa da EA Sports.</div>`;
-    }
-  }
-
-  // 2. Partite di Campionato reali tramite API EA: clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794
-  async function fetchMatches() {
-    const list = document.getElementById("recent-matches-list");
-    try {
-      const res = await fetch(`/api/ea?path=clubs/matches&matchType=leagueMatch&clubIds=${CLUB_ID}`);
-      const data = await res.json();
-
-      let wins = 0, draws = 0, losses = 0;
-
-      if (data && data.length > 0) {
-        list.innerHTML = "";
-        data.forEach(m => {
-          const clubInfo = Object.values(m.clubs).find(c => c.id == CLUB_ID);
-          const oppInfo = Object.values(m.clubs).find(c => c.id != CLUB_ID);
-
-          if (clubInfo && oppInfo) {
-            const goalsFor = parseInt(clubInfo.goals);
-            const goalsAgainst = parseInt(oppInfo.goals);
-            let outcome = "N";
-
-            if (goalsFor > goalsAgainst) { wins++; outcome = "V"; }
-            else if (goalsFor === goalsAgainst) { draws++; outcome = "N"; }
-            else { losses++; outcome = "P"; }
-
-            list.innerHTML += `
-              <div class="match-item">
-                <div><strong>vs ${oppInfo.details?.name || 'Avversario'}</strong></div>
-                <div>
-                  <span style="font-weight: 700; margin-right: 8px;">${goalsFor} - ${goalsAgainst}</span>
-                  <span class="badge ${outcome === 'V' ? 'v' : 'p'}">${outcome === 'V' ? 'VITTORIA' : (outcome === 'N' ? 'PAREGGIO' : 'SCONFITTA')}</span>
-                </div>
-              </div>
-            `;
-          }
-        });
-
-        document.getElementById("stat-matches").innerText = data.length;
-        document.getElementById("stat-wins").innerText = wins;
-        document.getElementById("stat-draws").innerText = draws;
-        document.getElementById("stat-losses").innerText = losses;
-      } else {
-        list.innerHTML = `<div style="color: var(--mut);">Nessuna partita recente di campionato registrata nei server EA.</div>`;
-      }
-    } catch (e) {
-      list.innerHTML = `<div style="color: var(--bad);">Errore nel caricamento delle ultime partite.</div>`;
+      document.getElementById("stat-matches").innerText = data.length;
+      document.getElementById("stat-wins").innerText = wins;
+      document.getElementById("stat-draws").innerText = draws;
+      document.getElementById("stat-losses").innerText = losses;
+    } else {
+      list.innerHTML = `<div style="color: var(--mut);">Nessuna partita recente di campionato trovata.</div>`;
     }
   }
 
@@ -418,7 +398,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     });
 
     localStorage.setItem("sisal_fc_formation_data", JSON.stringify({ scheme, lineup }));
-    alert("Formazione di Sisal FC 2021 salvata sul dispositivo!");
+    alert("Formazione salvata!");
   }
 
   function loadSavedFormation() {
@@ -442,18 +422,15 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     const assignment = {};
 
     attRoles.forEach(role => {
-      if (pool.length > 0) assignment[role] = pool.shift();
-      else assignment[role] = "";
+      assignment[role] = pool.length > 0 ? pool.shift() : "";
     });
 
     midRoles.forEach(role => {
-      if (pool.length > 0) assignment[role] = pool.shift();
-      else assignment[role] = "IA (bot)";
+      assignment[role] = pool.length > 0 ? pool.shift() : "IA (bot)";
     });
 
     defRoles.forEach(role => {
-      if (pool.length > 0) assignment[role] = pool.shift();
-      else assignment[role] = "IA (bot)";
+      assignment[role] = pool.length > 0 ? pool.shift() : "IA (bot)";
     });
 
     roles.forEach(role => {
@@ -463,46 +440,6 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 
     renderPitch();
   }
-
-  async function sendGeminiMessage() {
-    const input = document.getElementById("chat-input");
-    const playstyle = document.getElementById("playstyle-input").value;
-    const box = document.getElementById("chat-box");
-    const txt = input.value.trim();
-
-    if (!txt) return;
-
-    box.innerHTML += `<div class="msg user">${txt}</div>`;
-    input.value = "";
-    box.scrollTop = box.scrollHeight;
-
-    const loading = document.createElement("div");
-    loading.className = "msg ai";
-    loading.innerText = "Elaborazione consiglio...";
-    box.appendChild(loading);
-    box.scrollTop = box.scrollHeight;
-
-    try {
-      const res = await fetch("/api/assistente", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messaggio: txt,
-          formazioneData: savedLineup,
-          comeGiochiamo: playstyle,
-          rosaGiocatori: playersStatsMap
-        })
-      });
-
-      const data = await res.json();
-      loading.innerText = data.risposta || "Nessuna risposta disponibile.";
-    } catch (err) {
-      loading.innerText = "Errore durante la connessione all'assistente IA.";
-    }
-
-    box.scrollTop = box.scrollHeight;
-  }
 </script>
-
 </body>
 </html>
