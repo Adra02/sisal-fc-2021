@@ -245,7 +245,13 @@ function aiView(){
   <div class="card"><div id="chat" aria-live="polite">${S.chat.map(msgHtml).join("")}</div><div style="display:flex;gap:8px"><input id="msg" placeholder="Scrivi una domanda" aria-label="Domanda"><button class="btn" data-a="send">Invia</button></div></div>`}
 
 const num=x=>Number(x)||0;
-async function ea(path,params){const r=await fetch(API+"?"+new URLSearchParams({path,...params}),{cache:"no-store"});if(!r.ok)throw new Error(r.status);return r.json()}
+async function ea(path,params){
+  let code="",detail="";
+  try{const r=await fetch(API+"?"+new URLSearchParams({path,...params}),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&!j.error)return j}
+    code=String(r.status);detail=(await r.text().catch(()=>"")).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim().slice(0,160)}catch(e){code=code||"rete"}
+  try{const r=await fetch("https://proclubs.ea.com/api/fc/"+path+"?"+new URLSearchParams({platform:"common-gen5",...params}));if(r.ok)return await r.json();code+=" / diretto "+r.status}catch(e){code+=" / diretto bloccato dal browser"}
+  const x=new Error(code);x.detail=detail;throw x}
 const CODE={forward:"F",midfielder:"M",defender:"D",goalkeeper:"G"},ITA={forward:"Attaccante",midfielder:"Centrocampista",defender:"Difensore",goalkeeper:"Portiere"};
 function sumPlayers(m,id){const cl=(m.clubs||{})[id]||{},s={sh:0,pm:0,pa:0,tm:0,ta:0,sv:0,g:num(cl.goals),ga:num(cl.goalsAgainst),secs:0,p:[]};
   Object.values((m.players||{})[id]||{}).forEach(x=>{s.sh+=num(x.shots);s.pm+=num(x.passesmade);s.pa+=num(x.passattempts);s.tm+=num(x.tacklesmade);s.ta+=num(x.tackleattempts);s.sv+=num(x.saves);s.secs=Math.max(s.secs,num(x.secondsPlayed));
@@ -283,13 +289,13 @@ async function pickOpp(info){
 async function search(sel){const n=(document.getElementById(sel)||{}).value||"";
   if(n.trim().length<3){S.msg="Scrivi almeno 3 lettere";render();return}
   S.msg="Cerco…";S.res=[];render();
-  try{const r=await ea("allTimeLeaderboard/search",{clubName:n.trim()});S.res=Array.isArray(r)?r:Object.values(r||{});S.msg=S.res.length?"":"Nessun club trovato"}catch(e){S.msg="EA non risponde ora, riprova tra poco"}
+  try{const r=await ea("allTimeLeaderboard/search",{clubName:n.trim()});S.res=Array.isArray(r)?r:Object.values(r||{});S.msg=S.res.length?"":"Nessun club trovato"}catch(e){S.msg="EA non risponde (codice "+e.message+(e.detail?": "+e.detail:"")+"). Riprova tra poco."}
   render()}
 const resHtml=k=>`${S.msg?`<p class="mut">${esc(S.msg)}</p>`:""}<div class="chips">${(S.res||[]).slice(0,10).map((x,i)=>`<button data-a="${k}" data-v="${i}">${esc((x.clubInfo||{}).name||x.clubName||"?")} · div. ${esc(x.currentDivision||"?")}</button>`).join("")}</div>`;
 const liveSearch=()=>`<div class="card"><h3>Cerca qualsiasi club</h3><div style="display:flex;gap:8px;margin-top:8px"><input id="os" placeholder="Nome del club" aria-label="Nome del club"><button class="btn" data-a="osearch">Cerca</button></div>${resHtml("opick")}</div>`;
 const startView=()=>`<header><small>PRO CLUBS · FC 27</small><h1>Sisal FC 2021</h1></header><div class="card"><h3>Cerca il tuo club</h3><p class="mut">Scrivi il nome come appare nel gioco.</p><div style="display:flex;gap:8px"><input id="cs" placeholder="Nome del club" aria-label="Nome del club"><button class="btn" data-a="csearch">Cerca</button></div>${resHtml("pick")}</div>`;
 async function start(info){S.ready=false;S.msg="Carico i dati del club…";S.res=[];render();
-  try{await loadMine(info);S.ready=true;S.msg=""}catch(e){S.msg="Non riesco a leggere i dati di EA. Riprova tra poco."}
+  try{await loadMine(info);S.ready=true;S.msg=""}catch(e){S.msg="Non riesco a leggere i dati di EA (codice "+e.message+(e.detail?": "+e.detail:"")+"). Riprova tra poco."}
   render()}
 async function refresh(force){
   if(!API||!S.ready||S.refreshing)return;
