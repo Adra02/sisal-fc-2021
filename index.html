@@ -74,6 +74,8 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 .badge.v { background: color-mix(in srgb, var(--good) 20%, transparent); color: var(--good); }
 .badge.p { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
 
+textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 10px; font-family: monospace; font-size: 12px; height: 70px; margin-top: 6px; }
+
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 </style>
@@ -93,17 +95,18 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     <button aria-current="page" onclick="switchTab('squadra', this)">Squadra</button>
     <button onclick="switchTab('formazione', this)">Formazione</button>
     <button onclick="switchTab('giocatori', this)">Giocatori Reali</button>
+    <button onclick="switchTab('import', this)">📥 Importa Dati</button>
   </nav>
 
   <!-- SEZIONE SQUADRA -->
   <div id="tab-squadra" class="tab-content active">
     <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
         <div>
           <strong style="color: var(--acc);">Sisal FC 2021 (ID: 328794)</strong>
-          <div id="sync-status" style="font-size: 12px; color: var(--mut);">⏳ Sincronizzazione automatica...</div>
+          <div id="sync-status" style="font-size: 12px; color: var(--mut);">⏳ Verifica connessione diretta...</div>
         </div>
-        <button class="btn" onclick="fetchEaDataAuto()">🔄 Aggiorna Ora</button>
+        <button class="btn" onclick="fetchEaDataAuto()">🔄 Prova Connessione Diretta</button>
       </div>
     </div>
 
@@ -121,7 +124,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     <div class="card">
       <h3>Ultime Partite di Campionato</h3>
       <div id="recent-matches-list" style="margin-top: 10px;">
-        <div style="color: var(--mut);">Connessione al server Vercel...</div>
+        <div style="color: var(--mut);">Caricamento dati...</div>
       </div>
     </div>
   </div>
@@ -174,8 +177,28 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     <div class="card">
       <h2>Membri Rosa Ufficiali</h2>
       <div id="players-list" style="margin-top: 14px;">
-        <div style="color: var(--mut);">Caricamento giocatori...</div>
+        <div style="color: var(--mut);">Nessun dato caricato.</div>
       </div>
+    </div>
+  </div>
+
+  <!-- SEZIONE IMPORTA DATI -->
+  <div id="tab-import" class="tab-content">
+    <div class="card">
+      <h2>Importazione Rapida Dati EA</h2>
+      <p style="font-size: 13px; color: var(--mut);">Poiché EA blocca le chiamate server automatiche, apri i due link sottostanti dal tuo telefono o browser, copia il testo e incollalo qui sotto:</p>
+      
+      <div style="margin-bottom: 12px;">
+        <a href="https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=328794" target="_blank" style="color: var(--acc); font-weight: 700; font-size: 13px;">1. Apri JSON Giocatori 🔗</a>
+        <textarea id="json-members-input" placeholder="Incolla qui il testo dei Giocatori..."></textarea>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <a href="https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794" target="_blank" style="color: var(--acc); font-weight: 700; font-size: 13px;">2. Apri JSON Partite 🔗</a>
+        <textarea id="json-matches-input" placeholder="Incolla qui il testo delle Partite..."></textarea>
+      </div>
+
+      <button class="btn" onclick="applyManualJson()">💾 Salva e Aggiorna App</button>
     </div>
   </div>
 
@@ -197,6 +220,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 
   window.onload = () => {
     loadSavedFormation();
+    loadCachedData();
     fetchEaDataAuto();
   };
 
@@ -215,39 +239,59 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 
   async function fetchEaDataAuto() {
     const statusLbl = document.getElementById("sync-status");
-    statusLbl.innerText = "⏳ Sincronizzazione automatica via Vercel...";
-
-    let okMembers = false, okMatches = false;
+    statusLbl.innerText = "⏳ Prova di chiamata diretta ad EA...";
 
     try {
-      const resM = await fetch(`/api/members?clubId=${CLUB_ID}`);
-      if (resM.ok) {
+      const resM = await fetch(`https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=${CLUB_ID}`);
+      const resMatches = await fetch(`https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=${CLUB_ID}`);
+
+      if (resM.ok && resMatches.ok) {
         const dataM = await resM.json();
-        renderMembers(dataM);
-        okMembers = true;
+        const dataMatches = await resMatches.json();
+        saveAndRender(dataM, dataMatches);
+        statusLbl.innerText = "✅ Connessione automatica diretta riuscita!";
+        return;
       }
     } catch (e) {
-      console.error("Errore membri:", e);
+      console.log("Connessione diretta bloccata da Cloudflare/CORS.");
     }
+
+    statusLbl.innerText = "⚠️ EA protegge le API. Usa la scheda 'Importa Dati' per aggiornare in 5 secondi.";
+  }
+
+  function applyManualJson() {
+    const rawM = document.getElementById("json-members-input").value.trim();
+    const rawMatches = document.getElementById("json-matches-input").value.trim();
 
     try {
-      const resMatches = await fetch(`/api/matches?clubId=${CLUB_ID}`);
-      if (resMatches.ok) {
-        const dataMatches = await resMatches.json();
-        renderMatches(dataMatches);
-        okMatches = true;
-      }
-    } catch (e) {
-      console.error("Errore partite:", e);
-    }
+      const dataM = rawM ? JSON.parse(rawM) : null;
+      const dataMatches = rawMatches ? JSON.parse(rawMatches) : null;
 
-    if (okMembers && okMatches) {
-      statusLbl.innerText = "✅ Sincronizzazione automatica completata!";
-    } else if (okMembers || okMatches) {
-      statusLbl.innerText = "⚠️ Sincronizzazione parziale completata.";
-    } else {
-      statusLbl.innerText = "❌ Errore nella connessione con EA Sports.";
+      saveAndRender(dataM, dataMatches);
+      alert("Dati importati e salvati con successo!");
+      switchTab('squadra', document.querySelectorAll('.tabs button')[0]);
+    } catch (e) {
+      alert("Errore nel formato del testo incollato. Assicurati di aver copiato tutto il contenuto del link.");
     }
+  }
+
+  function saveAndRender(dataM, dataMatches) {
+    if (dataM) {
+      localStorage.setItem("sisal_cache_members", JSON.stringify(dataM));
+      renderMembers(dataM);
+    }
+    if (dataMatches) {
+      localStorage.setItem("sisal_cache_matches", JSON.stringify(dataMatches));
+      renderMatches(dataMatches);
+    }
+  }
+
+  function loadCachedData() {
+    const cachedM = localStorage.getItem("sisal_cache_members");
+    const cachedMatches = localStorage.getItem("sisal_cache_matches");
+
+    if (cachedM) renderMembers(JSON.parse(cachedM));
+    if (cachedMatches) renderMatches(JSON.parse(cachedMatches));
   }
 
   function renderMembers(data) {
