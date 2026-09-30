@@ -101,7 +101,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
           <strong style="color: var(--acc);">Sisal FC 2021 (ID: 328794)</strong>
-          <div id="sync-status" style="font-size: 12px; color: var(--mut);">⏳ Scaricamento automatico da EA Sports...</div>
+          <div id="sync-status" style="font-size: 12px; color: var(--mut);">⏳ Sincronizzazione automatica...</div>
         </div>
         <button class="btn" onclick="fetchEaDataAuto()">🔄 Aggiorna Ora</button>
       </div>
@@ -121,7 +121,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     <div class="card">
       <h3>Ultime Partite di Campionato</h3>
       <div id="recent-matches-list" style="margin-top: 10px;">
-        <div style="color: var(--mut);">Connessione al server in corso...</div>
+        <div style="color: var(--mut);">Connessione al server Vercel...</div>
       </div>
     </div>
   </div>
@@ -213,20 +213,14 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     else document.documentElement.setAttribute('data-theme', 'light');
   }
 
-  // Chiamata automatica tramite Proxy CORS
   async function fetchEaDataAuto() {
     const statusLbl = document.getElementById("sync-status");
-    statusLbl.innerText = "⏳ Sincronizzazione automatica da EA Sports...";
-
-    const urlMembers = `https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=${CLUB_ID}`;
-    const urlMatches = `https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=${CLUB_ID}`;
-
-    const proxy = (target) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`;
+    statusLbl.innerText = "⏳ Sincronizzazione automatica via Vercel...";
 
     let okMembers = false, okMatches = false;
 
     try {
-      const resM = await fetch(proxy(urlMembers));
+      const resM = await fetch(`/api/members?clubId=${CLUB_ID}`);
       if (resM.ok) {
         const dataM = await resM.json();
         renderMembers(dataM);
@@ -237,7 +231,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     }
 
     try {
-      const resMatches = await fetch(proxy(urlMatches));
+      const resMatches = await fetch(`/api/matches?clubId=${CLUB_ID}`);
       if (resMatches.ok) {
         const dataMatches = await resMatches.json();
         renderMatches(dataMatches);
@@ -247,10 +241,12 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
       console.error("Errore partite:", e);
     }
 
-    if (okMembers || okMatches) {
-      statusLbl.innerText = "✅ Dati sincronizzati automaticamente con EA Sports!";
+    if (okMembers && okMatches) {
+      statusLbl.innerText = "✅ Sincronizzazione automatica completata!";
+    } else if (okMembers || okMatches) {
+      statusLbl.innerText = "⚠️ Sincronizzazione parziale completata.";
     } else {
-      statusLbl.innerText = "❌ EA Sports sta temporaneamente bloccando la risposta.";
+      statusLbl.innerText = "❌ Errore nella connessione con EA Sports.";
     }
   }
 
