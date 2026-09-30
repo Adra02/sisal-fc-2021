@@ -92,7 +92,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
   <nav class="tabs">
     <button aria-current="page" onclick="switchTab('squadra', this)">Squadra</button>
     <button onclick="switchTab('formazione', this)">Formazione</button>
-    <button onclick="switchTab('giocatori', this)">Giocatori</button>
+    <button onclick="switchTab('giocatori', this)">Giocatori Reali</button>
   </nav>
 
   <!-- SEZIONE SQUADRA -->
@@ -101,9 +101,9 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
           <strong style="color: var(--acc);">Sisal FC 2021 (ID: 328794)</strong>
-          <div id="status-msg" style="font-size: 12px; color: var(--mut);">Connessione al server Vercel in corso...</div>
+          <div id="sync-status" style="font-size: 12px; color: var(--mut);">⏳ Scaricamento automatico da EA Sports...</div>
         </div>
-        <button class="btn" onclick="fetchAutoData()">⚡ Aggiorna Dati</button>
+        <button class="btn" onclick="fetchEaDataAuto()">🔄 Aggiorna Ora</button>
       </div>
     </div>
 
@@ -121,7 +121,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     <div class="card">
       <h3>Ultime Partite di Campionato</h3>
       <div id="recent-matches-list" style="margin-top: 10px;">
-        <div style="color: var(--mut);">Caricamento dati in corso...</div>
+        <div style="color: var(--mut);">Connessione al server in corso...</div>
       </div>
     </div>
   </div>
@@ -130,17 +130,12 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
   <div id="tab-formazione" class="tab-content">
     <div class="card">
       <h2>Modulo & Assegnazione Giocatori</h2>
-      <p style="font-size: 12px; color: var(--mut); margin-bottom: 10px;">
-        Assegna i ruoli con i nomi reali scaricati. I Bot IA vengono posizionati nei ruoli difensivi lasciati scoperti.
-      </p>
-
-      <div style="margin-bottom: 12px;">
+      <div style="margin: 12px 0;">
         <label style="font: 700 13px Sora;">Seleziona Modulo: </label>
         <select id="formation-select" onchange="changeFormation()" style="background: var(--s2); border: 1px solid var(--line); color: var(--ink); padding: 6px 12px; border-radius: 8px; font-weight: 700;">
           <option value="4-3-3">4-3-3</option>
           <option value="4-4-2">4-4-2</option>
           <option value="4-2-3-1">4-2-3-1</option>
-          <option value="4-4-1-1">4-4-1-1</option>
           <option value="3-4-2-1">3-4-2-1</option>
           <option value="3-5-2">3-5-2</option>
           <option value="5-3-2">5-3-2</option>
@@ -151,7 +146,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 
       <div style="display: flex; gap: 8px; flex-wrap: wrap;">
         <button class="btn" onclick="saveFormation()">💾 Salva Formazione</button>
-        <button class="btn btn-sec" onclick="autoSuggest()">⚡ Suggerisci Formazione (No Bot Attacco)</button>
+        <button class="btn btn-sec" onclick="autoSuggest()">⚡ Suggerisci Formazione</button>
       </div>
     </div>
 
@@ -179,7 +174,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     <div class="card">
       <h2>Membri Rosa Ufficiali</h2>
       <div id="players-list" style="margin-top: 14px;">
-        <div style="color: var(--mut);">Caricamento giocatori in corso...</div>
+        <div style="color: var(--mut);">Caricamento giocatori...</div>
       </div>
     </div>
   </div>
@@ -192,7 +187,6 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     "4-3-3": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Centrocampista 1", "Centrocampista 2", "Trequartista", "Ala destra", "Attaccante", "Ala sinistra"],
     "4-4-2": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Attaccante 1", "Attaccante 2"],
     "4-2-3-1": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Mediano 1", "Mediano 2", "Esterno destro", "Trequartista", "Esterno sinistro", "Attaccante"],
-    "4-4-1-1": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Trequartista", "Attaccante"],
     "3-4-2-1": ["Portiere", "Difensore centrale 1", "Difensore centrale 2", "Difensore centrale 3", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Trequartista 1", "Trequartista 2", "Attaccante"],
     "3-5-2": ["Portiere", "Difensore centrale 1", "Difensore centrale 2", "Difensore centrale 3", "Mediano", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Attaccante 1", "Attaccante 2"],
     "5-3-2": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Difensore centrale 3", "Terzino sinistro", "Centrocampista 1", "Centrocampista 2", "Centrocampista 3", "Attaccante 1", "Attaccante 2"]
@@ -203,7 +197,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 
   window.onload = () => {
     loadSavedFormation();
-    fetchAutoData();
+    fetchEaDataAuto();
   };
 
   function switchTab(tabId, btn) {
@@ -219,23 +213,44 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     else document.documentElement.setAttribute('data-theme', 'light');
   }
 
-  async function fetchAutoData() {
-    const statusMsg = document.getElementById("status-msg");
-    statusMsg.innerText = "Sincronizzazione in corso via Vercel...";
+  // Chiamata automatica tramite Proxy CORS
+  async function fetchEaDataAuto() {
+    const statusLbl = document.getElementById("sync-status");
+    statusLbl.innerText = "⏳ Sincronizzazione automatica da EA Sports...";
+
+    const urlMembers = `https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=${CLUB_ID}`;
+    const urlMatches = `https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=${CLUB_ID}`;
+
+    const proxy = (target) => `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`;
+
+    let okMembers = false, okMatches = false;
 
     try {
-      const response = await fetch('/api/stats');
-      const data = await response.json();
-
-      if (data.success) {
-        if (data.members) renderMembers(data.members);
-        if (data.matches) renderMatches(data.matches);
-        statusMsg.innerText = "✅ Sincronizzazione automatica completata!";
-      } else {
-        statusMsg.innerText = "⚠️ Impossibile recuperare i dati da EA.";
+      const resM = await fetch(proxy(urlMembers));
+      if (resM.ok) {
+        const dataM = await resM.json();
+        renderMembers(dataM);
+        okMembers = true;
       }
-    } catch (error) {
-      statusMsg.innerText = "⚠️ Errore di connessione con il server dell'app.";
+    } catch (e) {
+      console.error("Errore membri:", e);
+    }
+
+    try {
+      const resMatches = await fetch(proxy(urlMatches));
+      if (resMatches.ok) {
+        const dataMatches = await resMatches.json();
+        renderMatches(dataMatches);
+        okMatches = true;
+      }
+    } catch (e) {
+      console.error("Errore partite:", e);
+    }
+
+    if (okMembers || okMatches) {
+      statusLbl.innerText = "✅ Dati sincronizzati automaticamente con EA Sports!";
+    } else {
+      statusLbl.innerText = "❌ EA Sports sta temporaneamente bloccando la risposta.";
     }
   }
 
@@ -263,7 +278,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
       });
       changeFormation();
     } else {
-      list.innerHTML = `<div style="color: var(--mut);">Nessun giocatore trovato.</div>`;
+      list.innerHTML = `<div style="color: var(--mut);">Nessun giocatore trovato nella rosa.</div>`;
     }
   }
 
@@ -272,12 +287,10 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     list.innerHTML = "";
     let wins = 0, draws = 0, losses = 0;
 
-    const matches = Array.isArray(data) ? data : [];
-
-    if (matches.length > 0) {
-      matches.forEach(m => {
-        const clubInfo = Object.values(m.clubs || {}).find(c => c.id == CLUB_ID);
-        const oppInfo = Object.values(m.clubs || {}).find(c => c.id != CLUB_ID);
+    if (Array.isArray(data) && data.length > 0) {
+      data.forEach(m => {
+        const clubInfo = Object.values(m.clubs).find(c => c.id == CLUB_ID);
+        const oppInfo = Object.values(m.clubs).find(c => c.id != CLUB_ID);
 
         if (clubInfo && oppInfo) {
           const goalsFor = parseInt(clubInfo.goals);
@@ -300,7 +313,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
         }
       });
 
-      document.getElementById("stat-matches").innerText = matches.length;
+      document.getElementById("stat-matches").innerText = data.length;
       document.getElementById("stat-wins").innerText = wins;
       document.getElementById("stat-draws").innerText = draws;
       document.getElementById("stat-losses").innerText = losses;
@@ -379,7 +392,7 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
     });
 
     localStorage.setItem("sisal_fc_formation_data", JSON.stringify({ scheme, lineup }));
-    alert("Formazione salvata con successo!");
+    alert("Formazione salvata!");
   }
 
   function loadSavedFormation() {
