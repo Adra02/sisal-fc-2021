@@ -1,10 +1,9 @@
-Fischio club · HTML
 <!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Fischio · Analisi Pro Clubs FC 27</title>
+<title>Sisal FC 2021 · Analisi Pro Clubs FC 27</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#F4F6FB;--s:#fff;--s2:#E9EDF8;--line:#D9DFEE;--ink:#0F1730;--mut:#5A6688;--acc:#0A7EA4;--on:#fff;--acc2:#4F5BD5;--good:#0F9F6E;--bad:#E0435A;--warn:#B7791F;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -87,7 +86,7 @@ let P=[["AdraTheTrue02","Attaccante",89,43,96,33,72,68,34,7.5,20,34,1],["pinuzzu
 const ID={A:"AdraTheTrue02",M:"MarcoBullyy",J:"joshuaviola2001",K:"MKS_geruzzok",L:"LUCAASIELEH",I:"Ilpisaaa_",X:"pinuzzuupazzu"};
 // partite della settimana: [giocatore, voto, gol, assist]
 let WK=[[["A",8,2,0],["M",9.2,0,0],["J",7.3,0,2],["K",6.6,0,0],["L",5.9,0,0]],[["A",5.9,0,0],["M",8.9,0,0],["J",6.2,0,0],["K",7,0,0],["L",6.3,0,0],["I",6.2,0,0],["X",6.8,1,0]],[["A",7.2,2,0],["M",9,0,0],["J",7.8,1,1],["K",8,0,0],["I",6.3,0,0],["X",6.6,0,0]],[["A",6.3,0,0],["M",7.6,0,0],["J",6.7,0,0],["K",6.7,0,0],["I",6.9,1,0],["X",6.5,0,0]],[["A",7.5,1,1],["M",8.3,0,0],["J",7.6,1,0],["K",8.4,0,0],["I",9.7,2,1],["X",7.3,1,1]]];
-let MYNAME="Sisal FC 2021",DIV="4",NOGK=true,WKL="Partite del 29/09/2026 (5 partite)",LAST=0;const API="";
+let MYNAME="Sisal FC 2021",DIV="4",NOGK=true,WKL="Partite del 29/09/2026 (5 partite)",LAST=0;const API="/api/ea";
 const ROLE={F:"Attaccante",M:"Centrocampista",D:"Difensore",G:"Portiere"};
 // avversari: r = gol loro - gol tuoi. giocatori: nome, ruolo, voto, gol, assist, contrasti fatti, tentati
 let O=[
@@ -102,13 +101,18 @@ const typ=c=>["ATT","AD","AS"].includes(c)?"a":c==="TRQ"?"t":c==="POR"?"g":["DC"
 const S={tab:"team",p:null,o:null,q:"",mod:LS.g("mod","4-3-3"),as:LS.g("as",null),cmp:[0,3],cmpOn:false,notes:LS.g("notes",""),chat:[],busy:false};
 const app=document.getElementById("app"),pn=n=>P.find(p=>p[0]===n);
 const slots=()=>{const r=MODS[S.mod];return r.flatMap((row,ri)=>row.map((c,i)=>({k:ri+"-"+i,c,ri,i,n:row.length,rows:r.length})))};
-function suggest(){const used=new Set(),as={},sc={a:p=>(p[4]+p[5])/p[2]*10+p[9],t:p=>p[5]/p[2]*12+p[9],m:p=>p[6]/10+p[8]/10+p[9]*2,d:p=>p[9]*2+p[8]/10+p[6]/20};
-  ["d","m","t","a"].forEach(t=>slots().filter(s=>typ(s.c)===t).forEach(s=>{const b=P.filter(p=>p[2]>=8&&!used.has(p[0])).sort((x,y)=>sc[t](y)-sc[t](x))[0];if(b){used.add(b[0]);as[s.k]=b[0]}}));
+function suggest(){
+  const used=new Set(),as={},nat={Attaccante:"a",Centrocampista:"m",Difensore:"d",Portiere:"g"};
+  const sc={a:p=>(p[4]+p[5])/p[2]*10+p[9],t:p=>p[5]/p[2]*12+p[9],m:p=>p[6]/10+p[8]/10+p[9]*2,d:p=>p[9]*2+p[8]/10+p[6]/20,g:p=>p[9]};
+  const fit=(p,t)=>sc[t](p)+(nat[p[1]]===t||(t==="t"&&nat[p[1]]==="a")?8:0)-(nat[p[1]]==="d"&&t!=="d"?6:0);
+  ["g","a","t","m","d"].forEach(t=>slots().filter(s=>typ(s.c)===t).forEach(s=>{
+    const b=P.filter(p=>p[2]>=8&&!used.has(p[0])&&(t!=="g"||p[1]==="Portiere")&&!(t==="d"&&p[8]<25&&p[7]>=20)).sort((x,y)=>fit(y,t)-fit(x,t))[0];
+    if(b){used.add(b[0]);as[s.k]=b[0]}}));
   S.as=as;LS.s("as",as)}
 if(!S.as)suggest();
 const IC={g:"+",b:"!",i:"i",r:"↻"};
 const tips=t=>t.map(x=>`<div class="tip t${x[0]}"><u>${IC[x[0]]}</u><span><b>${x[1]}</b> ${x[2]}</span></div>`).join("");
- 
+
 function pTips(p){
   const [n,r,gp,w,g,a,ps,tk,tp,rt,mv,sh,rd]=p,o=[],gpg=g/gp,apg=a/gp;
   if(gp<20)o.push(["i","Dati","solo "+gp+" partite: giudizio provvisorio."]);
@@ -134,7 +138,7 @@ function tTips(){const a=P[0];return[
   ["b","Contrasti",`nelle ultime 5 partite riesce solo il ${pc(T.tm,T.ta)}% dei contrasti e hai subito ${T.ga} gol. Meno scivolate, più raddoppi e marcature a uomo.`],
   ["g","Sfrutta",`circolazione buona (${pc(T.pm,T.pa)}% di passaggi riusciti): tieni il possesso e fai stancare l'avversario.`],
   ...(NOGK?[["i","Portiere",`nelle ultime 5 partite nessun portiere umano tra i tuoi. Un portiere fisso (archetipo Shot Stopper) può abbassare i gol subiti.`]]:[])]}
- 
+
 function week(){
   const st={};WK.forEach(m=>{const best=Math.max(...m.map(x=>x[1]));m.forEach(([i,r,g,a])=>{const s=st[i]||(st[i]={n:0,r:0,g:0,a:0,mv:0});s.n++;s.r+=r;s.g+=g;s.a+=a;if(r===best)s.mv++})});
   return Object.entries(st).filter(([,s])=>s.n>=3).map(([i,s])=>({n:ID[i],s,avg:s.r/s.n,pt:s.r/s.n*10+s.g*4+s.a*3+s.mv*5})).sort((a,b)=>b.pt-a.pt).slice(0,3)}
@@ -142,7 +146,7 @@ function weekView(){
   const t=week();
   if(!t.length)return `<h2 style="margin-top:6px">Classifica della settimana</h2><div class="card mut">Nessun giocatore ha giocato almeno 3 partite negli ultimi 7 giorni.</div>`;
   return `<h2 style="margin-top:6px">I 3 migliori della settimana</h2><p class="mut">${WKL}. Punteggio = voto medio ×10 + gol ×4 + assist ×3 + migliore in campo ×5. Servono almeno 3 partite giocate.</p><div class="card">${t.map((x,i)=>`<div class="pod"><span class="n">${i+1}</span><div><h3>${esc(x.n)} <span class="mut">· ${Math.round(x.pt)} punti</span></h3><p style="margin:4px 0 0">Voto medio ${x.avg.toFixed(1)} in ${x.s.n} partite${x.s.g?`, ${x.s.g} gol`:""}${x.s.a?`, ${x.s.a} assist`:""}${x.s.mv?`, migliore in campo ${x.s.mv} ${x.s.mv>1?"volte":"volta"}`:""}. ${x.s.g+x.s.a===0?"Ha pesato la costanza dietro, non i gol.":"Ha inciso anche sotto porta."}</p></div></div>`).join("")}</div>`}
- 
+
 function teamView(){
   const G=[["Contrasti riusciti",pc(T.tm,T.ta),45,"%",0],["Passaggi riusciti",pc(T.pm,T.pa),78,"%",0],["Conversione tiri",pc(T.g,T.sh),33,"%",0],["Gol subiti a partita",+(C.ga/C.gp).toFixed(1),1.8,"",1]];
   const bar=g=>`<div class="gl"><div><span>${g[0]}</span><b>${g[1]}${g[3]} <span class="mut">obiettivo ${g[4]?"≤":"≥"}${g[2]}${g[3]}</span></b></div><div class="bar"><i style="width:${Math.min(100,g[4]?g[2]/g[1]*100:g[1]/g[2]*100)}%"></i></div></div>`;
@@ -151,7 +155,7 @@ function teamView(){
   <div class="k"><div><b>${C.w}-${C.d}-${C.l}</b><span>V-N-P</span></div><div><b>${C.gf}</b><span>Gol fatti</span></div><div><b>${C.ga}</b><span>Gol subiti</span></div><div><b>${C.cs}</b><span>Porte inviolate</span></div><div><b>${pc(C.w,C.gp)}%</b><span>Vittorie</span></div></div>
   <h2>Come migliorare come squadra</h2><div class="card">${tips(tTips())}</div>
   <h2>Obiettivi per la prossima serata</h2><div class="card">${G.map(bar).join("")}</div><h2>Ultime 5 partite</h2><div class="card">${res}</div>`}
- 
+
 function radar(p,q){
   const cl=x=>Math.max(0,Math.min(1,x)),vv=p=>[cl(p[4]/p[2]/1.2),cl(p[5]/p[2]/.9),cl((p[6]-50)/40),cl((p[8]-10)/55),cl((p[9]-5)/4)],L=["Gol","Assist","Passaggi","Contrasti","Voto"];
   const pt=(i,r)=>{const a=-Math.PI/2+i*2*Math.PI/5;return[110+Math.cos(a)*r,110+Math.sin(a)*r]},poly=r=>[0,1,2,3,4].map(i=>pt(i,r).join(",")).join(" ");
@@ -167,7 +171,7 @@ function playersView(){
     <div class="k"><div><b>${p[4]}</b><span>Gol</span></div><div><b>${p[5]}</b><span>Assist</span></div><div><b>${p[9].toFixed(1)}</b><span>Voto medio</span></div><div><b>${p[10]}</b><span>Migliore in campo</span></div><div><b>${p[6]}%</b><span>Passaggi</span></div><div><b>${p[8]}%</b><span>Contrasti</span></div></div>
     <div class="card">${radar(p)}</div><h2>Cosa sfruttare e cosa migliorare</h2><div class="card">${tips(pTips(p))}</div>`}
   return `<div class="chips" style="justify-content:space-between"><h2 style="margin:0">Giocatori</h2><button class="btn" data-a="cmp">${S.cmpOn?"Chiudi confronto":"Confronta due giocatori"}</button></div>${S.cmpOn?cmpCard():""}<div class="pl">${P.map((p,i)=>`<button class="p" data-a="pl" data-v="${i}"><span class="big">${p[9].toFixed(1)}</span><b>${esc(p[0])}</b><small>${p[1]} · ${p[2]} pres. · ${p[4]} gol · ${p[5]} assist</small><div class="bar"><i style="width:${Math.min(100,(p[9]-5)/4*100)}%"></i></div></button>`).join("")}</div>`}
- 
+
 function field(inner){return `<svg viewBox="0 0 200 290" width="100%" style="max-width:340px;display:block;margin:auto" role="img" aria-label="Campo"><defs><linearGradient id="gr" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#14805A"/><stop offset="1" stop-color="#0B5A3C"/></linearGradient></defs><rect x="4" y="4" width="192" height="282" rx="10" fill="url(#gr)"/><g stroke="#fff" stroke-opacity=".55" fill="none" stroke-width="1.4"><rect x="4" y="4" width="192" height="282" rx="10"/><path d="M4 145H196"/><circle cx="100" cy="145" r="24"/><rect x="58" y="4" width="84" height="36"/><rect x="58" y="250" width="84" height="36"/></g>${inner}</svg>`}
 function formView(){
   const ss=slots(),hum=ss.filter(s=>S.as[s.k]),dots=ss.map(s=>{const x=200/(s.n+1)*(s.i+1),y=40+s.ri*(210/(s.rows-1)),nm=S.as[s.k];return `<circle cx="${x}" cy="${y}" r="13" fill="${nm?"#4DE1FF":"#0A3D29"}" stroke="#fff" stroke-width="1.5"/><text x="${x}" y="${y+3.5}" text-anchor="middle" font-size="8.5" font-weight="800" fill="${nm?"#04202A":"#fff"}">${s.c}</text><text x="${x}" y="${y+25}" text-anchor="middle" font-size="8.5" fill="#fff">${esc(nm?nm.slice(0,11):"IA")}</text>`}).join("");
@@ -182,8 +186,8 @@ function formView(){
     if(t==="a"&&p[11]>=30)f.push(["g",esc(p[0]),`in attacco è al posto giusto (${p[11]}% dei tiri a segno): sfrutta le sue conclusioni.`]);
     if(t==="t"&&p[5]/p[2]>=.6)f.push(["g",esc(p[0]),`da Trequartista sfrutta i suoi ${p[5]} assist: ottimo posto per lui.`])});
   return `<h2 style="margin-top:6px">Formazione</h2><div class="chips">${Object.keys(MODS).map(m=>`<button data-a="mod" data-v="${m}" aria-pressed="${S.mod===m}">${m}</button>`).join("")}<button class="btn" data-a="sug">Suggerisci formazione</button></div>
-  <div class="two"><div class="card">${field(dots)}</div><div><div class="card"><div class="grid">${ss.map(s=>`<div><label for="s${s.k}">${RN[s.c]} (${s.c})</label><select id="s${s.k}" data-k="${s.k}"><option value="">IA (bot)</option>${P.map(p=>`<option ${S.as[s.k]===p[0]?"selected":""}>${esc(p[0])}</option>`).join("")}</select></div>`).join("")}</div></div><div class="card">${tips(f)}</div></div></div>`}
- 
+  <div class="two"><div class="card">${field(dots)}</div><div><div class="card"><div class="grid">${ss.map(s=>`<div><label for="s${s.k}">${RN[s.c]} (${s.c})</label><select id="s${s.k}" data-k="${s.k}"><option value="">IA (bot)</option>${P.map(p=>`<option ${S.as[s.k]===p[0]?"selected":""}>${esc(p[0])}</option>`).join("")}</select></div>`).join("")}</div></div>${savedCard()}<div class="card">${tips(f)}</div></div></div>`}
+
 const lv=v=>v>=70?["FORTE","var(--bad)"]:v>=45?["MEDIO","var(--warn)"]:["DEBOLE","var(--good)"];
 function zones(o){const tp=o.tm/Math.max(1,o.ta),pp=o.pm/Math.max(1,o.pa),hasD=o.p.some(x=>x[1]==="D"||x[1]==="G");return{d:Math.max(0,Math.round(Math.min(100,tp*220)-(hasD?0:10))),m:Math.round(pp*100),a:Math.round(Math.min(100,(o.g/Math.max(1,o.sh))*120+o.g*8))}}
 function oppPitch(o,z){
@@ -212,7 +216,7 @@ function oppView(){
     <button class="btn" data-a="askopp" data-v="${S.o}">Chiedi all'assistente come affrontarli</button>`}
   const q=S.q.trim().toLowerCase(),l=O.map((o,i)=>[o,i]).filter(x=>x[0].n.toLowerCase().includes(q));
   return `<h2 style="margin-top:6px">Come affrontare un avversario</h2><input id="q" placeholder="Cerca un club" value="${esc(S.q)}" aria-label="Cerca un club"><div class="chips">${l.map(x=>`<button data-a="op" data-v="${x[1]}">${esc(x[0].n)}</button>`).join("")}</div>${l.length?"":`<div class="card mut">Questo club non è ancora nell'app. Con il server collegato potrai cercare qualsiasi club.</div>`}${API?liveSearch():""}<p class="mut">Club incontrati nelle ultime partite, analisi basata sui dati reali di quello scontro.</p>`}
- 
+
 function brief(){
   const fm=slots().map(s=>`${s.c}: ${S.as[s.k]||"IA"}`).join(", ");
   return `Sei l'assistente tecnico di un club Pro Clubs di EA FC 27 (club: ${MYNAME}, divisione ${DIV}). Rispondi in italiano, in testo semplice senza markdown né elenchi con asterischi, massimo 170 parole, con consigli concreti e specifici. Usa nomi di ruoli italiani (Portiere, Difensore centrale, Mediano, Trequartista, Ala, Attaccante). Non inventare dati che non hai: se ti manca qualcosa, chiedilo. Conoscenze utili su FC 27: la difesa manuale è più importante (i difensori IA tacklano meno da soli e la pressione dei compagni li tiene più lontani), il tasto marcatura L2/LT e la marcatura sprint aiutano, i passaggi filtranti sono molto pericolosi, la nuova difesa avanzata permette di spingere di spalla, tutti gli archetipi sono sbloccati (Finisher o Target per gli attaccanti, Magician per le ali, Maestro per i centrocampisti, Boss per i difensori, Shot Stopper per il portiere).
@@ -239,7 +243,7 @@ function aiView(){
   return `<h2 style="margin-top:6px">Assistente tecnico</h2><div class="card"><label class="mut" for="notes">Come giocate davvero (stile, tattiche, problemi): l'assistente lo usa per consigli più precisi</label><textarea id="notes" rows="3" placeholder="Es. giochiamo in 5 umani, pressiamo alto, prendiamo gol sui lanci lunghi...">${esc(S.notes)}</textarea></div>
   <div class="chips">${ex.map(e=>`<button data-a="ex" data-v="${esc(e)}">${e}</button>`).join("")}</div>
   <div class="card"><div id="chat" aria-live="polite">${S.chat.map(msgHtml).join("")}</div><div style="display:flex;gap:8px"><input id="msg" placeholder="Scrivi una domanda" aria-label="Domanda"><button class="btn" data-a="send">Invia</button></div></div>`}
- 
+
 const num=x=>Number(x)||0;
 async function ea(path,params){const r=await fetch(API+"?"+new URLSearchParams({path,...params}),{cache:"no-store"});if(!r.ok)throw new Error(r.status);return r.json()}
 const CODE={forward:"F",midfielder:"M",defender:"D",goalkeeper:"G"},ITA={forward:"Attaccante",midfielder:"Centrocampista",defender:"Difensore",goalkeeper:"Portiere"};
@@ -283,7 +287,7 @@ async function search(sel){const n=(document.getElementById(sel)||{}).value||"";
   render()}
 const resHtml=k=>`${S.msg?`<p class="mut">${esc(S.msg)}</p>`:""}<div class="chips">${(S.res||[]).slice(0,10).map((x,i)=>`<button data-a="${k}" data-v="${i}">${esc((x.clubInfo||{}).name||x.clubName||"?")} · div. ${esc(x.currentDivision||"?")}</button>`).join("")}</div>`;
 const liveSearch=()=>`<div class="card"><h3>Cerca qualsiasi club</h3><div style="display:flex;gap:8px;margin-top:8px"><input id="os" placeholder="Nome del club" aria-label="Nome del club"><button class="btn" data-a="osearch">Cerca</button></div>${resHtml("opick")}</div>`;
-const startView=()=>`<header><small>PRO CLUBS · FC 27</small><h1>Fischio</h1></header><div class="card"><h3>Cerca il tuo club</h3><p class="mut">Scrivi il nome come appare nel gioco.</p><div style="display:flex;gap:8px"><input id="cs" placeholder="Nome del club" aria-label="Nome del club"><button class="btn" data-a="csearch">Cerca</button></div>${resHtml("pick")}</div>`;
+const startView=()=>`<header><small>PRO CLUBS · FC 27</small><h1>Sisal FC 2021</h1></header><div class="card"><h3>Cerca il tuo club</h3><p class="mut">Scrivi il nome come appare nel gioco.</p><div style="display:flex;gap:8px"><input id="cs" placeholder="Nome del club" aria-label="Nome del club"><button class="btn" data-a="csearch">Cerca</button></div>${resHtml("pick")}</div>`;
 async function start(info){S.ready=false;S.msg="Carico i dati del club…";S.res=[];render();
   try{await loadMine(info);S.ready=true;S.msg=""}catch(e){S.msg="Non riesco a leggere i dati di EA. Riprova tra poco."}
   render()}
@@ -296,11 +300,20 @@ async function refresh(force){
   S.refreshing=false;render()}
 const tick=()=>{if(document.visibilityState==="visible"&&Date.now()-LAST>120000)refresh(false)};
 setInterval(tick,30000);document.addEventListener("visibilitychange",tick);
+function saveForm(){const el=document.getElementById("fn"),l=LS.g("forms",[]),name=((el&&el.value)||"").trim()||"Formazione "+(l.length+1),f={name,mod:S.mod,as:{...S.as}},i=l.findIndex(x=>x.name===name);
+  if(i>=0)l[i]=f;else l.push(f);LS.s("forms",l);S.fmsg="Salvata: "+name}
+function loadForm(i){const f=LS.g("forms",[])[i];if(!f)return;S.mod=f.mod;S.as={...f.as};LS.s("mod",f.mod);LS.s("as",S.as);S.fmsg="Caricata: "+f.name}
+function delForm(i){const l=LS.g("forms",[]);S.fmsg="Eliminata: "+((l[i]||{}).name||"");l.splice(i,1);LS.s("forms",l)}
+function copyForm(i){const f=LS.g("forms",[])[i];if(!f)return;const code=btoa(unescape(encodeURIComponent(JSON.stringify(f))));
+  (navigator.clipboard?navigator.clipboard.writeText(code):Promise.reject()).then(()=>{S.fmsg="Codice copiato: incollalo in chat ai compagni";S.fcode="";render()}).catch(()=>{S.fmsg="Non riesco a copiare da solo: tieni premuto il codice qui sotto e copialo.";S.fcode=code;render()})}
+function importForm(){const el=document.getElementById("fi");try{const f=JSON.parse(decodeURIComponent(escape(atob((el.value||"").trim()))));if(!MODS[f.mod]||typeof f.as!=="object")throw 0;const l=LS.g("forms",[]);l.push({name:String(f.name||"Importata").slice(0,30),mod:f.mod,as:f.as});LS.s("forms",l);S.fmsg="Formazione importata"}catch(e){S.fmsg="Codice non valido"}}
+function savedCard(){const l=LS.g("forms",[]);
+  return `<div class="card"><h3>Formazioni salvate</h3><div style="display:flex;gap:8px;margin:10px 0"><input id="fn" placeholder="Nome (es. Titolare)" aria-label="Nome formazione"><button class="btn" data-a="fsave">Salva</button></div>${S.fmsg?`<p class="mut">${esc(S.fmsg)}</p>`:""}${S.fcode?`<p class="mut" style="word-break:break-all;user-select:all">${esc(S.fcode)}</p>`:""}${l.length?"":`<p class="mut">Nessuna formazione salvata. Quella che scegli resta comunque memorizzata su questo telefono.</p>`}${l.map((f,i)=>`<div class="res"><span><b>${esc(f.name)}</b> <span class="mut">${esc(f.mod)}</span></span><span><button class="back" data-a="fload" data-v="${i}">Carica</button> <button class="back" data-a="fcopy" data-v="${i}">Copia codice</button> <button class="back" data-a="fdel" data-v="${i}">Elimina</button></span></div>`).join("")}<label class="mut" for="fi">Hai il codice di un compagno?</label><div style="display:flex;gap:8px;margin-top:6px"><input id="fi" aria-label="Codice formazione"><button class="btn" data-a="fimp">Importa</button></div></div>`}
 function render(){
   if(API&&!S.ready){app.innerHTML=startView();return}
   const T=[["team","Squadra"],["players","Giocatori"],["week","Classifica"],["form","Formazione"],["opp","Avversari"],["ai","Assistente"]];
   const view={team:teamView,players:playersView,week:weekView,form:formView,opp:oppView,ai:aiView}[S.tab]();
-  app.innerHTML=`<header><small>PRO CLUBS · FC 27</small><h1>Fischio</h1>${API?`<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="mut">Aggiornato alle ${new Date(LAST).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</span><button class="back" data-a="refresh">Aggiorna ora</button><button class="back" data-a="reset">Cambia club</button></div>`:""}</header><div class="tabs">${T.map(t=>`<button data-a="tab" data-v="${t[0]}" ${S.tab===t[0]?'aria-current="page"':""}>${t[1]}</button>`).join("")}</div>${view}`;
+  app.innerHTML=`<header><small>PRO CLUBS · FC 27</small><h1>Sisal FC 2021</h1>${API?`<div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="mut">Aggiornato alle ${new Date(LAST).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</span><button class="back" data-a="refresh">Aggiorna ora</button><button class="back" data-a="reset">Cambia club</button></div>`:""}</header><div class="tabs">${T.map(t=>`<button data-a="tab" data-v="${t[0]}" ${S.tab===t[0]?'aria-current="page"':""}>${t[1]}</button>`).join("")}</div>${view}`;
   const q=document.getElementById("q");if(q&&S.q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}
   paint()}
 app.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a,v=b.dataset.v;let top=1;
@@ -308,7 +321,7 @@ app.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(!b)retu
   else if(a==="mod"){S.mod=v;LS.s("mod",v);suggest();top=0}else if(a==="sug"){suggest();top=0}else if(a==="cmp"){S.cmpOn=!S.cmpOn;top=0}
   else if(a==="send"){const i=document.getElementById("msg");ask(i.value);i.value="";return}
   else if(a==="ex"){ask(v);return}
-  else if(a==="csearch"){search("cs");return}else if(a==="osearch"){search("os");return}else if(a==="pick"){start(S.res[+v]);return}else if(a==="opick"){pickOpp(S.res[+v]);return}else if(a==="refresh"){refresh(true);return}else if(a==="reset"){LS.s("club",null);S.ready=false;S.res=[];S.msg="";render();return}
+  else if(a==="csearch"){search("cs");return}else if(a==="osearch"){search("os");return}else if(a==="pick"){start(S.res[+v]);return}else if(a==="opick"){pickOpp(S.res[+v]);return}else if(a==="fsave"){saveForm();top=0}else if(a==="fload"){loadForm(+v);top=0}else if(a==="fdel"){delForm(+v);top=0}else if(a==="fcopy"){copyForm(+v);return}else if(a==="fimp"){importForm();top=0}else if(a==="refresh"){refresh(true);return}else if(a==="reset"){LS.s("club",null);S.ready=false;S.res=[];S.msg="";render();return}
   else if(a==="askopp"){const o=O[+v];S.tab="ai";S.p=null;S.o=null;render();ask(`Come affrontiamo ${o.n}? Dammi un piano partita usando i dati del loro ultimo scontro con noi.`);scrollTo(0,0);return}
   render();if(top)scrollTo(0,0)});
 app.addEventListener("change",e=>{const t=e.target;
