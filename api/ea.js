@@ -7,14 +7,20 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
 
-  const allowedPaths = ["allTimeLeaderboard/search", "clubs/matches", "members/stats"];
   const { path, ...rest } = req.query;
+  const allowedPaths = ["members/stats", "clubs/matches", "allTimeLeaderboard/search"];
 
   if (!path || !allowedPaths.includes(path)) {
-    return res.status(400).json({ error: "Percorso non valido o non autorizzato." });
+    return res.status(400).json({ error: "Endpoint non valido o non autorizzato." });
   }
 
-  const queryParams = new URLSearchParams({ platform: "common-gen5", ...rest });
+  // Parametri predefiniti stabiliti
+  const defaultParams = {
+    platform: "common-gen5",
+    ...rest
+  };
+
+  const queryParams = new URLSearchParams(defaultParams);
   const targetUrl = `https://proclubs.ea.com/api/fc/${path}?${queryParams.toString()}`;
 
   try {
@@ -27,14 +33,14 @@ module.exports = async (req, res) => {
     });
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: "I server EA non hanno risposto correttamente." });
+      return res.status(response.status).json({ error: `Errore dai server EA: ${response.status}` });
     }
 
     const data = await response.json();
     res.setHeader("Content-Type", "application/json");
-    res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=300");
+    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
     return res.status(200).json(data);
   } catch (error) {
-    return res.status(502).json({ error: "Impossibile connettersi ai servizi EA Sports Pro Clubs." });
+    return res.status(502).json({ error: "Impossibile contattare i server EA Sports Pro Clubs." });
   }
 };
