@@ -1,891 +1,426 @@
 <!DOCTYPE html>
-<html lang="it" class="dark">
+<html lang="it">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Sisal FC 2021 · EA FC Pro Clubs</title>
-  
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#f0fdf4',
-              100: '#dcfce7',
-              500: '#22c55e',
-              600: '#16a34a',
-              700: '#15803d',
-              900: '#14532d',
-            },
-            pitch: {
-              lines: 'rgba(255, 255, 255, 0.4)',
-              grass: '#1a472a',
-              darkGrass: '#133820',
-            }
-          },
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-          }
-        }
-      }
-    }
-  </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sisal FC 2021 · Analisi Pro Clubs</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B1020;
+  --s: #131A2E;
+  --s2: #1B2440;
+  --line: #263152;
+  --ink: #EAF0FF;
+  --mut: #97A3C7;
+  --acc: #4DE1FF;
+  --acc2: #8B9BFF;
+  --good: #34D399;
+  --bad: #FB7185;
+  --warn: #FBBF24;
+}
+:root[data-theme="light"] {
+  --bg: #F4F6FB;
+  --s: #fff;
+  --s2: #E9EDF8;
+  --line: #D9DFEE;
+  --ink: #0F1730;
+  --mut: #5A6688;
+  --acc: #0A7EA4;
+  --acc2: #4F5BD5;
+  --good: #0F9F6E;
+  --bad: #E0435A;
+  --warn: #B7791F;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 Manrope, system-ui, sans-serif; }
+h1, h2, h3, h4 { font-family: Sora, sans-serif; margin: 0; line-height: 1.2; letter-spacing: -.01em; }
+.w { max-width: 860px; margin: auto; padding: 0 16px 60px; }
 
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-    
-    .pitch-bg {
-      background: repeating-linear-gradient(
-        0deg,
-        #1a472a,
-        #1a472a 30px,
-        #153d24 30px,
-        #153d24 60px
-      );
-      box-shadow: inset 0 0 40px rgba(0,0,0,0.6);
-    }
+header { padding: 22px 0 12px; display: flex; justify-content: space-between; align-items: center; }
+header small { color: var(--acc); font-weight: 700; letter-spacing: .1em; font-size: 11px; text-transform: uppercase; }
+header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.1);
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(156, 163, 175, 0.4);
-      border-radius: 9999px;
-    }
-    
-    .glass-card {
-      background: rgba(255, 255, 255, 0.03);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
+.tabs { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); display: flex; gap: 6px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; margin-bottom: 12px; }
+.tabs button { flex: none; border: 1px solid var(--line); background: var(--s); color: var(--mut); padding: 8px 16px; border-radius: 99px; font: 700 13px Manrope; cursor: pointer; transition: all .2s; }
+.tabs button[aria-current="page"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
-    .light .glass-card {
-      background: rgba(255, 255, 255, 0.85);
-      border: 1px solid rgba(0, 0, 0, 0.08);
-    }
+.hero { position: relative; overflow: hidden; background: linear-gradient(135deg, var(--s), var(--s2)); border: 1px solid var(--line); border-radius: 22px; padding: 20px; margin-bottom: 14px; }
+.hero small { color: var(--mut); font-weight: 700; letter-spacing: .06em; font-size: 12px; }
+.hero h1 { font-size: clamp(24px, 6vw, 36px); font-weight: 800; margin: 4px 0 12px; }
 
-    .tab-active {
-      border-bottom: 3px solid #22c55e;
-      color: #22c55e !important;
-      font-weight: 700;
-    }
-  </style>
+.k { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
+.k div { background: var(--s); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; }
+.k b { display: block; font: 800 22px Sora; color: var(--acc); }
+.k span { font-size: 11px; color: var(--mut); }
+
+.card { background: var(--s); border: 1px solid var(--line); border-radius: 18px; padding: 18px; margin-bottom: 14px; }
+.btn { background: var(--ink); color: var(--bg); border: none; padding: 10px 18px; border-radius: 99px; font: 700 13px Manrope; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn-sec { background: var(--s2); color: var(--ink); border: 1px solid var(--line); }
+
+.pitch { background: #164e2d; border: 2px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; position: relative; min-height: 280px; }
+.pitch-col { background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 8px; text-align: center; }
+.pitch-col h4 { font: 800 11px Sora; color: #a3e635; text-transform: uppercase; margin-bottom: 8px; }
+.player-tag { background: rgba(15, 23, 42, 0.85); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+.player-tag.bot { background: rgba(224, 67, 90, 0.35); border-color: var(--bad); color: #fecdd3; }
+
+.role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 14px 0; }
+.role-item { background: var(--s2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.role-item label { display: block; font: 700 11px Sora; color: var(--acc); margin-bottom: 4px; }
+.role-item select { width: 100%; background: var(--s); border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: 6px; font: 600 12px Manrope; }
+
+.match-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.badge { padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 11px; }
+.badge.v { background: color-mix(in srgb, var(--good) 20%, transparent); color: var(--good); }
+.badge.p { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+</style>
 </head>
+<body>
 
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100 bg-slate-50 text-slate-900 light:bg-slate-50 light:text-slate-900">
-
-  <header class="sticky top-0 z-40 bg-slate-900/90 dark:bg-slate-900/90 light:bg-white/90 backdrop-blur-md border-b border-slate-800 dark:border-slate-800 light:border-slate-200">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-green-400 flex items-center justify-center text-white font-extrabold text-xl shadow-lg shadow-emerald-900/30">
-          S
-        </div>
-        <div>
-          <h1 class="font-extrabold text-lg leading-none flex items-center gap-2">
-            Sisal FC 2021
-            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Gen 5</span>
-          </h1>
-          <p class="text-xs text-slate-400 dark:text-slate-400 light:text-slate-500 font-medium mt-0.5">ID: 328794 · Pro Clubs EA FC</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-2">
-        <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-800 dark:bg-slate-800 light:bg-slate-100 hover:bg-slate-700 dark:hover:bg-slate-700 light:hover:bg-slate-200 text-slate-300 dark:text-slate-300 light:text-slate-600 transition-all">
-          <i id="theme-icon" class="fas fa-moon"></i>
-        </button>
-        <button onclick="triggerSync()" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-all shadow-md shadow-emerald-900/20">
-          <i id="sync-spinner" class="fas fa-sync-alt"></i>
-          <span class="hidden sm:inline">Sincronizza</span>
-        </button>
-      </div>
+<div class="w">
+  <header>
+    <div>
+      <small>PRO CLUBS · GEN 5</small>
+      <h1>Sisal FC 2021</h1>
     </div>
-
-    <!-- Navigation Tabs -->
-    <div class="max-w-5xl mx-auto px-4 flex border-t border-slate-800/60 dark:border-slate-800/60 light:border-slate-200">
-      <button onclick="switchTab('squadra')" id="tab-btn-squadra" class="flex-1 py-3 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all tab-active flex items-center justify-center gap-2">
-        <i class="fas fa-chart-line"></i> Squadra
-      </button>
-      <button onclick="switchTab('formazione')" id="tab-btn-formazione" class="flex-1 py-3 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all flex items-center justify-center gap-2">
-        <i class="fas fa-chess-board"></i> Formazione
-      </button>
-      <button onclick="switchTab('giocatori')" id="tab-btn-giocatori" class="flex-1 py-3 text-center text-xs sm:text-sm font-semibold text-slate-400 hover:text-slate-200 transition-all flex items-center justify-center gap-2">
-        <i class="fas fa-users"></i> Giocatori
-      </button>
-    </div>
+    <button class="btn btn-sec" onclick="toggleTheme()" style="padding: 6px 12px; font-size: 12px;">🌓 Tema</button>
   </header>
 
-  <!-- Status Notification Banner -->
-  <div class="max-w-5xl mx-auto px-4 pt-3 w-full">
-    <div id="status-banner" class="hidden rounded-xl p-3 text-xs flex items-center justify-between border transition-all duration-300">
-      <div class="flex items-center gap-2.5">
-        <i id="status-icon" class="fas fa-info-circle text-base"></i>
+  <nav class="tabs">
+    <button aria-current="page" onclick="switchTab('squadra', this)">Squadra</button>
+    <button onclick="switchTab('formazione', this)">Formazione</button>
+    <button onclick="switchTab('giocatori', this)">Giocatori</button>
+  </nav>
+
+  <!-- SEZIONE SQUADRA -->
+  <div id="tab-squadra" class="tab-content active">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <span id="status-title" class="font-bold block">Stato Sincronizzazione</span>
-          <span id="status-desc" class="text-slate-300 dark:text-slate-300 light:text-slate-600">In attesa di dati...</span>
+          <strong style="color: var(--acc);">Sisal FC 2021 (ID: 328794)</strong>
+          <div id="status-msg" style="font-size: 12px; color: var(--mut);">Connessione al server Vercel in corso...</div>
         </div>
+        <button class="btn" onclick="fetchAutoData()">⚡ Aggiorna Dati</button>
       </div>
-      <button onclick="openManualModal()" class="px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-medium text-xs border border-slate-700 transition">
-        <i class="fas fa-sliders-h mr-1"></i> Opzioni
-      </button>
+    </div>
+
+    <div class="hero">
+      <small>STATISTICHE CLUB REALI</small>
+      <h1>Sisal FC 2021</h1>
+      <div class="k">
+        <div><b id="stat-matches">0</b><span>Partite Tot.</span></div>
+        <div><b id="stat-wins">0</b><span>Vittorie</span></div>
+        <div><b id="stat-draws">0</b><span>Pareggi</span></div>
+        <div><b id="stat-losses">0</b><span>Sconfitte</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Ultime Partite di Campionato</h3>
+      <div id="recent-matches-list" style="margin-top: 10px;">
+        <div style="color: var(--mut);">Caricamento dati in corso...</div>
+      </div>
     </div>
   </div>
 
-  <main class="flex-1 max-w-5xl mx-auto w-full px-4 py-4 space-y-6">
+  <!-- SEZIONE FORMAZIONE -->
+  <div id="tab-formazione" class="tab-content">
+    <div class="card">
+      <h2>Modulo & Assegnazione Giocatori</h2>
+      <p style="font-size: 12px; color: var(--mut); margin-bottom: 10px;">
+        Assegna i ruoli con i nomi reali scaricati. I Bot IA vengono posizionati nei ruoli difensivi lasciati scoperti.
+      </p>
 
-    <section id="tab-squadra" class="space-y-4">
-      
-      <!-- Stats Summary Cards Grid -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="glass-card rounded-2xl p-4 border border-slate-800 dark:border-slate-800 light:border-slate-200 bg-slate-900/60 dark:bg-slate-900/60 light:bg-white">
-          <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
-            <span>Partite Totali</span>
-            <i class="fas fa-futbol text-emerald-400"></i>
-          </div>
-          <div id="stat-matches" class="text-2xl sm:text-3xl font-extrabold text-slate-100 dark:text-slate-100 light:text-slate-800">--</div>
-        </div>
-
-        <div class="glass-card rounded-2xl p-4 border border-slate-800 dark:border-slate-800 light:border-slate-200 bg-slate-900/60 dark:bg-slate-900/60 light:bg-white">
-          <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
-            <span>Vittorie</span>
-            <i class="fas fa-trophy text-amber-400"></i>
-          </div>
-          <div id="stat-wins" class="text-2xl sm:text-3xl font-extrabold text-emerald-400">--</div>
-        </div>
-
-        <div class="glass-card rounded-2xl p-4 border border-slate-800 dark:border-slate-800 light:border-slate-200 bg-slate-900/60 dark:bg-slate-900/60 light:bg-white">
-          <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
-            <span>Pareggi</span>
-            <i class="fas fa-handshake text-blue-400"></i>
-          </div>
-          <div id="stat-draws" class="text-2xl sm:text-3xl font-extrabold text-blue-400">--</div>
-        </div>
-
-        <div class="glass-card rounded-2xl p-4 border border-slate-800 dark:border-slate-800 light:border-slate-200 bg-slate-900/60 dark:bg-slate-900/60 light:bg-white">
-          <div class="flex items-center justify-between text-slate-400 text-xs font-medium mb-1">
-            <span>Sconfitte</span>
-            <i class="fas fa-times-circle text-rose-400"></i>
-          </div>
-          <div id="stat-losses" class="text-2xl sm:text-3xl font-extrabold text-rose-400">--</div>
-        </div>
+      <div style="margin-bottom: 12px;">
+        <label style="font: 700 13px Sora;">Seleziona Modulo: </label>
+        <select id="formation-select" onchange="changeFormation()" style="background: var(--s2); border: 1px solid var(--line); color: var(--ink); padding: 6px 12px; border-radius: 8px; font-weight: 700;">
+          <option value="4-3-3">4-3-3</option>
+          <option value="4-4-2">4-4-2</option>
+          <option value="4-2-3-1">4-2-3-1</option>
+          <option value="4-4-1-1">4-4-1-1</option>
+          <option value="3-4-2-1">3-4-2-1</option>
+          <option value="3-5-2">3-5-2</option>
+          <option value="5-3-2">5-3-2</option>
+        </select>
       </div>
 
-      <!-- Recent Matches Card -->
-      <div class="rounded-2xl border border-slate-800 dark:border-slate-800 light:border-slate-200 bg-slate-900/60 dark:bg-slate-900/60 light:bg-white overflow-hidden">
-        <div class="px-4 py-3 border-b border-slate-800 dark:border-slate-800 light:border-slate-200 flex items-center justify-between">
-          <h2 class="font-bold text-sm sm:text-base flex items-center gap-2">
-            <i class="fas fa-history text-emerald-400"></i> Ultimi Incontri di Campionato
-          </h2>
-          <span id="match-count-badge" class="text-xs bg-slate-800 dark:bg-slate-800 light:bg-slate-200 px-2.5 py-0.5 rounded-full text-slate-400 font-semibold">0 gare</span>
-        </div>
+      <div class="role-grid" id="roles-container"></div>
 
-        <div id="recent-matches-list" class="divide-y divide-slate-800/60 dark:divide-slate-800/60 light:divide-slate-100 max-h-96 overflow-y-auto custom-scrollbar">
-          <div class="p-8 text-center text-slate-500 text-xs">
-            <i class="fas fa-spinner fa-spin text-lg mb-2 block"></i>
-            Caricamento risultati in corso...
-          </div>
-        </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="btn" onclick="saveFormation()">💾 Salva Formazione</button>
+        <button class="btn btn-sec" onclick="autoSuggest()">⚡ Suggerisci Formazione (No Bot Attacco)</button>
       </div>
+    </div>
 
-    </section>
-
-    <section id="tab-formazione" class="hidden space-y-4">
-      
-      <!-- Formation Controls -->
-      <div class="rounded-2xl border border-slate-800 dark:border-slate-800 light:border-slate-200 bg-slate-900/60 dark:bg-slate-900/60 light:bg-white p-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div>
-            <h2 class="font-bold text-base flex items-center gap-2">
-              <i class="fas fa-sliders-h text-emerald-400"></i> Gestione Tattica
-            </h2>
-            <p class="text-xs text-slate-400">Imposta i ruoli o genera il suggerimento con algoritmi intelligenti.</p>
-          </div>
-
-          <div class="flex items-center gap-2">
-            <label class="text-xs font-semibold text-slate-400 whitespace-nowrap">Modulo:</label>
-            <select id="formation-select" onchange="onFormationChange()" class="bg-slate-800 dark:bg-slate-800 light:bg-slate-100 border border-slate-700 dark:border-slate-700 light:border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-              <option value="4-3-3">4-3-3</option>
-              <option value="4-4-2">4-4-2</option>
-              <option value="4-2-3-1">4-2-3-1</option>
-              <option value="3-4-2-1">3-4-2-1</option>
-              <option value="3-5-2">3-5-2</option>
-              <option value="5-3-2">5-3-2</option>
-            </select>
-          </div>
+    <div class="card">
+      <h3>Disposizione Tattica in Campo</h3>
+      <div class="pitch">
+        <div class="pitch-col">
+          <h4>Difesa & POR</h4>
+          <div id="pitch-def"></div>
         </div>
-
-        <!-- Role Selectors Grid -->
-        <div id="roles-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 mb-4">
-          <!-- Populated dynamically -->
+        <div class="pitch-col">
+          <h4>Centrocampo</h4>
+          <div id="pitch-mid"></div>
         </div>
-
-        <!-- Formation Action Buttons -->
-        <div class="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-800/60 dark:border-slate-800/60 light:border-slate-200">
-          <button onclick="autoSuggestFormation()" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-1.5 transition">
-            <i class="fas fa-magic"></i> Suggerisci (No Bot in Attacco)
-          </button>
-          <button onclick="saveFormation()" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 transition">
-            <i class="fas fa-save"></i> Salva Formazione
-          </button>
-        </div>
-      </div>
-
-      <!-- Tactical Pitch Preview -->
-      <div class="rounded-2xl border border-slate-800 dark:border-slate-800 light:border-slate-200 overflow-hidden">
-        <div class="px-4 py-3 bg-slate-900/80 dark:bg-slate-900/80 light:bg-slate-100 border-b border-slate-800 dark:border-slate-800 light:border-slate-200 flex items-center justify-between">
-          <h3 class="font-bold text-xs uppercase tracking-wider text-slate-300 dark:text-slate-300 light:text-slate-700 flex items-center gap-2">
-            <i class="fas fa-futbol text-emerald-400"></i> Disposizione sul Campo
-          </h3>
-          <span id="pitch-formation-tag" class="text-xs font-bold text-emerald-400">4-3-3</span>
-        </div>
-
-        <div class="pitch-bg p-4 sm:p-6 min-h-[420px] flex flex-col justify-between relative rounded-b-2xl border-t border-emerald-900/50">
-          <!-- Pitch Center Circle Overlay -->
-          <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-            <div class="w-40 h-40 border-2 border-white rounded-full flex items-center justify-center">
-              <div class="w-2 h-2 bg-white rounded-full"></div>
-            </div>
-            <div class="absolute w-full h-0.5 bg-white"></div>
-          </div>
-
-          <!-- Pitch Sector 3: Attacco -->
-          <div class="relative z-10 space-y-1">
-            <div class="text-[10px] uppercase tracking-widest font-extrabold text-emerald-300/80 text-center mb-1">
-              Reparto Avanzato (Attacco)
-            </div>
-            <div id="pitch-att" class="flex flex-wrap items-center justify-center gap-2 min-h-[60px]"></div>
-          </div>
-
-          <!-- Pitch Sector 2: Centrocampo -->
-          <div class="relative z-10 space-y-1 my-4">
-            <div class="text-[10px] uppercase tracking-widest font-extrabold text-amber-300/80 text-center mb-1">
-              Centrocampo
-            </div>
-            <div id="pitch-mid" class="flex flex-wrap items-center justify-center gap-2 min-h-[60px]"></div>
-          </div>
-
-          <!-- Pitch Sector 1: Difesa & Porta -->
-          <div class="relative z-10 space-y-1">
-            <div class="text-[10px] uppercase tracking-widest font-extrabold text-sky-300/80 text-center mb-1">
-              Difesa & Portiere
-            </div>
-            <div id="pitch-def" class="flex flex-wrap items-center justify-center gap-2 min-h-[60px]"></div>
-          </div>
-        </div>
-      </div>
-
-    </section>
-
-    <section id="tab-giocatori" class="hidden space-y-4">
-      
-      <div class="rounded-2xl border border-slate-800 dark:border-slate-800 light:border-slate-200 bg-slate-900/60 dark:bg-slate-900/60 light:bg-white p-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div>
-            <h2 class="font-bold text-base flex items-center gap-2">
-              <i class="fas fa-users text-emerald-400"></i> Rosa Ufficiale Sisal FC
-            </h2>
-            <p class="text-xs text-slate-400">Membri registrati e statistiche individuali di rendimento.</p>
-          </div>
-
-          <button onclick="openAddPlayerModal()" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs flex items-center gap-1.5 transition self-start sm:self-auto">
-            <i class="fas fa-plus"></i> Aggiungi Giocatore
-          </button>
-        </div>
-
-        <!-- Players List Grid -->
-        <div id="players-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="col-span-full p-8 text-center text-slate-500 text-xs">
-            <i class="fas fa-spinner fa-spin text-lg mb-2 block"></i>
-            Caricamento rosa in corso...
-          </div>
-        </div>
-      </div>
-
-    </section>
-
-  </main>
-
-  <div id="manual-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 dark:bg-slate-900 light:bg-white border border-slate-800 dark:border-slate-800 light:border-slate-200 rounded-2xl max-w-lg w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
-      <div class="flex items-center justify-between border-b border-slate-800 dark:border-slate-800 light:border-slate-200 pb-3">
-        <h3 class="font-bold text-base flex items-center gap-2">
-          <i class="fas fa-tools text-amber-400"></i> Opzioni Sincronizzazione API
-        </h3>
-        <button onclick="closeManualModal()" class="text-slate-400 hover:text-white p-1">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <p class="text-slate-300 dark:text-slate-300 light:text-slate-600">
-          A causa dei sistemi di protezione Cloudflare e CORS applicati da EA Sports sui loro server, le chiamate automatiche possono fallire. Puoi scegliere una delle seguenti alternative:
-        </p>
-
-        <div class="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60 space-y-2">
-          <div class="font-bold text-emerald-400 flex items-center justify-between">
-            <span>Opzione A: Carica Dati Reali Predefiniti</span>
-            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">Consigliato</span>
-          </div>
-          <p class="text-slate-400">Ripristina immediatamente la rosa reale di Sisal FC 2021 e i risultati recenti per continuare ad usare la lavagna tattica.</p>
-          <button onclick="loadPresetData()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition">
-            Carica Rosa Reale Sisal FC
-          </button>
-        </div>
-
-        <div class="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60 space-y-2">
-          <span class="font-bold text-slate-200">Opzione B: Incolla JSON Risposta EA</span>
-          <p class="text-slate-400">Incolla qui direttamente la risposta JSON presa dall'endpoint EA `members/stats` o `matches`:</p>
-          <textarea id="json-input" rows="4" placeholder='{"members": [{"name": "Player1", "gamesPlayed": 10...}]}' class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 font-mono text-[11px] text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"></textarea>
-          <button onclick="parseCustomJson()" class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold rounded-lg transition">
-            Importa JSON
-          </button>
+        <div class="pitch-col">
+          <h4>Attacco</h4>
+          <div id="pitch-att"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <div id="add-player-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 dark:bg-slate-900 light:bg-white border border-slate-800 dark:border-slate-800 light:border-slate-200 rounded-2xl max-w-sm w-full p-5 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="font-bold text-base flex items-center gap-2">
-          <i class="fas fa-user-plus text-emerald-400"></i> Aggiungi Giocatore
-        </h3>
-        <button onclick="closeAddPlayerModal()" class="text-slate-400 hover:text-white p-1">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-semibold mb-1 text-slate-300">Gamertag / Nome Pro</label>
-          <input type="text" id="new-player-name" placeholder="Es. Sisal_Striker" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-        </div>
-        <div>
-          <label class="block font-semibold mb-1 text-slate-300">Ruolo Preferito</label>
-          <select id="new-player-role" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-            <option value="ATT">Attaccante (ATT)</option>
-            <option value="ALA">Ala Destra/Sinistra</option>
-            <option value="COC">Trequartista (COC)</option>
-            <option value="CC">Centrocampista (CC/CDC)</option>
-            <option value="DC">Difensore Centrale (DC)</option>
-            <option value="TD/TS">Terzino (TD/TS)</option>
-            <option value="POR">Portiere (POR)</option>
-          </select>
-        </div>
-        <button onclick="saveNewPlayer()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition mt-2">
-          Salva in Rosa
-        </button>
+  <!-- SEZIONE GIOCATORI -->
+  <div id="tab-giocatori" class="tab-content">
+    <div class="card">
+      <h2>Membri Rosa Ufficiali</h2>
+      <div id="players-list" style="margin-top: 14px;">
+        <div style="color: var(--mut);">Caricamento giocatori in corso...</div>
       </div>
     </div>
   </div>
 
-  <script>
-    const CLUB_ID = "328794";
-    const PLATFORM = "common-gen5";
+</div>
 
-    // Presets for Sisal FC 2021 when APIs are blocked
-    const PRESET_MEMBERS = [
-      { name: "Sisal_Capitano", proPos: "ATT", gamesPlayed: 45, goals: 38, assists: 19 },
-      { name: "Sisal_Bomber", proPos: "ATT", gamesPlayed: 42, goals: 31, assists: 14 },
-      { name: "Maestro_Mid", proPos: "COC", gamesPlayed: 48, goals: 12, assists: 28 },
-      { name: "Regista_FC", proPos: "CC", gamesPlayed: 40, goals: 8, assists: 15 },
-      { name: "Speedy_Wing", proPos: "ALA", gamesPlayed: 36, goals: 14, assists: 18 },
-      { name: "Wall_Defender", proPos: "DC", gamesPlayed: 44, goals: 3, assists: 4 },
-      { name: "Shield_DC", proPos: "DC", gamesPlayed: 39, goals: 2, assists: 1 },
-      { name: "Giga_GK", proPos: "POR", gamesPlayed: 40, goals: 0, assists: 1 }
-    ];
+<script>
+  const CLUB_ID = "328794";
+  const formationsMap = {
+    "4-3-3": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Centrocampista 1", "Centrocampista 2", "Trequartista", "Ala destra", "Attaccante", "Ala sinistra"],
+    "4-4-2": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Attaccante 1", "Attaccante 2"],
+    "4-2-3-1": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Mediano 1", "Mediano 2", "Esterno destro", "Trequartista", "Esterno sinistro", "Attaccante"],
+    "4-4-1-1": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Trequartista", "Attaccante"],
+    "3-4-2-1": ["Portiere", "Difensore centrale 1", "Difensore centrale 2", "Difensore centrale 3", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Trequartista 1", "Trequartista 2", "Attaccante"],
+    "3-5-2": ["Portiere", "Difensore centrale 1", "Difensore centrale 2", "Difensore centrale 3", "Mediano", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Attaccante 1", "Attaccante 2"],
+    "5-3-2": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Difensore centrale 3", "Terzino sinistro", "Centrocampista 1", "Centrocampista 2", "Centrocampista 3", "Attaccante 1", "Attaccante 2"]
+  };
 
-    const PRESET_MATCHES = [
-      { id: "m1", opponent: "FC Inter Pro", scoreFor: 3, scoreAgainst: 1, result: "V" },
-      { id: "m2", opponent: "Milano Esports", scoreFor: 2, scoreAgainst: 2, result: "N" },
-      { id: "m3", opponent: "Roma Pro Club", scoreFor: 1, scoreAgainst: 0, result: "V" },
-      { id: "m4", opponent: "Juventus FIFA Clan", scoreFor: 0, scoreAgainst: 2, result: "P" },
-      { id: "m5", opponent: "Napoli Gaming", scoreFor: 4, scoreAgainst: 1, result: "V" }
-    ];
+  let realPlayers = [];
+  let savedLineup = {};
 
-    const FORMATIONS_MAP = {
-      "4-3-3": ["Portiere", "Terzino Destro", "Difensore Centrale 1", "Difensore Centrale 2", "Terzino Sinistro", "Centrocampista 1", "Centrocampista 2", "Trequartista", "Ala Destra", "Attaccante", "Ala Sinistra"],
-      "4-4-2": ["Portiere", "Terzino Destro", "Difensore Centrale 1", "Difensore Centrale 2", "Terzino Sinistro", "Esterno Destro", "Centrocampista 1", "Centrocampista 2", "Esterno Sinistro", "Attaccante 1", "Attaccante 2"],
-      "4-2-3-1": ["Portiere", "Terzino Destro", "Difensore Centrale 1", "Difensore Centrale 2", "Terzino Sinistro", "Mediano 1", "Mediano 2", "Esterno Destro", "Trequartista", "Esterno Sinistro", "Attaccante"],
-      "3-4-2-1": ["Portiere", "Difensore Centrale 1", "Difensore Centrale 2", "Difensore Centrale 3", "Esterno Destro", "Centrocampista 1", "Centrocampista 2", "Esterno Sinistro", "Trequartista 1", "Trequartista 2", "Attaccante"],
-      "3-5-2": ["Portiere", "Difensore Centrale 1", "Difensore Centrale 2", "Difensore Centrale 3", "Mediano", "Esterno Destro", "Centrocampista 1", "Centrocampista 2", "Esterno Sinistro", "Attaccante 1", "Attaccante 2"],
-      "5-3-2": ["Portiere", "Terzino Destro", "Difensore Centrale 1", "Difensore Centrale 2", "Difensore Centrale 3", "Terzino Sinistro", "Centrocampista 1", "Centrocampista 2", "Centrocampista 3", "Attaccante 1", "Attaccante 2"]
-    };
+  window.onload = () => {
+    loadSavedFormation();
+    fetchAutoData();
+  };
 
-    let clubMembers = [];
-    let clubMatches = [];
-    let currentLineup = {};
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(el => el.removeAttribute('aria-current'));
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+    btn.setAttribute('aria-current', 'page');
+  }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      initApp();
-    });
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    if (current === 'light') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', 'light');
+  }
 
-    function initApp() {
-      loadSavedTheme();
-      loadSavedFormation();
-      loadSavedPlayers();
-      triggerSync();
-    }
+  async function fetchAutoData() {
+    const statusMsg = document.getElementById("status-msg");
+    statusMsg.innerText = "Sincronizzazione in corso via Vercel...";
 
-    // UI Tab Navigation
-    function switchTab(tabName) {
-      ['squadra', 'formazione', 'giocatori'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.add('hidden');
-        document.getElementById(`tab-btn-${t}`).classList.remove('tab-active');
-      });
+    try {
+      const response = await fetch('/api/stats');
+      const data = await response.json();
 
-      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-      document.getElementById(`tab-btn-${tabName}`).classList.add('tab-active');
-
-      if (tabName === 'formazione') {
-        onFormationChange();
-      }
-    }
-
-    function toggleTheme() {
-      const isDark = document.documentElement.classList.contains('dark');
-      if (isDark) {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-        document.getElementById('theme-icon').className = 'fas fa-sun text-amber-500';
-        localStorage.setItem('sisal_theme', 'light');
+      if (data.success) {
+        if (data.members) renderMembers(data.members);
+        if (data.matches) renderMatches(data.matches);
+        statusMsg.innerText = "✅ Sincronizzazione automatica completata!";
       } else {
-        document.documentElement.classList.remove('light');
-        document.documentElement.classList.add('dark');
-        document.getElementById('theme-icon').className = 'fas fa-moon';
-        localStorage.setItem('sisal_theme', 'dark');
+        statusMsg.innerText = "⚠️ Impossibile recuperare i dati da EA.";
       }
+    } catch (error) {
+      statusMsg.innerText = "⚠️ Errore di connessione con il server dell'app.";
     }
+  }
 
-    function loadSavedTheme() {
-      const saved = localStorage.getItem('sisal_theme') || 'dark';
-      if (saved === 'light') {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-        document.getElementById('theme-icon').className = 'fas fa-sun text-amber-500';
-      }
-    }
+  function renderMembers(data) {
+    const list = document.getElementById("players-list");
+    list.innerHTML = "";
+    realPlayers = [];
 
-    async function triggerSync() {
-      const spinner = document.getElementById('sync-spinner');
-      spinner.classList.add('fa-spin');
-      showStatus('loading', 'Sincronizzazione in corso...', 'Connessione alle API EA Sports...');
-
-      const membersUrl = `https://proclubs.ea.com/api/fc/members/stats?platform=${PLATFORM}&clubId=${CLUB_ID}`;
-      const matchesUrl = `https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=${PLATFORM}&clubIds=${CLUB_ID}`;
-
-      // Array of proxies to attempt sequentially
-      const proxies = [
-        url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-        url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-        url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
-      ];
-
-      let membersSuccess = false;
-
-      // 1. Attempt Direct Call First
-      try {
-        const directRes = await fetch(membersUrl, { method: 'GET' });
-        if (directRes.ok) {
-          const data = await directRes.json();
-          processMembersData(data);
-          membersSuccess = true;
-          showStatus('success', 'Connessione Diretta Riuscita', 'Dati aggiornati direttamente dai server EA.');
-        }
-      } catch (e) {
-        console.log("Direct EA API blocked by CORS/Cloudflare. Trying proxies...");
-      }
-
-      // 2. Attempt Proxy Chain if Direct Call Fails
-      if (!membersSuccess) {
-        for (let i = 0; i < proxies.length; i++) {
-          try {
-            showStatus('loading', `Tentativo Fallback Proxy #${i+1}...`, 'Aggancio endpoint alternativo.');
-            const proxyRes = await fetch(proxies[i](membersUrl));
-            if (proxyRes.ok) {
-              const data = await proxyRes.json();
-              if (data) {
-                processMembersData(data);
-                membersSuccess = true;
-                showStatus('success', 'Sincronizzazione via Proxy', `Dati recuperati con successo tramite Proxy #${i+1}.`);
-                break;
-              }
-            }
-          } catch (err) {
-            console.warn(`Proxy #${i+1} fallito.`);
-          }
-        }
-      }
-
-      // Try fetching matches
-      try {
-        const matchesRes = await fetch(proxies[0](matchesUrl));
-        if (matchesRes.ok) {
-          const mData = await matchesRes.json();
-          processMatchesData(mData);
-        }
-      } catch(e) {
-        console.log("Matches proxy fetch failed.");
-      }
-
-      // 3. Fallback to Presets if all network attempts are blocked
-      if (!membersSuccess && clubMembers.length === 0) {
-        loadPresetData();
-        showStatus('warning', 'Protezione EA Attiva - Modalità Offline', 'Impossibile superare Cloudflare. Dati predefiniti caricati.');
-      }
-
-      spinner.classList.remove('fa-spin');
-    }
-
-    // Process and normalize API data
-    function processMembersData(data) {
-      let rawList = [];
-      if (data.members) rawList = data.members;
-      else if (Array.isArray(data)) rawList = data;
-      else if (typeof data === 'object') rawList = Object.values(data);
-
-      if (rawList.length > 0) {
-        clubMembers = rawList.map(m => ({
-          name: m.name || m.proName || "Giocatore Pro",
-          proPos: m.proPos || "GEN",
-          gamesPlayed: parseInt(m.gamesPlayed || m.games || 0),
-          goals: parseInt(m.goals || 0),
-          assists: parseInt(m.assists || 0)
-        }));
-
-        savePlayersToLocal();
-        renderPlayers();
-        onFormationChange();
-      }
-    }
-
-    function processMatchesData(data) {
-      if (!Array.isArray(data) || data.length === 0) return;
-
-      clubMatches = [];
-      let wins = 0, draws = 0, losses = 0;
-
-      data.forEach((m, idx) => {
-        const clubObj = m.clubs ? Object.values(m.clubs).find(c => String(c.id) === CLUB_ID) : null;
-        const oppObj = m.clubs ? Object.values(m.clubs).find(c => String(c.id) !== CLUB_ID) : null;
-
-        if (clubObj && oppObj) {
-          const scoreFor = parseInt(clubObj.goals || 0);
-          const scoreAgainst = parseInt(oppObj.goals || 0);
-          let res = "N";
-          if (scoreFor > scoreAgainst) { wins++; res = "V"; }
-          else if (scoreFor < scoreAgainst) { losses++; res = "P"; }
-          else { draws++; res = "N"; }
-
-          clubMatches.push({
-            id: `m_${idx}`,
-            opponent: oppObj.details?.name || 'Club Avversario',
-            scoreFor,
-            scoreAgainst,
-            result: res
-          });
-        }
-      });
-
-      renderMatchesUI(wins, draws, losses);
-    }
-
-    function renderMatchesUI(wins, draws, losses) {
-      document.getElementById('stat-matches').innerText = clubMatches.length;
-      document.getElementById('stat-wins').innerText = wins;
-      document.getElementById('stat-draws').innerText = draws;
-      document.getElementById('stat-losses').innerText = losses;
-
-      document.getElementById('match-count-badge').innerText = `${clubMatches.length} gare`;
-
-      const listContainer = document.getElementById('recent-matches-list');
-      if (clubMatches.length === 0) {
-        listContainer.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs">Nessun match registrato nelle ultime ore.</div>`;
-        return;
-      }
-
-      listContainer.innerHTML = clubMatches.map(m => {
-        let badgeStyle = "bg-blue-500/10 text-blue-400 border-blue-500/20";
-        if (m.result === "V") badgeStyle = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
-        if (m.result === "P") badgeStyle = "bg-rose-500/10 text-rose-400 border-rose-500/20";
-
-        return `
-          <div class="px-4 py-3 flex items-center justify-between text-xs hover:bg-slate-800/30 transition">
-            <div class="flex items-center gap-3">
-              <div class="w-2 h-2 rounded-full ${m.result === 'V' ? 'bg-emerald-400' : m.result === 'P' ? 'bg-rose-400' : 'bg-blue-400'}"></div>
-              <span class="font-bold text-slate-200">vs ${m.opponent}</span>
-            </div>
-            <div class="flex items-center gap-3">
-              <span class="font-extrabold text-sm text-slate-100">${m.scoreFor} - ${m.scoreAgainst}</span>
-              <span class="px-2 py-0.5 rounded-full font-bold text-[10px] border ${badgeStyle}">
-                ${m.result === 'V' ? 'VITTORIA' : m.result === 'P' ? 'SCONFITTA' : 'PAREGGIO'}
-              </span>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function loadPresetData() {
-      clubMembers = [...PRESET_MEMBERS];
-      clubMatches = [...PRESET_MATCHES];
-
-      savePlayersToLocal();
-      renderPlayers();
-
-      let w = clubMatches.filter(m => m.result === 'V').length;
-      let d = clubMatches.filter(m => m.result === 'N').length;
-      let l = clubMatches.filter(m => m.result === 'P').length;
-      renderMatchesUI(w, d, l);
-
-      onFormationChange();
-      closeManualModal();
-      showStatus('warning', 'Rosa Predefinita Caricata', 'Visualizzazione dati reali memorizzati di Sisal FC 2021.');
-    }
-
-    function renderPlayers() {
-      const grid = document.getElementById('players-grid');
-      if (clubMembers.length === 0) {
-        grid.innerHTML = `<div class="col-span-full p-6 text-center text-slate-500 text-xs">Nessun giocatore registrato in rosa.</div>`;
-        return;
-      }
-
-      grid.innerHTML = clubMembers.map((p, i) => `
-        <div class="glass-card rounded-xl p-3 border border-slate-800 dark:border-slate-800 light:border-slate-200 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center font-extrabold text-xs text-emerald-400">
-              ${p.proPos || 'PRO'}
-            </div>
+    const members = data.members || (Array.isArray(data) ? data : []);
+    if (members.length > 0) {
+      members.forEach(m => {
+        const pName = m.name || m.proName || "Giocatore";
+        realPlayers.push(pName);
+        list.innerHTML += `
+          <div style="padding: 10px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
             <div>
-              <div class="font-bold text-sm text-slate-100 dark:text-slate-100 light:text-slate-800">${p.name}</div>
-              <div class="text-[11px] text-slate-400">
-                Presenze: <b class="text-slate-200">${p.gamesPlayed}</b> | Gol: <b class="text-emerald-400">${p.goals}</b> | Assist: <b class="text-amber-400">${p.assists}</b>
+              <strong>${pName}</strong>
+              <div style="font-size: 11px; color: var(--mut);">
+                Presenze: ${m.gamesPlayed || 0} | Gol: ${m.goals || 0} | Assist: ${m.assists || 0}
               </div>
             </div>
-          </div>
-          <button onclick="removePlayer(${i})" class="text-slate-600 hover:text-rose-400 p-1 transition">
-            <i class="fas fa-trash-alt text-xs"></i>
-          </button>
-        </div>
-      `).join('');
-    }
-
-    function removePlayer(idx) {
-      clubMembers.splice(idx, 1);
-      savePlayersToLocal();
-      renderPlayers();
-      onFormationChange();
-    }
-
-    function savePlayersToLocal() {
-      localStorage.setItem('sisal_members', JSON.stringify(clubMembers));
-    }
-
-    function loadSavedPlayers() {
-      const saved = localStorage.getItem('sisal_members');
-      if (saved) {
-        try { clubMembers = JSON.parse(saved); } catch(e){}
-      }
-    }
-
-    // Modal Operations
-    function openManualModal() { document.getElementById('manual-modal').classList.remove('hidden'); }
-    function closeManualModal() { document.getElementById('manual-modal').classList.add('hidden'); }
-    function openAddPlayerModal() { document.getElementById('add-player-modal').classList.remove('hidden'); }
-    function closeAddPlayerModal() { document.getElementById('add-player-modal').classList.add('hidden'); }
-
-    function parseCustomJson() {
-      const val = document.getElementById('json-input').value.trim();
-      if (!val) return;
-      try {
-        const parsed = JSON.parse(val);
-        processMembersData(parsed);
-        closeManualModal();
-        showStatus('success', 'JSON Importato con Successo', 'Dati della rosa aggiornati manualmente.');
-      } catch(e) {
-        alert("Formato JSON non valido!");
-      }
-    }
-
-    function saveNewPlayer() {
-      const name = document.getElementById('new-player-name').value.trim();
-      const role = document.getElementById('new-player-role').value;
-      if (!name) return;
-
-      clubMembers.push({
-        name: name,
-        proPos: role,
-        gamesPlayed: 0,
-        goals: 0,
-        assists: 0
-      });
-
-      savePlayersToLocal();
-      renderPlayers();
-      onFormationChange();
-      closeAddPlayerModal();
-      document.getElementById('new-player-name').value = '';
-    }
-
-    function onFormationChange() {
-      const scheme = document.getElementById('formation-select').value;
-      document.getElementById('pitch-formation-tag').innerText = scheme;
-
-      const roles = FORMATIONS_MAP[scheme] || FORMATIONS_MAP["4-3-3"];
-      const grid = document.getElementById('roles-grid');
-
-      grid.innerHTML = roles.map(role => {
-        const savedPlayer = currentLineup[role] || "";
-        
-        let optionsHtml = `<option value="">-- Vuoto --</option>`;
-        clubMembers.forEach(p => {
-          optionsHtml += `<option value="${p.name}" ${savedPlayer === p.name ? 'selected' : ''}>${p.name}</option>`;
-        });
-        optionsHtml += `<option value="🤖 IA (bot)" ${savedPlayer === '🤖 IA (bot)' ? 'selected' : ''}>🤖 IA (bot)</option>`;
-
-        return `
-          <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-            <label class="block text-[11px] font-bold text-emerald-400 mb-1">${role}</label>
-            <select id="select-role-${role}" onchange="updatePitchFromSelects()" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500">
-              ${optionsHtml}
-            </select>
+            <span class="badge v">${m.proPos || 'Giocatore'}</span>
           </div>
         `;
-      }).join('');
-
-      updatePitchFromSelects();
+      });
+      changeFormation();
+    } else {
+      list.innerHTML = `<div style="color: var(--mut);">Nessun giocatore trovato.</div>`;
     }
+  }
 
-    function updatePitchFromSelects() {
-      const scheme = document.getElementById('formation-select').value;
-      const roles = FORMATIONS_MAP[scheme];
+  function renderMatches(data) {
+    const list = document.getElementById("recent-matches-list");
+    list.innerHTML = "";
+    let wins = 0, draws = 0, losses = 0;
 
-      const pDef = document.getElementById('pitch-def');
-      const pMid = document.getElementById('pitch-mid');
-      const pAtt = document.getElementById('pitch-att');
+    const matches = Array.isArray(data) ? data : [];
 
-      pDef.innerHTML = ''; pMid.innerHTML = ''; pAtt.innerHTML = '';
+    if (matches.length > 0) {
+      matches.forEach(m => {
+        const clubInfo = Object.values(m.clubs || {}).find(c => c.id == CLUB_ID);
+        const oppInfo = Object.values(m.clubs || {}).find(c => c.id != CLUB_ID);
 
-      roles.forEach(role => {
-        const select = document.getElementById(`select-role-${role}`);
-        const val = select ? select.value : "";
-        if (!val) return;
+        if (clubInfo && oppInfo) {
+          const goalsFor = parseInt(clubInfo.goals);
+          const goalsAgainst = parseInt(oppInfo.goals);
+          let outcome = "N";
 
-        const isBot = val.includes('IA (bot)');
-        const tag = document.createElement('div');
-        tag.className = `px-2.5 py-1 rounded-lg text-xs font-bold border shadow-sm flex items-center gap-1.5 ${
-          isBot 
-            ? 'bg-rose-950/80 border-rose-700/60 text-rose-300' 
-            : 'bg-slate-900/90 border-emerald-500/40 text-emerald-300'
-        }`;
-        tag.innerHTML = `<i class="${isBot ? 'fas fa-robot text-rose-400' : 'fas fa-user text-emerald-400'} text-[10px]"></i> ${role}: <b>${val}</b>`;
+          if (goalsFor > goalsAgainst) { wins++; outcome = "V"; }
+          else if (goalsFor === goalsAgainst) { draws++; outcome = "N"; }
+          else { losses++; outcome = "P"; }
 
-        const rLower = role.toLowerCase();
-        if (rLower.includes('portiere') || rLower.includes('difensore') || rLower.includes('terzino')) {
-          pDef.appendChild(tag);
-        } else if (rLower.includes('centrocampista') || rLower.includes('mediano') || rLower.includes('esterno') || rLower.includes('trequartista')) {
-          pMid.appendChild(tag);
-        } else {
-          pAtt.appendChild(tag);
+          list.innerHTML += `
+            <div class="match-item">
+              <div><strong>vs ${oppInfo.details?.name || 'Avversario'}</strong></div>
+              <div>
+                <span style="font-weight: 700; margin-right: 8px;">${goalsFor} - ${goalsAgainst}</span>
+                <span class="badge ${outcome === 'V' ? 'v' : 'p'}">${outcome === 'V' ? 'VITTORIA' : (outcome === 'N' ? 'PAREGGIO' : 'SCONFITTA')}</span>
+              </div>
+            </div>
+          `;
         }
       });
+
+      document.getElementById("stat-matches").innerText = matches.length;
+      document.getElementById("stat-wins").innerText = wins;
+      document.getElementById("stat-draws").innerText = draws;
+      document.getElementById("stat-losses").innerText = losses;
+    } else {
+      list.innerHTML = `<div style="color: var(--mut);">Nessuna partita recente di campionato trovata.</div>`;
     }
+  }
 
-    function autoSuggestFormation() {
-      const scheme = document.getElementById('formation-select').value;
-      const roles = FORMATIONS_MAP[scheme];
-      let humanPool = [...clubMembers.map(m => m.name)];
+  function changeFormation() {
+    const scheme = document.getElementById("formation-select").value;
+    const roles = formationsMap[scheme];
+    const container = document.getElementById("roles-container");
+    container.innerHTML = "";
 
-      const attRoles = roles.filter(r => r.toLowerCase().includes('attaccante') || r.toLowerCase().includes('ala'));
-      const midRoles = roles.filter(r => r.toLowerCase().includes('centrocampista') || r.toLowerCase().includes('trequartista') || r.toLowerCase().includes('esterno') || r.toLowerCase().includes('mediano'));
-      const defRoles = roles.filter(r => r.toLowerCase().includes('portiere') || r.toLowerCase().includes('difensore') || r.toLowerCase().includes('terzino'));
+    roles.forEach(role => {
+      const savedVal = savedLineup[role] || "";
+      const div = document.createElement("div");
+      div.className = "role-item";
 
-      const assignment = {};
-
-      // 1. Assign humans to Attack FIRST (Never Bots in Attack if humans exist)
-      attRoles.forEach(r => {
-        assignment[r] = humanPool.length > 0 ? humanPool.shift() : "🤖 IA (bot)";
+      let options = `<option value="">-- Vuoto --</option>`;
+      realPlayers.forEach(p => {
+        options += `<option value="${p}" ${savedVal === p ? 'selected' : ''}>${p}</option>`;
       });
+      options += `<option value="IA (bot)" ${savedVal === 'IA (bot)' ? 'selected' : ''}>🤖 IA (bot)</option>`;
 
-      // 2. Assign humans to Midfield SECOND
-      midRoles.forEach(r => {
-        assignment[r] = humanPool.length > 0 ? humanPool.shift() : "🤖 IA (bot)";
-      });
+      div.innerHTML = `
+        <label>${role}</label>
+        <select id="role-${role}" onchange="renderPitch()">
+          ${options}
+        </select>
+      `;
+      container.appendChild(div);
+    });
 
-      // 3. Relegate Bots / remaining humans to Defense & GK LAST
-      defRoles.forEach(r => {
-        assignment[r] = humanPool.length > 0 ? humanPool.shift() : "🤖 IA (bot)";
-      });
+    renderPitch();
+  }
 
-      // Apply assignments to select boxes
-      roles.forEach(r => {
-        const select = document.getElementById(`select-role-${r}`);
-        if (select) select.value = assignment[r];
-      });
+  function renderPitch() {
+    const scheme = document.getElementById("formation-select").value;
+    const roles = formationsMap[scheme];
 
-      updatePitchFromSelects();
-    }
+    const pDef = document.getElementById("pitch-def");
+    const pMid = document.getElementById("pitch-mid");
+    const pAtt = document.getElementById("pitch-att");
 
-    function saveFormation() {
-      const scheme = document.getElementById('formation-select').value;
-      const roles = FORMATIONS_MAP[scheme];
-      const lineup = {};
+    pDef.innerHTML = ""; pMid.innerHTML = ""; pAtt.innerHTML = "";
 
-      roles.forEach(role => {
-        const select = document.getElementById(`select-role-${role}`);
-        if (select) lineup[role] = select.value;
-      });
+    roles.forEach(role => {
+      const select = document.getElementById(`role-${role}`);
+      const val = select ? select.value : (savedLineup[role] || "");
+      if (!val) return;
 
-      localStorage.setItem('sisal_formation', JSON.stringify({ scheme, lineup }));
-      alert('Formazione salvata con successo nel LocalStorage!');
-    }
+      const tag = document.createElement("div");
+      tag.className = `player-tag ${val === 'IA (bot)' ? 'bot' : ''}`;
+      tag.innerText = `${role}: ${val}`;
 
-    function loadSavedFormation() {
-      const saved = localStorage.getItem('sisal_formation');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed.scheme) document.getElementById('formation-select').value = parsed.scheme;
-          if (parsed.lineup) currentLineup = parsed.lineup;
-        } catch(e){}
-      }
-    }
-
-    // Helper: Show status banner
-    function showStatus(type, title, desc) {
-      const banner = document.getElementById('status-banner');
-      const icon = document.getElementById('status-icon');
-      const titleEl = document.getElementById('status-title');
-      const descEl = document.getElementById('status-desc');
-
-      banner.classList.remove('hidden', 'bg-emerald-950/40', 'border-emerald-800', 'bg-amber-950/40', 'border-amber-800', 'bg-blue-950/40', 'border-blue-800');
-
-      if (type === 'success') {
-        banner.classList.add('bg-emerald-950/40', 'border-emerald-800/80');
-        icon.className = 'fas fa-check-circle text-emerald-400 text-lg';
-      } else if (type === 'warning') {
-        banner.classList.add('bg-amber-950/40', 'border-amber-800/80');
-        icon.className = 'fas fa-exclamation-triangle text-amber-400 text-lg';
+      const rLower = role.toLowerCase();
+      if (rLower.includes("portiere") || rLower.includes("difensore") || rLower.includes("terzino")) {
+        pDef.appendChild(tag);
+      } else if (rLower.includes("centrocampista") || rLower.includes("mediano") || rLower.includes("esterno") || rLower.includes("trequartista")) {
+        pMid.appendChild(tag);
       } else {
-        banner.classList.add('bg-blue-950/40', 'border-blue-800/80');
-        icon.className = 'fas fa-sync fa-spin text-blue-400 text-lg';
+        pAtt.appendChild(tag);
       }
+    });
+  }
 
-      titleEl.innerText = title;
-      descEl.innerText = desc;
+  function saveFormation() {
+    const scheme = document.getElementById("formation-select").value;
+    const roles = formationsMap[scheme];
+    const lineup = {};
+
+    roles.forEach(role => {
+      const select = document.getElementById(`role-${role}`);
+      if (select) lineup[role] = select.value;
+    });
+
+    localStorage.setItem("sisal_fc_formation_data", JSON.stringify({ scheme, lineup }));
+    alert("Formazione salvata con successo!");
+  }
+
+  function loadSavedFormation() {
+    const raw = localStorage.getItem("sisal_fc_formation_data");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      document.getElementById("formation-select").value = parsed.scheme || "4-3-3";
+      savedLineup = parsed.lineup || {};
     }
-  </script>
+  }
 
+  function autoSuggest() {
+    const scheme = document.getElementById("formation-select").value;
+    const roles = formationsMap[scheme];
+    let pool = [...realPlayers];
+
+    const attRoles = roles.filter(r => r.toLowerCase().includes("attaccante") || r.toLowerCase().includes("ala"));
+    const midRoles = roles.filter(r => r.toLowerCase().includes("centrocampista") || r.toLowerCase().includes("trequartista") || r.toLowerCase().includes("esterno") || r.toLowerCase().includes("mediano"));
+    const defRoles = roles.filter(r => r.toLowerCase().includes("portiere") || r.toLowerCase().includes("difensore") || r.toLowerCase().includes("terzino"));
+
+    const assignment = {};
+
+    attRoles.forEach(role => {
+      assignment[role] = pool.length > 0 ? pool.shift() : "";
+    });
+
+    midRoles.forEach(role => {
+      assignment[role] = pool.length > 0 ? pool.shift() : "IA (bot)";
+    });
+
+    defRoles.forEach(role => {
+      assignment[role] = pool.length > 0 ? pool.shift() : "IA (bot)";
+    });
+
+    roles.forEach(role => {
+      const select = document.getElementById(`role-${role}`);
+      if (select) select.value = assignment[role] || "";
+    });
+
+    renderPitch();
+  }
+</script>
 </body>
 </html>
