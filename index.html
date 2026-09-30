@@ -14,10 +14,8 @@
   --ink: #EAF0FF;
   --mut: #97A3C7;
   --acc: #4DE1FF;
-  --acc2: #8B9BFF;
   --good: #34D399;
   --bad: #FB7185;
-  --warn: #FBBF24;
 }
 :root[data-theme="light"] {
   --bg: #F4F6FB;
@@ -27,42 +25,38 @@
   --ink: #0F1730;
   --mut: #5A6688;
   --acc: #0A7EA4;
-  --acc2: #4F5BD5;
   --good: #0F9F6E;
   --bad: #E0435A;
-  --warn: #B7791F;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 Manrope, system-ui, sans-serif; }
-h1, h2, h3, h4 { font-family: Sora, sans-serif; margin: 0; line-height: 1.2; letter-spacing: -.01em; }
+h1, h2, h3, h4 { font-family: Sora, sans-serif; margin: 0; line-height: 1.2; }
 .w { max-width: 860px; margin: auto; padding: 0 16px 60px; }
 
 header { padding: 22px 0 12px; display: flex; justify-content: space-between; align-items: center; }
-header small { color: var(--acc); font-weight: 700; letter-spacing: .1em; font-size: 11px; text-transform: uppercase; }
+header small { color: var(--acc); font-weight: 700; font-size: 11px; text-transform: uppercase; }
 header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 
-.tabs { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); display: flex; gap: 6px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; margin-bottom: 12px; }
-.tabs button { flex: none; border: 1px solid var(--line); background: var(--s); color: var(--mut); padding: 8px 16px; border-radius: 99px; font: 700 13px Manrope; cursor: pointer; transition: all .2s; }
+.tabs { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); display: flex; gap: 6px; overflow-x: auto; padding: 10px 0; margin-bottom: 12px; }
+.tabs button { flex: none; border: 1px solid var(--line); background: var(--s); color: var(--mut); padding: 8px 16px; border-radius: 99px; font: 700 13px Manrope; cursor: pointer; }
 .tabs button[aria-current="page"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
-.hero { position: relative; overflow: hidden; background: linear-gradient(135deg, var(--s), var(--s2)); border: 1px solid var(--line); border-radius: 22px; padding: 20px; margin-bottom: 14px; }
-.hero small { color: var(--mut); font-weight: 700; letter-spacing: .06em; font-size: 12px; }
-.hero h1 { font-size: clamp(24px, 6vw, 36px); font-weight: 800; margin: 4px 0 12px; }
-
+.hero { background: linear-gradient(135deg, var(--s), var(--s2)); border: 1px solid var(--line); border-radius: 22px; padding: 20px; margin-bottom: 14px; }
 .k { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
 .k div { background: var(--s); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; }
 .k b { display: block; font: 800 22px Sora; color: var(--acc); }
 .k span { font-size: 11px; color: var(--mut); }
 
 .card { background: var(--s); border: 1px solid var(--line); border-radius: 18px; padding: 18px; margin-bottom: 14px; }
-.btn { background: var(--ink); color: var(--bg); border: none; padding: 10px 18px; border-radius: 99px; font: 700 13px Manrope; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn { background: var(--ink); color: var(--bg); border: none; padding: 10px 18px; border-radius: 99px; font: 700 13px Manrope; cursor: pointer; }
 .btn-sec { background: var(--s2); color: var(--ink); border: 1px solid var(--line); }
 
-.pitch { background: #164e2d; border: 2px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; position: relative; min-height: 280px; }
+textarea { width: 100%; height: 90px; background: var(--s2); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 10px; font-family: monospace; font-size: 12px; margin-top: 6px; }
+
+.pitch { background: #164e2d; border: 2px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; min-height: 280px; }
 .pitch-col { background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 8px; text-align: center; }
 .pitch-col h4 { font: 800 11px Sora; color: #a3e635; text-transform: uppercase; margin-bottom: 8px; }
 .player-tag { background: rgba(15, 23, 42, 0.85); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
-.player-tag.bot { background: rgba(224, 67, 90, 0.35); border-color: var(--bad); color: #fecdd3; }
 
 .role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 14px 0; }
 .role-item { background: var(--s2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
@@ -73,8 +67,6 @@ header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
 .badge { padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 11px; }
 .badge.v { background: color-mix(in srgb, var(--good) 20%, transparent); color: var(--good); }
 .badge.p { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
-
-textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 10px; font-family: monospace; font-size: 12px; height: 70px; margin-top: 6px; }
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
@@ -94,22 +86,12 @@ textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); co
   <nav class="tabs">
     <button aria-current="page" onclick="switchTab('squadra', this)">Squadra</button>
     <button onclick="switchTab('formazione', this)">Formazione</button>
-    <button onclick="switchTab('giocatori', this)">Giocatori Reali</button>
-    <button onclick="switchTab('import', this)">📥 Importa Dati</button>
+    <button onclick="switchTab('giocatori', this)">Giocatori</button>
+    <button onclick="switchTab('importa', this)">📥 Importa Dati</button>
   </nav>
 
-  <!-- SEZIONE SQUADRA -->
+  <!-- TAB SQUADRA -->
   <div id="tab-squadra" class="tab-content active">
-    <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-        <div>
-          <strong style="color: var(--acc);">Sisal FC 2021 (ID: 328794)</strong>
-          <div id="sync-status" style="font-size: 12px; color: var(--mut);">⏳ Verifica connessione diretta...</div>
-        </div>
-        <button class="btn" onclick="fetchEaDataAuto()">🔄 Prova Connessione Diretta</button>
-      </div>
-    </div>
-
     <div class="hero">
       <small>STATISTICHE CLUB REALI</small>
       <h1>Sisal FC 2021</h1>
@@ -123,13 +105,13 @@ textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); co
 
     <div class="card">
       <h3>Ultime Partite di Campionato</h3>
-      <div id="recent-matches-list" style="margin-top: 10px;">
-        <div style="color: var(--mut);">Caricamento dati...</div>
+      <div id="recent-matches-list" style="margin-top: 10px; color: var(--mut);">
+        Usa la scheda "Importa Dati" per caricare le partite recenti o attendi il caricamento automatico.
       </div>
     </div>
   </div>
 
-  <!-- SEZIONE FORMAZIONE -->
+  <!-- TAB FORMAZIONE -->
   <div id="tab-formazione" class="tab-content">
     <div class="card">
       <h2>Modulo & Assegnazione Giocatori</h2>
@@ -172,33 +154,33 @@ textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); co
     </div>
   </div>
 
-  <!-- SEZIONE GIOCATORI -->
+  <!-- TAB GIOCATORI -->
   <div id="tab-giocatori" class="tab-content">
     <div class="card">
       <h2>Membri Rosa Ufficiali</h2>
-      <div id="players-list" style="margin-top: 14px;">
-        <div style="color: var(--mut);">Nessun dato caricato.</div>
+      <div id="players-list" style="margin-top: 14px; color: var(--mut);">
+        Nessun giocatore caricato. Importa i dati per vedere la rosa.
       </div>
     </div>
   </div>
 
-  <!-- SEZIONE IMPORTA DATI -->
-  <div id="tab-import" class="tab-content">
+  <!-- TAB IMPORTA DATI -->
+  <div id="tab-importa" class="tab-content">
     <div class="card">
       <h2>Importazione Rapida Dati EA</h2>
-      <p style="font-size: 13px; color: var(--mut);">Poiché EA blocca le chiamate server automatiche, apri i due link sottostanti dal tuo telefono o browser, copia il testo e incollalo qui sotto:</p>
+      <p style="font-size: 13px; color: var(--mut);">Apri i link, copia tutto il testo e incollalo nei riquadri sottostanti:</p>
       
-      <div style="margin-bottom: 12px;">
-        <a href="https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=328794" target="_blank" style="color: var(--acc); font-weight: 700; font-size: 13px;">1. Apri JSON Giocatori 🔗</a>
-        <textarea id="json-members-input" placeholder="Incolla qui il testo dei Giocatori..."></textarea>
-      </div>
+      <label style="font-weight: 700; font-size: 13px;">1. JSON Giocatori (<a href="https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=328794" target="_blank" style="color: var(--acc);">Apri Link</a>)</label>
+      <textarea id="json-members" placeholder="Incolla qui il testo dei Giocatori..."></textarea>
 
-      <div style="margin-bottom: 12px;">
-        <a href="https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794" target="_blank" style="color: var(--acc); font-weight: 700; font-size: 13px;">2. Apri JSON Partite 🔗</a>
-        <textarea id="json-matches-input" placeholder="Incolla qui il testo delle Partite..."></textarea>
-      </div>
+      <div style="height: 12px;"></div>
 
-      <button class="btn" onclick="applyManualJson()">💾 Salva e Aggiorna App</button>
+      <label style="font-weight: 700; font-size: 13px;">2. JSON Partite (<a href="https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794" target="_blank" style="color: var(--acc);">Apri Link</a>)</label>
+      <textarea id="json-matches" placeholder="Incolla qui il testo delle Partite..."></textarea>
+
+      <div style="margin-top: 14px;">
+        <button class="btn" onclick="parseAndSaveData()">💾 Salva e Aggiorna App</button>
+      </div>
     </div>
   </div>
 
@@ -219,9 +201,8 @@ textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); co
   let savedLineup = {};
 
   window.onload = () => {
-    loadSavedFormation();
-    loadCachedData();
-    fetchEaDataAuto();
+    loadSavedData();
+    autoFetchProxy();
   };
 
   function switchTab(tabId, btn) {
@@ -237,61 +218,59 @@ textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); co
     else document.documentElement.setAttribute('data-theme', 'light');
   }
 
-  async function fetchEaDataAuto() {
-    const statusLbl = document.getElementById("sync-status");
-    statusLbl.innerText = "⏳ Prova di chiamata diretta ad EA...";
-
+  async function autoFetchProxy() {
+    const proxy = (t) => `https://api.allorigins.win/raw?url=${encodeURIComponent(t)}`;
     try {
-      const resM = await fetch(`https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=${CLUB_ID}`);
-      const resMatches = await fetch(`https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=${CLUB_ID}`);
-
-      if (resM.ok && resMatches.ok) {
-        const dataM = await resM.json();
-        const dataMatches = await resMatches.json();
-        saveAndRender(dataM, dataMatches);
-        statusLbl.innerText = "✅ Connessione automatica diretta riuscita!";
-        return;
-      }
-    } catch (e) {
-      console.log("Connessione diretta bloccata da Cloudflare/CORS.");
-    }
-
-    statusLbl.innerText = "⚠️ EA protegge le API. Usa la scheda 'Importa Dati' per aggiornare in 5 secondi.";
+      const resM = await fetch(proxy(`https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=${CLUB_ID}`));
+      if(resM.ok) { renderMembers(await resM.json()); }
+      const resX = await fetch(proxy(`https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=${CLUB_ID}`));
+      if(resX.ok) { renderMatches(await resX.json()); }
+    } catch(e) { console.log("Proxy in attesa di dati manuali..."); }
   }
 
-  function applyManualJson() {
-    const rawM = document.getElementById("json-members-input").value.trim();
-    const rawMatches = document.getElementById("json-matches-input").value.trim();
+  function parseAndSaveData() {
+    const rawM = document.getElementById("json-members").value.trim();
+    const rawX = document.getElementById("json-matches").value.trim();
 
-    try {
-      const dataM = rawM ? JSON.parse(rawM) : null;
-      const dataMatches = rawMatches ? JSON.parse(rawMatches) : null;
+    let count = 0;
+    if (rawM) {
+      try {
+        const dataM = JSON.parse(rawM);
+        renderMembers(dataM);
+        localStorage.setItem("ea_members_cache", rawM);
+        count++;
+      } catch(e) { console.error("Errore parse membri:", e); }
+    }
 
-      saveAndRender(dataM, dataMatches);
-      alert("Dati importati e salvati con successo!");
+    if (rawX) {
+      try {
+        const dataX = JSON.parse(rawX);
+        renderMatches(dataX);
+        localStorage.setItem("ea_matches_cache", rawX);
+        count++;
+      } catch(e) { console.error("Errore parse partite:", e); }
+    }
+
+    if (count > 0) {
+      alert("✅ Dati caricati e salvati con successo!");
       switchTab('squadra', document.querySelectorAll('.tabs button')[0]);
-    } catch (e) {
-      alert("Errore nel formato del testo incollato. Assicurati di aver copiato tutto il contenuto del link.");
+    } else {
+      alert("❌ Impossibile leggere i testi incollati. Assicurati di aver copiato l'intero contenuto delle pagine JSON.");
     }
   }
 
-  function saveAndRender(dataM, dataMatches) {
-    if (dataM) {
-      localStorage.setItem("sisal_cache_members", JSON.stringify(dataM));
-      renderMembers(dataM);
+  function loadSavedData() {
+    const cM = localStorage.getItem("ea_members_cache");
+    const cX = localStorage.getItem("ea_matches_cache");
+    if(cM) try { renderMembers(JSON.parse(cM)); }catch(e){}
+    if(cX) try { renderMatches(JSON.parse(cX)); }catch(e){}
+    
+    const rawF = localStorage.getItem("sisal_fc_formation_data");
+    if (rawF) {
+      const parsed = JSON.parse(rawF);
+      document.getElementById("formation-select").value = parsed.scheme || "4-3-3";
+      savedLineup = parsed.lineup || {};
     }
-    if (dataMatches) {
-      localStorage.setItem("sisal_cache_matches", JSON.stringify(dataMatches));
-      renderMatches(dataMatches);
-    }
-  }
-
-  function loadCachedData() {
-    const cachedM = localStorage.getItem("sisal_cache_members");
-    const cachedMatches = localStorage.getItem("sisal_cache_matches");
-
-    if (cachedM) renderMembers(JSON.parse(cachedM));
-    if (cachedMatches) renderMatches(JSON.parse(cachedMatches));
   }
 
   function renderMembers(data) {
@@ -299,11 +278,17 @@ textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); co
     list.innerHTML = "";
     realPlayers = [];
 
-    const members = data.members || (Array.isArray(data) ? data : []);
+    let members = [];
+    if (Array.isArray(data)) members = data;
+    else if (data && data.members) members = data.members;
+    else if (data && typeof data === 'object') members = Object.values(data);
+
     if (members.length > 0) {
       members.forEach(m => {
-        const pName = m.name || m.proName || "Giocatore";
-        realPlayers.push(pName);
+        if(!m || typeof m !== 'object') return;
+        const pName = m.name || m.proName || m.nameRaw || "Giocatore";
+        if(pName && !realPlayers.includes(pName)) realPlayers.push(pName);
+        
         list.innerHTML += `
           <div style="padding: 10px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
             <div>
@@ -317,8 +302,6 @@ textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); co
         `;
       });
       changeFormation();
-    } else {
-      list.innerHTML = `<div style="color: var(--mut);">Nessun giocatore trovato nella rosa.</div>`;
     }
   }
 
@@ -327,8 +310,11 @@ textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); co
     list.innerHTML = "";
     let wins = 0, draws = 0, losses = 0;
 
-    if (Array.isArray(data) && data.length > 0) {
-      data.forEach(m => {
+    let matches = Array.isArray(data) ? data : (data && data.matches ? data.matches : []);
+
+    if (matches.length > 0) {
+      matches.forEach(m => {
+        if(!m.clubs) return;
         const clubInfo = Object.values(m.clubs).find(c => c.id == CLUB_ID);
         const oppInfo = Object.values(m.clubs).find(c => c.id != CLUB_ID);
 
@@ -353,12 +339,10 @@ textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); co
         }
       });
 
-      document.getElementById("stat-matches").innerText = data.length;
+      document.getElementById("stat-matches").innerText = matches.length;
       document.getElementById("stat-wins").innerText = wins;
       document.getElementById("stat-draws").innerText = draws;
       document.getElementById("stat-losses").innerText = losses;
-    } else {
-      list.innerHTML = `<div style="color: var(--mut);">Nessuna partita recente di campionato trovata.</div>`;
     }
   }
 
@@ -407,7 +391,7 @@ textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); co
       if (!val) return;
 
       const tag = document.createElement("div");
-      tag.className = `player-tag ${val === 'IA (bot)' ? 'bot' : ''}`;
+      tag.className = "player-tag";
       tag.innerText = `${role}: ${val}`;
 
       const rLower = role.toLowerCase();
@@ -435,41 +419,14 @@ textarea { width: 100%; background: var(--s2); border: 1px solid var(--line); co
     alert("Formazione salvata!");
   }
 
-  function loadSavedFormation() {
-    const raw = localStorage.getItem("sisal_fc_formation_data");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      document.getElementById("formation-select").value = parsed.scheme || "4-3-3";
-      savedLineup = parsed.lineup || {};
-    }
-  }
-
   function autoSuggest() {
     const scheme = document.getElementById("formation-select").value;
     const roles = formationsMap[scheme];
     let pool = [...realPlayers];
 
-    const attRoles = roles.filter(r => r.toLowerCase().includes("attaccante") || r.toLowerCase().includes("ala"));
-    const midRoles = roles.filter(r => r.toLowerCase().includes("centrocampista") || r.toLowerCase().includes("trequartista") || r.toLowerCase().includes("esterno") || r.toLowerCase().includes("mediano"));
-    const defRoles = roles.filter(r => r.toLowerCase().includes("portiere") || r.toLowerCase().includes("difensore") || r.toLowerCase().includes("terzino"));
-
-    const assignment = {};
-
-    attRoles.forEach(role => {
-      assignment[role] = pool.length > 0 ? pool.shift() : "";
-    });
-
-    midRoles.forEach(role => {
-      assignment[role] = pool.length > 0 ? pool.shift() : "IA (bot)";
-    });
-
-    defRoles.forEach(role => {
-      assignment[role] = pool.length > 0 ? pool.shift() : "IA (bot)";
-    });
-
     roles.forEach(role => {
       const select = document.getElementById(`role-${role}`);
-      if (select) select.value = assignment[role] || "";
+      if (select) select.value = pool.length > 0 ? pool.shift() : "IA (bot)";
     });
 
     renderPitch();
