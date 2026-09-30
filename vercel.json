@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "routes": [
+    {
+      "src": "/api/ea",
+      "dest": "/api/ea.js"
+    },
+    {
+      "src": "/api/assistente",
+      "dest": "/api/assistente.js"
+    }
+  ]
+}
