@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sisal FC 2021 · Analisi Pro Clubs FC 27</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0B1020;
+  --s: #131A2E;
+  --s2: #1B2440;
+  --line: #263152;
+  --ink: #EAF0FF;
+  --mut: #97A3C7;
+  --acc: #4DE1FF;
+  --on: #04202A;
+  --acc2: #8B9BFF;
+  --good: #34D399;
+  --bad: #FB7185;
+  --warn: #FBBF24;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+:root[data-theme="light"] {
+  --bg: #F4F6FB;
+  --s: #fff;
+  --s2: #E9EDF8;
+  --line: #D9DFEE;
+  --ink: #0F1730;
+  --mut: #5A6688;
+  --acc: #0A7EA4;
+  --on: #fff;
+  --acc2: #4F5BD5;
+  --good: #0F9F6E;
+  --bad: #E0435A;
+  --warn: #B7791F;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.5 Manrope, system-ui, sans-serif; }
+h1, h2, h3, h4 { font-family: Sora, sans-serif; margin: 0; line-height: 1.2; letter-spacing: -.01em; }
+.w { max-width: 860px; margin: auto; padding: 0 16px 60px; }
+
+header { padding: 22px 0 12px; display: flex; justify-content: space-between; align-items: center; }
+header small { color: var(--acc); font-weight: 700; letter-spacing: .1em; font-size: 11px; text-transform: uppercase; }
+header h1 { font-size: clamp(26px, 6vw, 36px); font-weight: 800; }
+
+.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); display: flex; gap: 6px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; margin-bottom: 12px; }
+.tabs button { flex: none; border: 1px solid var(--line); background: var(--s); color: var(--mut); padding: 8px 16px; border-radius: 99px; font: 700 13px Manrope; cursor: pointer; transition: all .2s; }
+.tabs button[aria-current="page"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.hero { position: relative; overflow: hidden; background: linear-gradient(135deg, var(--s), var(--s2)); border: 1px solid var(--line); border-radius: 22px; padding: 20px; margin-bottom: 14px; }
+.hero small { color: var(--mut); font-weight: 700; letter-spacing: .06em; font-size: 12px; }
+.hero h1 { font-size: clamp(24px, 6vw, 36px); font-weight: 800; margin: 4px 0 12px; }
+
+.k { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
+.k div { background: var(--s); border: 1px solid var(--line); border-radius: 16px; padding: 10px 12px; }
+.k b { display: block; font: 800 22px Sora; color: var(--acc); }
+.k span { font-size: 11px; color: var(--mut); }
+
+.card { background: var(--s); border: 1px solid var(--line); border-radius: 18px; padding: 18px; margin-bottom: 14px; }
+.search-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+.search-bar input { flex: 1; background: var(--s2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; color: var(--ink); font: 500 14px Manrope; }
+
+.btn { background: var(--ink); color: var(--bg); border: none; padding: 10px 18px; border-radius: 99px; font: 700 13px Manrope; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn-sec { background: var(--s2); color: var(--ink); border: 1px solid var(--line); }
+
+.pitch { background: #164e2d; border: 2px solid rgba(255,255,255,0.2); border-radius: 16px; padding: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; position: relative; min-height: 280px; }
+.pitch-col { background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 8px; text-align: center; }
+.pitch-col h4 { font: 800 11px Sora; color: #a3e635; text-transform: uppercase; margin-bottom: 8px; }
+.player-tag { background: rgba(15, 23, 42, 0.85); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+.player-tag.bot { background: rgba(224, 67, 90, 0.35); border-color: var(--bad); color: #fecdd3; }
+
+.role-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 14px 0; }
+.role-item { background: var(--s2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; }
+.role-item label { display: block; font: 700 11px Sora; color: var(--acc); margin-bottom: 4px; }
+.role-item select { width: 100%; background: var(--s); border: 1px solid var(--line); color: var(--ink); border-radius: 6px; padding: 6px; font: 600 12px Manrope; }
+
+.chat-box { height: 260px; overflow-y: auto; background: var(--s2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+.msg { padding: 8px 12px; border-radius: 12px; max-width: 85%; font-size: 13px; line-height: 1.4; }
+.msg.user { background: var(--acc2); color: #fff; align-self: flex-end; }
+.msg.ai { background: var(--s); border: 1px solid var(--line); color: var(--ink); align-self: flex-start; }
+
+.radar-box { width: 100%; max-width: 320px; margin: auto; height: 220px; }
+.match-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.badge { padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 11px; }
+.badge.v { background: color-mix(in srgb, var(--good) 20%, transparent); color: var(--good); }
+.badge.p { background: color-mix(in srgb, var(--bad) 20%, transparent); color: var(--bad); }
+.badge.n { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="w">
+  <header>
+    <div>
+      <small>PRO CLUBS FC 27</small>
+      <h1 id="app-title">Sisal FC 2021</h1>
+    </div>
+    <button class="btn btn-sec" onclick="toggleTheme()" style="padding: 6px 12px; font-size: 12px;">🌓 Tema</button>
+  </header>
+
+  <nav class="tabs">
+    <button aria-current="page" onclick="switchTab('squadra', this)">Squadra</button>
+    <button onclick="switchTab('formazione', this)">Formazione</button>
+    <button onclick="switchTab('giocatori', this)">Giocatori</button>
+    <button onclick="switchTab('avversari', this)">Avversari</button>
+    <button onclick="switchTab('ia', this)">Assistente IA</button>
+  </nav>
+
+  <!-- SEZIONE SQUADRA -->
+  <div id="tab-squadra" class="tab-content active">
+    <div class="card">
+      <div class="search-bar">
+        <input type="text" id="club-search-input" placeholder="Cerca un altro club per nome...">
+        <button class="btn" onclick="searchClub()">Cerca</button>
+      </div>
+      <small style="color: var(--mut);" id="club-id-label">Club ID: 328794 (Sisal FC 2021)</small>
+    </div>
+
+    <div class="hero">
+      <small>PANORAMICA STAGIONE</small>
+      <h1 id="hero-club-name">Sisal FC 2021</h1>
+      <div class="k">
+        <div><b id="stat-wins">0</b><span>Vittorie</span></div>
+        <div><b id="stat-draws">0</b><span>Pareggi</span></div>
+        <div><b id="stat-losses">0</b><span>Sconfitte</span></div>
+        <div><b id="stat-goals">0</b><span>Gol Fatti</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Ultime Partite</h3>
+      <div id="recent-matches-list">
+        <div style="color: var(--mut); padding: 10px 0;">Caricamento ultime partite in corso...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEZIONE FORMAZIONE -->
+  <div id="tab-formazione" class="tab-content">
+    <div class="card">
+      <h2>Modulo & Assegnazione Ruoli</h2>
+      <p style="font-size: 12px; color: var(--mut); margin-bottom: 10px;">
+        La formazione viene salvata sul dispositivo. I Bot vengono assegnati esclusivamente in Difesa o Porta.
+      </p>
+
+      <div style="margin-bottom: 12px;">
+        <label style="font: 700 13px Sora;">Seleziona Modulo: </label>
+        <select id="formation-select" onchange="changeFormation()" style="background: var(--s2); border: 1px solid var(--line); color: var(--ink); padding: 6px 12px; border-radius: 8px; font-weight: 700;">
+          <option value="4-3-3">4-3-3</option>
+          <option value="4-4-2">4-4-2</option>
+          <option value="4-2-3-1">4-2-3-1</option>
+          <option value="4-4-1-1">4-4-1-1</option>
+          <option value="3-4-2-1">3-4-2-1</ me>
+          <option value="3-5-2">3-5-2</option>
+          <option value="5-3-2">5-3-2</option>
+        </select>
+      </div>
+
+      <div class="role-grid" id="roles-container"></div>
+
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="btn" onclick="saveFormation()">💾 Salva Formazione</button>
+        <button class="btn btn-sec" onclick="autoSuggest()">⚡ Suggerisci Formazione (No Bot Attacco)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Disposizione Tattica</h3>
+      <div class="pitch">
+        <div class="pitch-col">
+          <h4>Difesa & POR</h4>
+          <div id="pitch-def"></div>
+        </div>
+        <div class="pitch-col">
+          <h4>Centrocampo</h4>
+          <div id="pitch-mid"></div>
+        </div>
+        <div class="pitch-col">
+          <h4>Attacco</h4>
+          <div id="pitch-att"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEZIONE GIOCATORI -->
+  <div id="tab-giocatori" class="tab-content">
+    <div class="card">
+      <h2>Rosa Giocatori Reali</h2>
+      <div id="players-list" style="margin-top: 10px;">
+        <!-- Lista dinamica giocatori -->
+      </div>
+    </div>
+  </div>
+
+  <!-- SEZIONE AVVERSARI -->
+  <div id="tab-avversari" class="tab-content">
+    <div class="card">
+      <h2>Analisi Avversario</h2>
+      <div class="search-bar">
+        <input type="text" id="enemy-search-input" placeholder="Nome club avversario...">
+        <button class="btn" onclick="analyzeEnemy()">Analizza</button>
+      </div>
+      <div id="enemy-results" style="display: none; margin-top: 12px;">
+        <h3 id="enemy-name">Nome Avversario</h3>
+        <p style="font-size: 13px; color: var(--mut);" id="enemy-summary"></p>
+        <div class="pitch" style="margin-top: 10px;">
+          <div class="pitch-col">
+            <h4>Difesa Avversaria</h4>
+            <div id="enemy-def-status" style="font-weight: 700; font-size: 13px;">Media</div>
+          </div>
+          <div class="pitch-col">
+            <h4>Centrocampo</h4>
+            <div id="enemy-mid-status" style="font-weight: 700; font-size: 13px;">Forte</div>
+          </div>
+          <div class="pitch-col">
+            <h4>Attacco</h4>
+            <div id="enemy-att-status" style="font-weight: 700; font-size: 13px;">Debole</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEZIONE ASSISTENTE IA -->
+  <div id="tab-ia" class="tab-content">
+    <div class="card">
+      <h2>Assistente IA · Sisal FC 2021</h2>
+      <p style="font-size: 12px; color: var(--mut); margin-bottom: 10px;">
+        Chiedi consigli tattici tarati sul meta di FC 27 Pro Clubs e sulle tue impostazioni.
+      </p>
+
+      <div style="margin-bottom: 10px;">
+        <label style="font: 700 12px Sora; display: block; margin-bottom: 4px;">Come volete giocare? (Stile / Note):</label>
+        <input type="text" id="playstyle-input" placeholder="Es. Possesso palla, ripartenze rapide, pressing alto..." style="width: 100%; background: var(--s2); border: 1px solid var(--line); border-radius: 8px; padding: 8px; color: var(--ink); font-size: 13px;">
+      </div>
+
+      <div class="chat-box" id="chat-box">
+        <div class="msg ai">Ciao! Sono l'assistente tattico di Sisal FC 2021. Chiedimi consigli sul modulo, sulla difesa manuale o sui PlayStyle per FC 27!</div>
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <input type="text" id="chat-input" placeholder="Chiedi un consiglio..." style="flex: 1; background: var(--s2); border: 1px solid var(--line); border-radius: 99px; padding: 10px 16px; color: var(--ink); font-size: 13px;" onkeypress="if(event.key==='Enter') sendGeminiMessage()">
+        <button class="btn" onclick="sendGeminiMessage()">Invia</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Struttura dati moduli ufficiali
+  const formationsMap = {
+    "4-3-3": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Centrocampista 1", "Centrocampista 2", "Trequartista", "Ala destra", "Attaccante", "Ala sinistra"],
+    "4-4-2": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Attaccante 1", "Attaccante 2"],
+    "4-2-3-1": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Mediano 1", "Mediano 2", "Esterno destro", "Trequartista", "Esterno sinistro", "Attaccante"],
+    "4-4-1-1": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Terzino sinistro", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Trequartista", "Attaccante"],
+    "3-4-2-1": ["Portiere", "Difensore centrale 1", "Difensore centrale 2", "Difensore centrale 3", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Trequartista 1", "Trequartista 2", "Attaccante"],
+    "3-5-2": ["Portiere", "Difensore centrale 1", "Difensore centrale 2", "Difensore centrale 3", "Mediano", "Esterno destro", "Centrocampista 1", "Centrocampista 2", "Esterno sinistro", "Attaccante 1", "Attaccante 2"],
+    "5-3-2": ["Portiere", "Terzino destro", "Difensore centrale 1", "Difensore centrale 2", "Difensore centrale 3", "Terzino sinistro", "Centrocampista 1", "Centrocampista 2", "Centrocampista 3", "Attaccante 1", "Attaccante 2"]
+  };
+
+  let realPlayers = ["Marco", "Luca", "Matteo", "Andrea", "Stefano", "Alessandro", "Giuseppe"];
+  let savedLineup = {};
+  let currentClubId = "328794";
+  let cachedClubStats = {};
+
+  window.onload = () => {
+    loadSavedFormation();
+    loadClubData(currentClubId);
+    renderPlayersList();
+  };
+
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(el => el.removeAttribute('aria-current'));
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+    btn.setAttribute('aria-current', 'page');
+  }
+
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    if (current === 'light') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }
+
+  function changeFormation() {
+    const scheme = document.getElementById("formation-select").value;
+    const roles = formationsMap[scheme];
+    const container = document.getElementById("roles-container");
+    container.innerHTML = "";
+
+    roles.forEach(role => {
+      const savedVal = savedLineup[role] || "";
+      const div = document.createElement("div");
+      div.className = "role-item";
+
+      let options = `<option value="">-- Vuoto --</option>`;
+      realPlayers.forEach(p => {
+        options += `<option value="${p}" ${savedVal === p ? 'selected' : ''}>${p}</option>`;
+      });
+      options += `<option value="IA (bot)" ${savedVal === 'IA (bot)' ? 'selected' : ''}>🤖 IA (bot)</option>`;
+
+      div.innerHTML = `
+        <label>${role}</label>
+        <select id="role-${role}" onchange="renderPitch()">
+          ${options}
+        </select>
+      `;
+      container.appendChild(div);
+    });
+
+    renderPitch();
+  }
+
+  function renderPitch() {
+    const scheme = document.getElementById("formation-select").value;
+    const roles = formationsMap[scheme];
+
+    const pDef = document.getElementById("pitch-def");
+    const pMid = document.getElementById("pitch-mid");
+    const pAtt = document.getElementById("pitch-att");
+
+    pDef.innerHTML = ""; pMid.innerHTML = ""; pAtt.innerHTML = "";
+
+    roles.forEach(role => {
+      const select = document.getElementById(`role-${role}`);
+      const val = select ? select.value : (savedLineup[role] || "");
+      if (!val) return;
+
+      const tag = document.createElement("div");
+      tag.className = `player-tag ${val === 'IA (bot)' ? 'bot' : ''}`;
+      tag.innerText = `${role}: ${val}`;
+
+      const rLower = role.toLowerCase();
+      if (rLower.includes("portiere") || rLower.includes("difensore") || rLower.includes("terzino")) {
+        pDef.appendChild(tag);
+      } else if (rLower.includes("centrocampista") || rLower.includes("mediano") || rLower.includes("esterno") || rLower.includes("trequartista")) {
+        pMid.appendChild(tag);
+      } else {
+        pAtt.appendChild(tag);
+      }
+    });
+  }
+
+  function saveFormation() {
+    const scheme = document.getElementById("formation-select").value;
+    const roles = formationsMap[scheme];
+    const lineup = {};
+
+    roles.forEach(role => {
+      const select = document.getElementById(`role-${role}`);
+      if (select) lineup[role] = select.value;
+    });
+
+    localStorage.setItem("sisal_fc_formation_data", JSON.stringify({ scheme, lineup }));
+    alert("Formazione di Sisal FC 2021 salvata sul dispositivo!");
+  }
+
+  function loadSavedFormation() {
+    const raw = localStorage.getItem("sisal_fc_formation_data");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      document.getElementById("formation-select").value = parsed.scheme || "4-3-3";
+      savedLineup = parsed.lineup || {};
+    }
+    changeFormation();
+  }
+
+  // ALGORITMO ANTI-BOT IN ATTACCO
+  function autoSuggest() {
+    const scheme = document.getElementById("formation-select").value;
+    const roles = formationsMap[scheme];
+    let pool = [...realPlayers];
+
+    const attRoles = roles.filter(r => r.toLowerCase().includes("attaccante") || r.toLowerCase().includes("ala"));
+    const midRoles = roles.filter(r => r.toLowerCase().includes("centrocampista") || r.toLowerCase().includes("trequartista") || r.toLowerCase().includes("esterno") || r.toLowerCase().includes("mediano"));
+    const defRoles = roles.filter(r => r.toLowerCase().includes("portiere") || r.toLowerCase().includes("difensore") || r.toLowerCase().includes("terzino"));
+
+    const assignment = {};
+
+    // 1. Assegna SENZA BOT i ruoli offensivi
+    attRoles.forEach(role => {
+      if (pool.length > 0) assignment[role] = pool.shift();
+      else assignment[role] = ""; // Nessun Bot in attacco
+    });
+
+    // 2. Assegna i giocatori reali a centrocampo
+    midRoles.forEach(role => {
+      if (pool.length > 0) assignment[role] = pool.shift();
+      else assignment[role] = "IA (bot)";
+    });
+
+    // 3. I Bot vanno in difesa o porta
+    defRoles.forEach(role => {
+      if (pool.length > 0) assignment[role] = pool.shift();
+      else assignment[role] = "IA (bot)";
+    });
+
+    roles.forEach(role => {
+      const select = document.getElementById(`role-${role}`);
+      if (select) select.value = assignment[role] || "";
+    });
+
+    renderPitch();
+  }
+
+  async function loadClubData(clubId) {
+    try {
+      const res = await fetch(`/api/ea?path=allTimeLeaderboard/search&clubName=Sisal%20FC%202021`);
+      if (!res.ok) throw new Error("Errore API");
+      const data = await res.json();
+      
+      if (data && data.length > 0) {
+        const club = data[0];
+        cachedClubStats = club;
+        document.getElementById("stat-wins").innerText = club.wins || "0";
+        document.getElementById("stat-draws").innerText = club.ties || "0";
+        document.getElementById("stat-losses").innerText = club.losses || "0";
+        document.getElementById("stat-goals").innerText = club.goals || "0";
+      }
+    } catch (e) {
+      console.log("Modalità fallback locale attiva.");
+    }
+  }
+
+  function renderPlayersList() {
+    const container = document.getElementById("players-list");
+    container.innerHTML = "";
+    realPlayers.forEach(p => {
+      container.innerHTML += `
+        <div style="padding: 10px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <strong>${p}</strong>
+            <div style="font-size: 11px; color: var(--mut);">Ruolo consigliato: Centrocampista / Attaccante</div>
+          </div>
+          <span class="badge v">Voto Medio: 7.8</span>
+        </div>
+      `;
+    });
+  }
+
+  async function sendGeminiMessage() {
+    const input = document.getElementById("chat-input");
+    const playstyle = document.getElementById("playstyle-input").value;
+    const box = document.getElementById("chat-box");
+    const txt = input.value.trim();
+
+    if (!txt) return;
+
+    box.innerHTML += `<div class="msg user">${txt}</div>`;
+    input.value = "";
+    box.scrollTop = box.scrollHeight;
+
+    const loading = document.createElement("div");
+    loading.className = "msg ai";
+    loading.innerText = "Elaborazione consiglio tattico...";
+    box.appendChild(loading);
+    box.scrollTop = box.scrollHeight;
+
+    try {
+      const res = await fetch("/api/assistente", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messaggio: txt,
+          clubData: cachedClubStats,
+          formazioneData: savedLineup,
+          comeGiochiamo: playstyle
+        })
+      });
+
+      const data = await res.json();
+      loading.innerText = data.risposta || "Nessuna risposta disponibile.";
+    } catch (err) {
+      loading.innerText = "Errore durante la connessione all'assistente IA.";
+    }
+
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function searchClub() {
+    const val = document.getElementById("club-search-input").value;
+    if (val) {
+      document.getElementById("hero-club-name").innerText = val;
+      document.getElementById("app-title").innerText = val;
+    }
+  }
+
+  function analyzeEnemy() {
+    const name = document.getElementById("enemy-search-input").value;
+    if (!name) return;
+    document.getElementById("enemy-results").style.display = "block";
+    document.getElementById("enemy-name").innerText = name;
+    document.getElementById("enemy-summary").innerText = `Analisi basata sulle ultime sfide del club ${name}.`;
+  }
+</script>
+
+</body>
+</html>
