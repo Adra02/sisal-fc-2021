@@ -14,6 +14,7 @@
       --text-muted: #94a3b8;
       --border: #334155;
       --success: #22c55e;
+      --danger: #ef4444;
     }
 
     * {
@@ -141,9 +142,8 @@
       color: white;
     }
 
-    .status-badge.ok {
-      background-color: var(--success);
-    }
+    .status-badge.ok { background-color: var(--success); }
+    .status-badge.err { background-color: var(--danger); }
 
     table {
       width: 100%;
@@ -158,9 +158,7 @@
       border-bottom: 1px solid var(--border);
     }
 
-    th {
-      color: var(--accent);
-    }
+    th { color: var(--accent); }
 
     .top-rank-item {
       display: flex;
@@ -230,57 +228,57 @@
     <!-- 1. SQUADRA -->
     <section id="tab-squadra" class="tab-content active">
       <div class="card">
-        <h2>Importazione e Stato Dati</h2>
-        <div id="data-status" class="status-badge">Dati non caricati</div>
+        <h2>Importazione Dati Reali EA</h2>
+        <div id="data-status" class="status-badge">Nessun dato incollato</div>
         
         <a href="https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=328794" target="_blank" class="btn-link">
           📋 1. Apri & Copia: Statistiche Membri
         </a>
-        <label for="json-members">Incolla JSON Membri:</label>
-        <textarea id="json-members" placeholder="Incolla qui il JSON delle statistiche membri..."></textarea>
+        <label for="json-members">Incolla qui tutto il testo del 1° link:</label>
+        <textarea id="json-members" placeholder="Incolla il JSON dei membri..."></textarea>
 
         <a href="https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794" target="_blank" class="btn-link">
           ⚽ 2. Apri & Copia: Storico Partite
         </a>
-        <label for="json-matches">Incolla JSON Partite:</label>
-        <textarea id="json-matches" placeholder="Incolla qui il JSON dello storico partite..."></textarea>
+        <label for="json-matches">Incolla qui tutto il testo del 2° link:</label>
+        <textarea id="json-matches" placeholder="Incolla il JSON delle partite..."></textarea>
 
-        <button class="btn-action" onclick="elaboraESalvaDati()">🔄 Aggiorna ed Elabora Dati</button>
+        <button class="btn-action" onclick="elaboraESalvaDati()">🔄 Aggiorna Dati Reali</button>
       </div>
 
       <div class="card">
-        <h2>Riepilogo Squadra</h2>
-        <div id="squadra-summary">Nessun dato caricato. Incolla i JSON sopra e premi "Aggiorna".</div>
+        <h2>Stato Sincronizzazione</h2>
+        <div id="squadra-summary">Incolla i due testi presi dai link EA per caricare la rosa effettiva di Sisal FC 2021.</div>
       </div>
     </section>
 
     <!-- 2. GIOCATORI -->
     <section id="tab-giocatori" class="tab-content">
       <div class="card">
-        <h2>Rosa Giocatori</h2>
-        <div id="giocatori-container">Incolla il JSON Membri nella scheda Squadra per visualizzare la rosa.</div>
+        <h2>Rosa Giocatori Effettiva</h2>
+        <div id="giocatori-container">Incolla i dati nel tab Squadra per visualizzare la rosa reale.</div>
       </div>
     </section>
 
     <!-- 3. TOP 3 -->
     <section id="tab-top3" class="tab-content">
       <div class="card">
-        <h2>Leaderboard della Squadra</h2>
-        <div id="top3-container">I dati delle classifiche appariranno dopo l'aggiornamento.</div>
+        <h2>Classifiche della Squadra</h2>
+        <div id="top3-container">I leader in gol e assist compariranno qui dopo l'aggiornamento.</div>
       </div>
     </section>
 
     <!-- 4. CAMPO -->
     <section id="tab-campo" class="tab-content">
       <div class="card">
-        <h2>Schieramento 3-4-2-1</h2>
-        <p>Assetto Tattico Predefinito: Sisal FC 2021</p>
+        <h2>Modulo Tattico 3-4-2-1</h2>
+        <p>Assetto ufficiale Sisal FC 2021:</p>
         <ul style="margin-left: 20px; margin-top: 10px; font-size: 0.9rem;">
-          <li><strong>POR:</strong> Rinvii lunghi / Copertura area</li>
-          <li><strong>DC (3):</strong> Difesa contenitiva L2/LT, no uscite a vuoto</li>
+          <li><strong>POR:</strong> Rinvio lungo / Copertura area</li>
+          <li><strong>DC (3):</strong> Difesa contenitiva L2/LT, no uscite aggressive</li>
           <li><strong>ED/ES:</strong> Copertura di fascia e ripiegamento</li>
-          <li><strong>CC (2):</strong> Intercettamento e impostazione centrale</li>
-          <li><strong>COC (2):</strong> Rifinitura e inserimenti a supporto</li>
+          <li><strong>CC (2):</strong> Intercettamento e impostazione</li>
+          <li><strong>COC (2):</strong> Rifinitura e inserimenti</li>
           <li><strong>ATT:</strong> Attacco della profondità</li>
         </ul>
       </div>
@@ -289,8 +287,8 @@
     <!-- 5. OPPOSIZIONI -->
     <section id="tab-opposizioni" class="tab-content">
       <div class="card">
-        <h2>Ultimi Match Giocati</h2>
-        <div id="matches-container">Incolla il JSON Partite nella scheda Squadra per vedere lo storico.</div>
+        <h2>Storico Ultimi Match</h2>
+        <div id="matches-container">Incolla i dati nel tab Squadra per vedere lo storico delle partite.</div>
       </div>
     </section>
 
@@ -298,11 +296,11 @@
     <section id="tab-ia" class="tab-content">
       <div class="card">
         <h2>Assistente Tattico IA</h2>
-        <label for="dati-squadra">Note/Istruzioni extra per la partita:</label>
-        <textarea id="dati-squadra" placeholder="Es. Cerchiamo di sfruttare i contropiedi..."></textarea>
+        <label for="dati-squadra">Note tattiche extra:</label>
+        <textarea id="dati-squadra" placeholder="Es. indicazioni sul pressing o sui ruoli..."></textarea>
 
-        <label for="ia-prompt">Domanda per l'Assistente:</label>
-        <textarea id="ia-prompt" placeholder="Chiedi un consiglio o un'analisi della squadra..."></textarea>
+        <label for="ia-prompt">Domanda per l'IA:</label>
+        <textarea id="ia-prompt" placeholder="Fai una domanda sulle statistiche della squadra..."></textarea>
 
         <button class="btn-action" onclick="chiediAssistente()">Invia all'Assistente IA</button>
         <div id="ia-response">In attesa di una richiesta...</div>
@@ -321,7 +319,6 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Gestione Tab
       const navButtons = document.querySelectorAll('.bottom-nav .nav-btn');
       const tabContents = document.querySelectorAll('.tab-content');
 
@@ -339,7 +336,6 @@
         });
       });
 
-      // Ripristina salvataggio e aggiorna vista
       if (localStorage.getItem('ea_members')) {
         document.getElementById('json-members').value = localStorage.getItem('ea_members');
       }
@@ -356,9 +352,11 @@
       localStorage.setItem('ea_members', membersText);
       localStorage.setItem('ea_matches', matchesText);
 
-      const success = renderAllData();
-      if (success) {
-        alert('Dati EA elaborati con successo! Tutte le schede sono aggiornate.');
+      const ok = renderAllData();
+      if (ok) {
+        alert('Dati reali sincronizzati con successo!');
+      } else {
+        alert('Errore nel formato del testo incollato. Assicurati di aver copiato tutto il testo dai link EA.');
       }
     }
 
@@ -375,36 +373,46 @@
       const statusBadge = document.getElementById('data-status');
 
       if (!membersData && !matchesData) {
-        statusBadge.className = "status-badge";
-        statusBadge.innerText = "Dati non caricati o non validi";
+        statusBadge.className = "status-badge err";
+        statusBadge.innerText = "Dati assenti o non validi";
         return false;
       }
 
       statusBadge.className = "status-badge ok";
-      statusBadge.innerText = "Dati caricati e sincronizzati";
+      statusBadge.innerText = "Dati reali caricati";
 
-      // 1. Render Tab Giocatori & Top 3
+      // --- PARSING MEMBRI EA SPORTS ---
       if (membersData) {
-        const membersList = Array.isArray(membersData) ? membersData : (membersData.members || Object.values(membersData.members || {}));
-        
-        if (membersList && membersList.length > 0) {
-          // Tab Giocatori Table
+        let membersList = [];
+
+        if (Array.isArray(membersData)) {
+          membersList = membersData;
+        } else if (membersData.members && Array.isArray(membersData.members)) {
+          membersList = membersData.members;
+        } else if (membersData.members && typeof membersData.members === 'object') {
+          membersList = Object.values(membersData.members);
+        } else if (typeof membersData === 'object') {
+          membersList = Object.values(membersData);
+        }
+
+        if (membersList.length > 0) {
           let htmlG = `<table><thead><tr><th>Giocatore</th><th>Pres.</th><th>Gol</th><th>Assist</th><th>Voto</th></tr></thead><tbody>`;
-          
+
           membersList.forEach(m => {
-            const name = m.name || m.proName || 'Giocatore';
-            const games = m.gamesPlayed || m.games || 0;
+            const name = m.name || m.proName || m.namePro || 'Sconosciuto';
+            const games = m.gamesPlayed || m.gamesplayed || m.games || 0;
             const goals = m.goals || 0;
             const assists = m.assists || 0;
-            const rating = m.ratingAve || m.rating || 'N/D';
+            const rating = m.ratingAve || m.rating || m.voto || 'N/D';
+
             htmlG += `<tr><td><strong>${name}</strong></td><td>${games}</td><td>${goals}</td><td>${assists}</td><td>${rating}</td></tr>`;
           });
           htmlG += `</tbody></table>`;
           document.getElementById('giocatori-container').innerHTML = htmlG;
 
-          // Tab Top 3
-          const topGoals = [...membersList].sort((a,b) => (b.goals||0) - (a.goals||0)).slice(0, 3);
-          const topAssists = [...membersList].sort((a,b) => (b.assists||0) - (a.assists||0)).slice(0, 3);
+          // Top 3 Marcatori & Assistman
+          const topGoals = [...membersList].sort((a,b) => (parseInt(b.goals||0) - parseInt(a.goals||0))).slice(0, 3);
+          const topAssists = [...membersList].sort((a,b) => (parseInt(b.assists||0) - parseInt(a.assists||0))).slice(0, 3);
 
           let htmlTop = `<h3 style="color:var(--accent); margin-bottom:8px;">⚽ Top Marcatori</h3>`;
           topGoals.forEach((m, i) => {
@@ -420,26 +428,28 @@
         }
       }
 
-      // 2. Render Tab Opposizioni (Storico Partite)
+      // --- PARSING MATCH EA SPORTS ---
       if (matchesData) {
-        const matchesList = Array.isArray(matchesData) ? matchesData : (matchesData.matches || []);
-        
-        if (matchesList && matchesList.length > 0) {
-          let htmlM = `<table><thead><tr><th>Risultato</th><th>Squadra Casa</th><th>Squadra Fuori</th></tr></thead><tbody>`;
-          
+        let matchesList = Array.isArray(matchesData) ? matchesData : (matchesData.matches || []);
+
+        if (matchesList.length > 0) {
+          let htmlM = `<table><thead><tr><th>Risultato</th><th>Casa</th><th>Ospiti</th></tr></thead><tbody>`;
+
           matchesList.slice(0, 10).forEach(match => {
             const clubs = match.clubs || {};
-            const keys = Object.keys(clubs);
-            if (keys.length >= 2) {
-              const c1 = clubs[keys[0]];
-              const c2 = clubs[keys[1]];
-              htmlM += `<tr><td><strong>${c1.goals} - ${c2.goals}</strong></td><td>${c1.details?.name || 'Casa'}</td><td>${c2.details?.name || 'Ospiti'}</td></tr>`;
+            const clubIds = Object.keys(clubs);
+            if (clubIds.length >= 2) {
+              const c1 = clubs[clubIds[0]];
+              const c2 = clubs[clubIds[1]];
+              const name1 = c1.details?.name || 'Squadra 1';
+              const name2 = c2.details?.name || 'Squadra 2';
+              htmlM += `<tr><td><strong>${c1.goals} - ${c2.goals}</strong></td><td>${name1}</td><td>${name2}</td></tr>`;
             }
           });
           htmlM += `</tbody></table>`;
           document.getElementById('matches-container').innerHTML = htmlM;
 
-          document.getElementById('squadra-summary').innerHTML = `<p>Partite recenti registrate: <strong>${matchesList.length}</strong></p><p>Sincronizzazione completata.</p>`;
+          document.getElementById('squadra-summary').innerHTML = `<p>Sincronizzazione riuscita!</p><p>Totale match analizzati: <strong>${matchesList.length}</strong></p>`;
         }
       }
 
@@ -458,7 +468,7 @@
         return;
       }
 
-      responseDiv.innerText = "L'assistente sta analizzando i dati salvati e preparando la risposta...";
+      responseDiv.innerText = "L'assistente sta analizzando i dati salvati...";
 
       try {
         const res = await fetch('/api/assistente', {
