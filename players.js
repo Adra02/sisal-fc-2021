@@ -1,0 +1,13 @@
+window.PLAYERS=[
+{name:'joshuaviola2001',gp:24,g:10,a:5,r:7.1,ovr:79},
+{name:'Ilpisaaa_',gp:18,g:18,a:10,r:7.4,ovr:82},
+{name:'MKS_geruzzok',gp:13,g:1,a:0,r:7.1,ovr:73},
+{name:'AdraTheTrue02',gp:94,g:97,a:33,r:7.5,ovr:83},
+{name:'MarcoBullyy',gp:19,g:1,a:2,r:8.0,ovr:75},
+{name:'Cr4zy-Selminx',gp:8,g:2,a:2,r:8.4,ovr:77},
+{name:'LUCAASIELEH',gp:6,g:1,a:0,r:6.6,ovr:77},
+{name:'VinceCMV99',gp:4,g:0,a:1,r:6.9,ovr:77},
+{name:'pinuzzuupazzu',gp:76,g:45,a:61,r:7.4,ovr:80},
+{name:'ALEbbasta',gp:0,g:0,a:0,r:0,ovr:0},
+{name:'idanesi03',gp:0,g:0,a:0,r:0,ovr:0}
+];
