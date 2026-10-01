@@ -1,499 +1,1001 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sisal FC 2021 - Tactical Hub</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="Sisal FC 2021 - Dashboard EA Sports FC Pro Clubs" />
+  <title>Sisal FC 2021 | Pro Clubs Hub</title>
+
   <style>
     :root {
-      --bg-color: #0f172a;
-      --card-bg: #1e293b;
-      --accent: #3b82f6;
-      --accent-hover: #2563eb;
+      --bg: #0f172a;
+      --bg-soft: #111c31;
+      --card: #1e293b;
+      --card-2: #243247;
+      --border: rgba(148, 163, 184, 0.14);
       --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --border: #334155;
-      --success: #22c55e;
-      --danger: #ef4444;
+      --muted: #94a3b8;
+      --blue: #3b82f6;
+      --blue-2: #2563eb;
+      --cyan: #22d3ee;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #facc15;
+      --shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+      --radius: 18px;
+      --nav-height: 78px;
     }
 
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
       -webkit-tap-highlight-color: transparent;
     }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text);
-      padding-bottom: 90px;
+    html {
+      scroll-behavior: smooth;
+      background: var(--bg);
     }
 
-    header {
-      background-color: var(--card-bg);
-      padding: 15px;
-      text-align: center;
-      border-bottom: 1px solid var(--border);
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(59, 130, 246, 0.18), transparent 28%),
+        linear-gradient(180deg, #0f172a 0%, #0b1324 100%);
+      color: var(--text);
+      font-family:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button,
+    a,
+    select,
+    textarea {
+      touch-action: manipulation;
+    }
+
+    button {
+      border: 0;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding-bottom: calc(var(--nav-height) + 20px + env(safe-area-inset-bottom));
+    }
+
+    .topbar {
       position: sticky;
       top: 0;
-      z-index: 100;
+      z-index: 30;
+      padding: 14px 16px 12px;
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
     }
 
-    header h1 {
-      font-size: 1.2rem;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    .topbar-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 0;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      flex: 0 0 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #3b82f6, #1d4ed8);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.32);
+      font-size: 22px;
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-subtitle {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .sync-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border-radius: 999px;
+      padding: 8px 11px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+      background: rgba(30, 41, 59, 0.82);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .sync-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.08);
+    }
+
+    .sync-pill.success .sync-dot {
+      background: var(--green);
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1);
+    }
+
+    .sync-pill.error .sync-dot {
+      background: var(--red);
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
     }
 
     main {
-      padding: 15px;
-      max-width: 800px;
+      width: 100%;
+      max-width: 1180px;
       margin: 0 auto;
+      padding: 16px;
     }
 
-    .tab-content {
+    .screen {
       display: none;
+      animation: screenIn 0.22s ease;
     }
 
-    .tab-content.active {
+    .screen.active {
       display: block;
+    }
+
+    @keyframes screenIn {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero {
+      padding: 18px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.13), transparent 34%),
+        linear-gradient(145deg, rgba(30, 41, 59, 0.98), rgba(24, 37, 58, 0.96));
+      box-shadow: var(--shadow);
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 26px;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+    }
+
+    .hero p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .club-badge {
+      width: 54px;
+      height: 54px;
+      flex: 0 0 54px;
+      border-radius: 17px;
+      display: grid;
+      place-items: center;
+      background: rgba(59, 130, 246, 0.13);
+      border: 1px solid rgba(59, 130, 246, 0.24);
+      font-size: 26px;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .meta-chip {
+      padding: 7px 10px;
+      background: rgba(15, 23, 42, 0.52);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: #cbd5e1;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .section-title {
+      margin: 20px 0 10px;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .section-subtitle {
+      margin: -2px 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
     }
 
     .card {
-      background-color: var(--card-bg);
-      border-radius: 12px;
+      background: linear-gradient(145deg, rgba(30, 41, 59, 0.98), rgba(27, 39, 57, 0.98));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+    }
+
+    .card-pad {
       padding: 15px;
-      margin-bottom: 15px;
-      border: 1px solid var(--border);
     }
 
-    .card h2 {
-      font-size: 1.1rem;
-      margin-bottom: 10px;
-      color: var(--accent);
+    .api-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
     }
 
-    label {
-      display: block;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-bottom: 5px;
-      font-weight: 600;
+    .api-card {
+      padding: 14px;
     }
 
-    textarea {
+    .api-card h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .api-card p {
+      margin: 5px 0 12px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .api-link {
       width: 100%;
-      height: 80px;
-      background-color: var(--bg-color);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 8px;
-      padding: 10px;
-      margin-bottom: 12px;
-      resize: vertical;
-      font-family: monospace;
-      font-size: 0.8rem;
-    }
-
-    textarea#ia-prompt {
-      height: 70px;
-      font-family: inherit;
-      font-size: 0.9rem;
-    }
-
-    .btn-link {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      background-color: #334155;
-      color: #38bdf8;
-      text-align: center;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 0.9rem;
-      margin-bottom: 10px;
-      border: 1px solid var(--border);
-    }
-
-    button.btn-action {
-      width: 100%;
-      padding: 12px;
-      background-color: var(--accent);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 0.95rem;
-    }
-
-    .status-badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      font-weight: bold;
-      margin-bottom: 10px;
-      background-color: #475569;
-      color: white;
-    }
-
-    .status-badge.ok { background-color: var(--success); }
-    .status-badge.err { background-color: var(--danger); }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 0.85rem;
-    }
-
-    th, td {
-      padding: 8px 6px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-    }
-
-    th { color: var(--accent); }
-
-    .top-rank-item {
       display: flex;
+      align-items: center;
       justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
+      gap: 10px;
+      padding: 12px 13px;
+      border-radius: 13px;
+      color: #fff;
+      background: linear-gradient(145deg, #2563eb, #1d4ed8);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      transition: transform 0.15s ease, filter 0.15s ease;
     }
 
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+    .api-link:active {
+      transform: scale(0.985);
+    }
+
+    .api-link:hover {
+      filter: brightness(1.06);
+    }
+
+    .url-copy {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: block;
+      min-width: 0;
+      opacity: 0.88;
+      font-weight: 500;
+    }
+
+    textarea,
+    select {
       width: 100%;
-      height: 65px;
-      background-color: var(--card-bg);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      border-top: 1px solid var(--border);
-      z-index: 99999 !important;
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      background: #0d1729;
+      color: var(--text);
+      border-radius: 13px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
-    .nav-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      cursor: pointer;
-      flex: 1;
-      height: 100%;
+    textarea:focus,
+    select:focus {
+      border-color: rgba(59, 130, 246, 0.78);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
     }
 
-    .nav-btn .icon {
-      font-size: 1.2rem;
-      margin-bottom: 2px;
-    }
-
-    .nav-btn.active {
-      color: var(--accent);
-      font-weight: bold;
-    }
-
-    #ia-response {
-      margin-top: 15px;
+    .json-input {
+      min-height: 190px;
+      resize: vertical;
       padding: 12px;
-      background: var(--bg-color);
-      border-radius: 8px;
-      font-size: 0.9rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
+      font-size: 11px;
+      line-height: 1.55;
+      font-family:
+        ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+        monospace;
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .danger-btn,
+    .quick-btn {
+      min-height: 46px;
+      border-radius: 13px;
+      padding: 12px 14px;
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform 0.15s ease, filter 0.15s ease, opacity 0.15s ease;
+    }
+
+    .primary-btn {
+      background: linear-gradient(145deg, var(--blue), var(--blue-2));
+      color: white;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.24);
+    }
+
+    .secondary-btn {
+      background: #243247;
+      color: #e2e8f0;
       border: 1px solid var(--border);
     }
-  </style>
-</head>
-<body>
 
-  <header>
-    <h1>Sisal FC 2021</h1>
-  </header>
-
-  <main>
-    <!-- 1. SQUADRA -->
-    <section id="tab-squadra" class="tab-content active">
-      <div class="card">
-        <h2>Importazione Dati Reali EA</h2>
-        <div id="data-status" class="status-badge">Nessun dato incollato</div>
-        
-        <a href="https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=328794" target="_blank" class="btn-link">
-          📋 1. Apri & Copia: Statistiche Membri
-        </a>
-        <label for="json-members">Incolla qui tutto il testo del 1° link:</label>
-        <textarea id="json-members" placeholder="Incolla il JSON dei membri..."></textarea>
-
-        <a href="https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794" target="_blank" class="btn-link">
-          ⚽ 2. Apri & Copia: Storico Partite
-        </a>
-        <label for="json-matches">Incolla qui tutto il testo del 2° link:</label>
-        <textarea id="json-matches" placeholder="Incolla il JSON delle partite..."></textarea>
-
-        <button class="btn-action" onclick="elaboraESalvaDati()">🔄 Aggiorna Dati Reali</button>
-      </div>
-
-      <div class="card">
-        <h2>Stato Sincronizzazione</h2>
-        <div id="squadra-summary">Incolla i due testi presi dai link EA per caricare la rosa effettiva di Sisal FC 2021.</div>
-      </div>
-    </section>
-
-    <!-- 2. GIOCATORI -->
-    <section id="tab-giocatori" class="tab-content">
-      <div class="card">
-        <h2>Rosa Giocatori Effettiva</h2>
-        <div id="giocatori-container">Incolla i dati nel tab Squadra per visualizzare la rosa reale.</div>
-      </div>
-    </section>
-
-    <!-- 3. TOP 3 -->
-    <section id="tab-top3" class="tab-content">
-      <div class="card">
-        <h2>Classifiche della Squadra</h2>
-        <div id="top3-container">I leader in gol e assist compariranno qui dopo l'aggiornamento.</div>
-      </div>
-    </section>
-
-    <!-- 4. CAMPO -->
-    <section id="tab-campo" class="tab-content">
-      <div class="card">
-        <h2>Modulo Tattico 3-4-2-1</h2>
-        <p>Assetto ufficiale Sisal FC 2021:</p>
-        <ul style="margin-left: 20px; margin-top: 10px; font-size: 0.9rem;">
-          <li><strong>POR:</strong> Rinvio lungo / Copertura area</li>
-          <li><strong>DC (3):</strong> Difesa contenitiva L2/LT, no uscite aggressive</li>
-          <li><strong>ED/ES:</strong> Copertura di fascia e ripiegamento</li>
-          <li><strong>CC (2):</strong> Intercettamento e impostazione</li>
-          <li><strong>COC (2):</strong> Rifinitura e inserimenti</li>
-          <li><strong>ATT:</strong> Attacco della profondità</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- 5. OPPOSIZIONI -->
-    <section id="tab-opposizioni" class="tab-content">
-      <div class="card">
-        <h2>Storico Ultimi Match</h2>
-        <div id="matches-container">Incolla i dati nel tab Squadra per vedere lo storico delle partite.</div>
-      </div>
-    </section>
-
-    <!-- 6. IA -->
-    <section id="tab-ia" class="tab-content">
-      <div class="card">
-        <h2>Assistente Tattico IA</h2>
-        <label for="dati-squadra">Note tattiche extra:</label>
-        <textarea id="dati-squadra" placeholder="Es. indicazioni sul pressing o sui ruoli..."></textarea>
-
-        <label for="ia-prompt">Domanda per l'IA:</label>
-        <textarea id="ia-prompt" placeholder="Fai una domanda sulle statistiche della squadra..."></textarea>
-
-        <button class="btn-action" onclick="chiediAssistente()">Invia all'Assistente IA</button>
-        <div id="ia-response">In attesa di una richiesta...</div>
-      </div>
-    </section>
-  </main>
-
-  <nav class="bottom-nav">
-    <button class="nav-btn active" data-tab="tab-squadra"><span class="icon">🛡️</span><span>Squadra</span></button>
-    <button class="nav-btn" data-tab="tab-giocatori"><span class="icon">👥</span><span>Giocatori</span></button>
-    <button class="nav-btn" data-tab="tab-top3"><span class="icon">🏆</span><span>Top 3</span></button>
-    <button class="nav-btn" data-tab="tab-campo"><span class="icon">⚽</span><span>Campo</span></button>
-    <button class="nav-btn" data-tab="tab-opposizioni"><span class="icon">📊</span><span>Opposizioni</span></button>
-    <button class="nav-btn" data-tab="tab-ia"><span class="icon">🤖</span><span>IA</span></button>
-  </nav>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const navButtons = document.querySelectorAll('.bottom-nav .nav-btn');
-      const tabContents = document.querySelectorAll('.tab-content');
-
-      navButtons.forEach(btn => {
-        ['click', 'touchstart'].forEach(eventType => {
-          btn.addEventListener(eventType, (e) => {
-            if (eventType === 'touchstart') e.preventDefault();
-            const targetTabId = btn.getAttribute('data-tab');
-            navButtons.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(tc => tc.classList.remove('active'));
-            btn.classList.add('active');
-            const activeSection = document.getElementById(targetTabId);
-            if (activeSection) activeSection.classList.add('active');
-          });
-        });
-      });
-
-      if (localStorage.getItem('ea_members')) {
-        document.getElementById('json-members').value = localStorage.getItem('ea_members');
-      }
-      if (localStorage.getItem('ea_matches')) {
-        document.getElementById('json-matches').value = localStorage.getItem('ea_matches');
-      }
-      renderAllData();
-    });
-
-    function elaboraESalvaDati() {
-      const membersText = document.getElementById('json-members').value.trim();
-      const matchesText = document.getElementById('json-matches').value.trim();
-
-      localStorage.setItem('ea_members', membersText);
-      localStorage.setItem('ea_matches', matchesText);
-
-      const ok = renderAllData();
-      if (ok) {
-        alert('Dati reali sincronizzati con successo!');
-      } else {
-        alert('Errore nel formato del testo incollato. Assicurati di aver copiato tutto il testo dai link EA.');
-      }
+    .danger-btn {
+      background: rgba(239, 68, 68, 0.12);
+      color: #fecaca;
+      border: 1px solid rgba(239, 68, 68, 0.2);
     }
 
-    function renderAllData() {
-      const rawMembers = localStorage.getItem('ea_members');
-      const rawMatches = localStorage.getItem('ea_matches');
-
-      let membersData = null;
-      let matchesData = null;
-
-      try { if (rawMembers) membersData = JSON.parse(rawMembers); } catch(e){}
-      try { if (rawMatches) matchesData = JSON.parse(rawMatches); } catch(e){}
-
-      const statusBadge = document.getElementById('data-status');
-
-      if (!membersData && !matchesData) {
-        statusBadge.className = "status-badge err";
-        statusBadge.innerText = "Dati assenti o non validi";
-        return false;
-      }
-
-      statusBadge.className = "status-badge ok";
-      statusBadge.innerText = "Dati reali caricati";
-
-      // --- PARSING MEMBRI EA SPORTS ---
-      if (membersData) {
-        let membersList = [];
-
-        if (Array.isArray(membersData)) {
-          membersList = membersData;
-        } else if (membersData.members && Array.isArray(membersData.members)) {
-          membersList = membersData.members;
-        } else if (membersData.members && typeof membersData.members === 'object') {
-          membersList = Object.values(membersData.members);
-        } else if (typeof membersData === 'object') {
-          membersList = Object.values(membersData);
-        }
-
-        if (membersList.length > 0) {
-          let htmlG = `<table><thead><tr><th>Giocatore</th><th>Pres.</th><th>Gol</th><th>Assist</th><th>Voto</th></tr></thead><tbody>`;
-
-          membersList.forEach(m => {
-            const name = m.name || m.proName || m.namePro || 'Sconosciuto';
-            const games = m.gamesPlayed || m.gamesplayed || m.games || 0;
-            const goals = m.goals || 0;
-            const assists = m.assists || 0;
-            const rating = m.ratingAve || m.rating || m.voto || 'N/D';
-
-            htmlG += `<tr><td><strong>${name}</strong></td><td>${games}</td><td>${goals}</td><td>${assists}</td><td>${rating}</td></tr>`;
-          });
-          htmlG += `</tbody></table>`;
-          document.getElementById('giocatori-container').innerHTML = htmlG;
-
-          // Top 3 Marcatori & Assistman
-          const topGoals = [...membersList].sort((a,b) => (parseInt(b.goals||0) - parseInt(a.goals||0))).slice(0, 3);
-          const topAssists = [...membersList].sort((a,b) => (parseInt(b.assists||0) - parseInt(a.assists||0))).slice(0, 3);
-
-          let htmlTop = `<h3 style="color:var(--accent); margin-bottom:8px;">⚽ Top Marcatori</h3>`;
-          topGoals.forEach((m, i) => {
-            htmlTop += `<div class="top-rank-item"><span>${i+1}. ${m.name || m.proName}</span><strong>${m.goals||0} Gol</strong></div>`;
-          });
-
-          htmlTop += `<h3 style="color:var(--accent); margin-top:15px; margin-bottom:8px;">🎯 Top Assistman</h3>`;
-          topAssists.forEach((m, i) => {
-            htmlTop += `<div class="top-rank-item"><span>${i+1}. ${m.name || m.proName}</span><strong>${m.assists||0} Assist</strong></div>`;
-          });
-
-          document.getElementById('top3-container').innerHTML = htmlTop;
-        }
-      }
-
-      // --- PARSING MATCH EA SPORTS ---
-      if (matchesData) {
-        let matchesList = Array.isArray(matchesData) ? matchesData : (matchesData.matches || []);
-
-        if (matchesList.length > 0) {
-          let htmlM = `<table><thead><tr><th>Risultato</th><th>Casa</th><th>Ospiti</th></tr></thead><tbody>`;
-
-          matchesList.slice(0, 10).forEach(match => {
-            const clubs = match.clubs || {};
-            const clubIds = Object.keys(clubs);
-            if (clubIds.length >= 2) {
-              const c1 = clubs[clubIds[0]];
-              const c2 = clubs[clubIds[1]];
-              const name1 = c1.details?.name || 'Squadra 1';
-              const name2 = c2.details?.name || 'Squadra 2';
-              htmlM += `<tr><td><strong>${c1.goals} - ${c2.goals}</strong></td><td>${name1}</td><td>${name2}</td></tr>`;
-            }
-          });
-          htmlM += `</tbody></table>`;
-          document.getElementById('matches-container').innerHTML = htmlM;
-
-          document.getElementById('squadra-summary').innerHTML = `<p>Sincronizzazione riuscita!</p><p>Totale match analizzati: <strong>${matchesList.length}</strong></p>`;
-        }
-      }
-
-      return true;
+    .primary-btn:active,
+    .secondary-btn:active,
+    .danger-btn:active,
+    .quick-btn:active {
+      transform: scale(0.985);
     }
 
-    async function chiediAssistente() {
-      const noteExtra = document.getElementById('dati-squadra').value.trim();
-      const domanda = document.getElementById('ia-prompt').value.trim();
-      const membersText = localStorage.getItem('ea_members') || "";
-      const matchesText = localStorage.getItem('ea_matches') || "";
-      const responseDiv = document.getElementById('ia-response');
-
-      if (!domanda) {
-        alert('Inserisci una domanda per l\'assistente.');
-        return;
-      }
-
-      responseDiv.innerText = "L'assistente sta analizzando i dati salvati...";
-
-      try {
-        const res = await fetch('/api/assistente', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            comeGiochiamo: noteExtra,
-            formazione: membersText,
-            clubData: matchesText,
-            domandaUtente: domanda
-          })
-        });
-
-        const data = await res.json();
-        if (data.risposta) {
-          responseDiv.innerText = data.risposta;
-        } else if (data.error) {
-          responseDiv.innerText = "Errore: " + (data.details || data.error);
-        } else {
-          responseDiv.innerText = "Nessuna risposta ricevuta dal server.";
-        }
-      } catch (err) {
-        responseDiv.innerText = "Errore di connessione con la funzione API.";
-      }
+    .primary-btn:hover,
+    .secondary-btn:hover,
+    .danger-btn:hover,
+    .quick-btn:hover {
+      filter: brightness(1.06);
     }
-  </script>
-</body>
-</html>
+
+    .primary-btn:disabled,
+    .secondary-btn:disabled,
+    .quick-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stat-card {
+      padding: 14px;
+      min-height: 92px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .stat-value {
+      margin-top: 7px;
+      font-size: 26px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+    }
+
+    .stat-extra {
+      margin-top: 7px;
+      color: #cbd5e1;
+      font-size: 10px;
+    }
+
+    .players-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .player-card {
+      padding: 13px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.48);
+      border: 1px solid var(--border);
+    }
+
+    .player-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 11px;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      flex: 0 0 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(145deg, rgba(59, 130, 246, 0.28), rgba(34, 211, 238, 0.12));
+      border: 1px solid rgba(59, 130, 246, 0.22);
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .player-name {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    .player-id {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .player-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .mini-stat {
+      min-width: 0;
+      padding: 9px;
+      border-radius: 12px;
+      background: rgba(30, 41, 59, 0.76);
+      border: 1px solid rgba(148, 163, 184, 0.08);
+    }
+
+    .mini-label {
+      color: var(--muted);
+      display: block;
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .mini-value {
+      display: block;
+      margin-top: 4px;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .empty-state {
+      padding: 30px 18px;
+      text-align: center;
+      border: 1px dashed rgba(148, 163, 184, 0.18);
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.35);
+    }
+
+    .empty-icon {
+      font-size: 28px;
+    }
+
+    .empty-state h3 {
+      margin: 9px 0 5px;
+      font-size: 15px;
+    }
+
+    .empty-state p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .rank-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .rank-card {
+      padding: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .rank-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .rank-title {
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .rank-subtitle {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .rank-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .rank-item {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 8px 10px;
+      background: rgba(15, 23, 42, 0.42);
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.08);
+    }
+
+    .rank-pos {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: rgba(59, 130, 246, 0.12);
+      color: #bfdbfe;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .rank-name {
+      min-width: 0;
+    }
+
+    .rank-name strong {
+      display: block;
+      font-size: 12px;
+      word-break: break-word;
+    }
+
+    .rank-name span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+
+    .rank-value {
+      text-align: right;
+      font-weight: 900;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .field-controls {
+      display: grid;
+      gap: 10px;
+    }
+
+    .label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 11px;
+      color: #cbd5e1;
+      font-weight: 800;
+    }
+
+    .select-wrap {
+      position: relative;
+    }
+
+    select {
+      min-height: 47px;
+      padding: 0 42px 0 13px;
+      appearance: none;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .select-arrow {
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .pitch-card {
+      padding: 12px;
+      margin-top: 12px;
+    }
+
+    .pitch {
+      position: relative;
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      aspect-ratio: 0.72;
+      overflow: hidden;
+      border-radius: 20px;
+      background:
+        linear-gradient(
+          90deg,
+          rgba(255, 255, 255, 0.025) 0 12.5%,
+          transparent 12.5% 25%,
+          rgba(255, 255, 255, 0.025) 25% 37.5%,
+          transparent 37.5% 50%,
+          rgba(255, 255, 255, 0.025) 50% 62.5%,
+          transparent 62.5% 75%,
+          rgba(255, 255, 255, 0.025) 75% 87.5%,
+          transparent 87.5%
+        ),
+        linear-gradient(180deg, #18382d 0%, #1b4938 100%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.18);
+    }
+
+    .pitch::before {
+      content: "";
+      position: absolute;
+      inset: 4%;
+      border: 2px solid rgba(255, 255, 255, 0.42);
+      border-radius: 2px;
+    }
+
+    .pitch-half {
+      position: absolute;
+      left: 4%;
+      right: 4%;
+      top: 50%;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.42);
+      transform: translateY(-1px);
+    }
+
+    .pitch-circle {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 27%;
+      aspect-ratio: 1;
+      border: 2px solid rgba(255, 255, 255, 0.42);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .box {
+      position: absolute;
+      left: 21%;
+      width: 58%;
+      height: 17%;
+      border: 2px solid rgba(255, 255, 255, 0.42);
+    }
+
+    .box.top {
+      top: 4%;
+      border-top: 0;
+    }
+
+    .box.bottom {
+      bottom: 4%;
+      border-bottom: 0;
+    }
+
+    .player-node {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      min-width: 56px;
+      max-width: 78px;
+      padding: 7px 7px 6px;
+      border-radius: 12px;
+      text-align: center;
+      background: rgba(15, 23, 42, 0.91);
+      border: 1px solid rgba(96, 165, 250, 0.55);
+      box-shadow: 0 7px 18px rgba(0, 0, 0, 0.22);
+    }
+
+    .player-node strong {
+      display: block;
+      color: #dbeafe;
+      font-size: 9px;
+      line-height: 1.1;
+      font-weight: 900;
+    }
+
+    .player-node span {
+      display: block;
+      margin-top: 3px;
+      color: #94a3b8;
+      font-size: 8px;
+      line-height: 1.05;
+    }
+
+    .formation-title {
+      margin: 12px 0 0;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .formation-note {
+      margin: 4px 0 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .roles-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    .role-card {
+      padding: 11px;
+      border-radius: 13px;
+      border: 1px solid rgba(148, 163, 184, 0.09);
+      background: rgba(15, 23, 42, 0.46);
+    }
+
+    .role-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .role-name {
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .role-tag {
+      padding: 4px 7px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.11);
+      color: #bfdbfe;
+      font-size: 8px;
+      font-weight: 900;
+    }
+
+    .role-card p {
+      margin: 7px 0 0;
+      color: #cbd5e1;
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .notes {
+      min-height: 130px;
+      resize: vertical;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .match-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .match-card {
+      padding: 13px;
+    }
+
+    .match-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 11px;
+    }
+
+    .match-date {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .match-type {
+      font-size: 9px;
+      padding: 5px 7px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.1);
+      color: #bfdbfe;
+      font-weight: 800;
+    }
+
+    .match-score {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: center;
+      gap: 9px;
+    }
+
+    .team-name {
+      font-size: 12px;
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    .team-name.right {
+      text-align: right;
+    }
+
+    .score {
+      min-width: 62px;
+      text-align: center;
+      font-size: 23px;
+      font-weight: 950;
+      letter-spacing: -0.05em;
+    }
+
+    .result {
+      margin-top: 9px;
+      text-align: center;
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .result.win {
+      color: #86efac;
+    }
+
+    .result.loss {
+      color: #fca5a5;
+    }
+
+    .result.draw {
+      color: #fde68a;
+    }
+
+    .result.unknown {
+      color: var(--muted);
+    }
+
+    .ai-box {
+      display: grid;
+      gap: 11px;
+    }
+
+    .ai-intro {
+      padding: 14px;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.12), transparent 28%),
+        rgba(15, 23, 42, 0.46);
+      border: 1px solid rgba(59, 130, 246, 0.13);
+    }
+
+    .ai-intro h3 {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .ai-intro p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .quick-btn {
+      min-height: 40px;
+      padding: 9px 11px;
+      background: #243247;
+      color: #dbeafe;
+      border: 1px solid var(--border);
+      font-size: 10px;
+    }
+
+    .ai-question {
+      min-height: 120px;
+      padding: 12px;
+      resize: vertical;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .ai-response {
+      min-height: 120px;
+      padding: 13px;
+      border-radius: 15px;
+      background: #0b1425;
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      color: #e2e8f0;
+      font-size: 12px;
+      line-height: 1.62;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .ai-response.muted {
+      color: var(--muted);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(var(--nav-height) + 16px + env(safe-area-inset-bottom));
+      transform: translate(-50%, 16px);
+      z-index: 100;
+      width: min(92vw, 460px);
+      
