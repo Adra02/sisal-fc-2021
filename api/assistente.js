@@ -1,27 +1,62 @@
+const { GoogleGenAI } = require('@google/genai');
+
 module.exports = async (req, res) => {
-  if (req.method !== "POST") return res.status(405).json({ error: "metodo non valido" });
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) return res.status(500).json({ error: "Manca la chiave GEMINI_API_KEY su Vercel." });
-  const model = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
-  let body = req.body;
-  if (typeof body === "string") { try { body = JSON.parse(body); } catch (e) { body = {}; } }
-  const msgs = Array.isArray(body && body.messages) ? body.messages.slice(-8) : [];
-  if (!msgs.length) return res.status(400).json({ error: "messaggio vuoto" });
-  const contents = msgs.map((m) => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: String(m.content).slice(0, 12000) }],
-  }));
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Metodo non consentito. Usa POST.' });
+  }
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'Chiave GEMINI_API_KEY non configurata nei segreti di Vercel.' });
+  }
+
   try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 1500, temperature: 0.6 } }),
+    const { clubData, modulo, formazione, comeGiochiamo, domandaUtente } = req.body;
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    const systemInstruction = `Sei l'Assistente Tattico Senior di FC 27 Pro Clubs per la squadra "Sisal FC 2021".
+Fornisci consigli tattici ed esecutivi chiari e diretti.
+REGOLE RIGIDE:
+1. Rispondi SEMPRE in italiano.
+2. Usa solo testo semplice (niente elenchi puntati complessi o marcatori pesanti, massimo 2 brevi paragrafi).
+3. Lunghezza MAX: 170 parole.
+4. Non inventare dati non presenti nel contesto.
+5. Considera le meccaniche di FC 27: difesa contenitiva con L2/LT, gestione dei filtranti, posizionamento dei difensori centrali, transizioni veloci.`;
+
+    const prompt = `
+Dati Squadra: ${JSON.stringify(clubData || {})}
+Modulo Impostato: ${modulo || 'Non specificato'}
+Titolari Schierati: ${JSON.stringify(formazione || {})}
+Stile/Istruzioni squadra: ${comeGiochiamo || 'Nessuna indicazione fornita'}
+
+Domanda del Mister/Giocatore: ${domandaUtente || 'Fornisci una breve analisi tattica per migliorare il rendimento generale.'}
+`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction: systemInstruction,
+        temperature: 0.5,
+        maxOutputTokens: 300,
+      }
     });
-    const j = await r.json();
-    if (!r.ok) return res.status(502).json({ error: (j.error && j.error.message) || "Gemini ha risposto con un errore." });
-    const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
-    res.status(200).json({ text: parts.map((p) => p.text || "").join("").trim() || "Nessuna risposta." });
-  } catch (e) {
-    res.status(502).json({ error: "Gemini non risponde." });
+
+    return res.status(200).json({ risposta: response.text });
+
+  } catch (error) {
+    return res.status(500).json({ 
+      error: 'Errore nell\'elaborazione della risposta da parte dell\'Assistente IA.',
+      details: error.message 
+    });
   }
 };
