@@ -13,6 +13,7 @@
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --border: #334155;
+      --success: #22c55e;
     }
 
     * {
@@ -84,13 +85,13 @@
 
     textarea {
       width: 100%;
-      height: 90px;
+      height: 80px;
       background-color: var(--bg-color);
       border: 1px solid var(--border);
       color: var(--text);
       border-radius: 8px;
       padding: 10px;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       resize: vertical;
       font-family: monospace;
       font-size: 0.8rem;
@@ -115,11 +116,6 @@
       font-size: 0.9rem;
       margin-bottom: 10px;
       border: 1px solid var(--border);
-      box-sizing: border-box;
-    }
-
-    .btn-link:active {
-      background-color: #475569;
     }
 
     button.btn-action {
@@ -134,8 +130,43 @@
       font-size: 0.95rem;
     }
 
-    button.btn-action:active {
-      background-color: var(--accent-hover);
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+      background-color: #475569;
+      color: white;
+    }
+
+    .status-badge.ok {
+      background-color: var(--success);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.85rem;
+    }
+
+    th, td {
+      padding: 8px 6px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      color: var(--accent);
+    }
+
+    .top-rank-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
     }
 
     .bottom-nav {
@@ -151,7 +182,6 @@
       align-items: center;
       border-top: 1px solid var(--border);
       z-index: 99999 !important;
-      box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
     }
 
     .nav-btn {
@@ -166,7 +196,6 @@
       cursor: pointer;
       flex: 1;
       height: 100%;
-      touch-action: manipulation;
     }
 
     .nav-btn .icon {
@@ -201,26 +230,27 @@
     <!-- 1. SQUADRA -->
     <section id="tab-squadra" class="tab-content active">
       <div class="card">
-        <h2>Importazione Dati EA Sports</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
-          Apri i link, copia tutto il testo presente nelle pagine e incollalo nelle due caselle sottostanti.
-        </p>
-
-        <!-- LINK E CASELLA 1: MEMBRI -->
+        <h2>Importazione e Stato Dati</h2>
+        <div id="data-status" class="status-badge">Dati non caricati</div>
+        
         <a href="https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=328794" target="_blank" class="btn-link">
-          📋 1. Apri e Copia: Statistiche Membri
+          📋 1. Apri & Copia: Statistiche Membri
         </a>
-        <label for="json-members">Incolla Dati Statistiche Membri (JSON):</label>
-        <textarea id="json-members" placeholder="Incolla qui il codice copiato dal primo link..."></textarea>
+        <label for="json-members">Incolla JSON Membri:</label>
+        <textarea id="json-members" placeholder="Incolla qui il JSON delle statistiche membri..."></textarea>
 
-        <!-- LINK E CASELLA 2: PARTITE -->
         <a href="https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794" target="_blank" class="btn-link">
-          ⚽ 2. Apri e Copia: Storico Partite
+          ⚽ 2. Apri & Copia: Storico Partite
         </a>
-        <label for="json-matches">Incolla Dati Storico Partite (JSON):</label>
-        <textarea id="json-matches" placeholder="Incolla qui il codice copiato dal secondo link..."></textarea>
+        <label for="json-matches">Incolla JSON Partite:</label>
+        <textarea id="json-matches" placeholder="Incolla qui il JSON dello storico partite..."></textarea>
 
-        <button class="btn-action" onclick="salvaDatiEA()">💾 Salva Dati EA</button>
+        <button class="btn-action" onclick="elaboraESalvaDati()">🔄 Aggiorna ed Elabora Dati</button>
+      </div>
+
+      <div class="card">
+        <h2>Riepilogo Squadra</h2>
+        <div id="squadra-summary">Nessun dato caricato. Incolla i JSON sopra e premi "Aggiorna".</div>
       </div>
     </section>
 
@@ -228,128 +258,199 @@
     <section id="tab-giocatori" class="tab-content">
       <div class="card">
         <h2>Rosa Giocatori</h2>
-        <p>Elenco completo dei membri della squadra e dettagli dei ruoli.</p>
+        <div id="giocatori-container">Incolla il JSON Membri nella scheda Squadra per visualizzare la rosa.</div>
       </div>
     </section>
 
     <!-- 3. TOP 3 -->
     <section id="tab-top3" class="tab-content">
       <div class="card">
-        <h2>Top 3 Classifica</h2>
-        <p>Migliori marcatori, assistman e MVP della settimana.</p>
+        <h2>Leaderboard della Squadra</h2>
+        <div id="top3-container">I dati delle classifiche appariranno dopo l'aggiornamento.</div>
       </div>
     </section>
 
     <!-- 4. CAMPO -->
     <section id="tab-campo" class="tab-content">
       <div class="card">
-        <h2>Schieramento in Campo</h2>
-        <p>Configurazione del modulo 3-4-2-1 e istruzioni di squadra.</p>
+        <h2>Schieramento 3-4-2-1</h2>
+        <p>Assetto Tattico Predefinito: Sisal FC 2021</p>
+        <ul style="margin-left: 20px; margin-top: 10px; font-size: 0.9rem;">
+          <li><strong>POR:</strong> Rinvii lunghi / Copertura area</li>
+          <li><strong>DC (3):</strong> Difesa contenitiva L2/LT, no uscite a vuoto</li>
+          <li><strong>ED/ES:</strong> Copertura di fascia e ripiegamento</li>
+          <li><strong>CC (2):</strong> Intercettamento e impostazione centrale</li>
+          <li><strong>COC (2):</strong> Rifinitura e inserimenti a supporto</li>
+          <li><strong>ATT:</strong> Attacco della profondità</li>
+        </ul>
       </div>
     </section>
 
     <!-- 5. OPPOSIZIONI -->
     <section id="tab-opposizioni" class="tab-content">
       <div class="card">
-        <h2>Analisi Opposizioni</h2>
-        <p>Storico degli avversari incontrati e dati sui match ufficiali.</p>
+        <h2>Ultimi Match Giocati</h2>
+        <div id="matches-container">Incolla il JSON Partite nella scheda Squadra per vedere lo storico.</div>
       </div>
     </section>
 
-    <!-- 6. IA (ASSISTENTE TATTICO) -->
+    <!-- 6. IA -->
     <section id="tab-ia" class="tab-content">
       <div class="card">
         <h2>Assistente Tattico IA</h2>
-        
-        <label for="dati-squadra">Istruzioni Modulo/Stile (es. 3-4-2-1, pressing, contenimento):</label>
-        <textarea id="dati-squadra" placeholder="Inserisci indicazioni di gioco..."></textarea>
+        <label for="dati-squadra">Note/Istruzioni extra per la partita:</label>
+        <textarea id="dati-squadra" placeholder="Es. Cerchiamo di sfruttare i contropiedi..."></textarea>
 
         <label for="ia-prompt">Domanda per l'Assistente:</label>
-        <textarea id="ia-prompt" placeholder="Chiedi un'analisi tattica o consigli sulla squadra..."></textarea>
+        <textarea id="ia-prompt" placeholder="Chiedi un consiglio o un'analisi della squadra..."></textarea>
 
         <button class="btn-action" onclick="chiediAssistente()">Invia all'Assistente IA</button>
-
         <div id="ia-response">In attesa di una richiesta...</div>
       </div>
     </section>
   </main>
 
-  <!-- BARRA DI NAVIGAZIONE IN BASSO -->
   <nav class="bottom-nav">
-    <button class="nav-btn active" data-tab="tab-squadra">
-      <span class="icon">🛡️</span>
-      <span>Squadra</span>
-    </button>
-    <button class="nav-btn" data-tab="tab-giocatori">
-      <span class="icon">👥</span>
-      <span>Giocatori</span>
-    </button>
-    <button class="nav-btn" data-tab="tab-top3">
-      <span class="icon">🏆</span>
-      <span>Top 3</span>
-    </button>
-    <button class="nav-btn" data-tab="tab-campo">
-      <span class="icon">⚽</span>
-      <span>Campo</span>
-    </button>
-    <button class="nav-btn" data-tab="tab-opposizioni">
-      <span class="icon">📊</span>
-      <span>Opposizioni</span>
-    </button>
-    <button class="nav-btn" data-tab="tab-ia">
-      <span class="icon">🤖</span>
-      <span>IA</span>
-    </button>
+    <button class="nav-btn active" data-tab="tab-squadra"><span class="icon">🛡️</span><span>Squadra</span></button>
+    <button class="nav-btn" data-tab="tab-giocatori"><span class="icon">👥</span><span>Giocatori</span></button>
+    <button class="nav-btn" data-tab="tab-top3"><span class="icon">🏆</span><span>Top 3</span></button>
+    <button class="nav-btn" data-tab="tab-campo"><span class="icon">⚽</span><span>Campo</span></button>
+    <button class="nav-btn" data-tab="tab-opposizioni"><span class="icon">📊</span><span>Opposizioni</span></button>
+    <button class="nav-btn" data-tab="tab-ia"><span class="icon">🤖</span><span>IA</span></button>
   </nav>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Gestione Tab
       const navButtons = document.querySelectorAll('.bottom-nav .nav-btn');
       const tabContents = document.querySelectorAll('.tab-content');
 
-      // Ripristina i dati salvati in precedenza nelle caselle
+      navButtons.forEach(btn => {
+        ['click', 'touchstart'].forEach(eventType => {
+          btn.addEventListener(eventType, (e) => {
+            if (eventType === 'touchstart') e.preventDefault();
+            const targetTabId = btn.getAttribute('data-tab');
+            navButtons.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
+            btn.classList.add('active');
+            const activeSection = document.getElementById(targetTabId);
+            if (activeSection) activeSection.classList.add('active');
+          });
+        });
+      });
+
+      // Ripristina salvataggio e aggiorna vista
       if (localStorage.getItem('ea_members')) {
         document.getElementById('json-members').value = localStorage.getItem('ea_members');
       }
       if (localStorage.getItem('ea_matches')) {
         document.getElementById('json-matches').value = localStorage.getItem('ea_matches');
       }
-
-      navButtons.forEach(btn => {
-        ['click', 'touchstart'].forEach(eventType => {
-          btn.addEventListener(eventType, (e) => {
-            if (eventType === 'touchstart') e.preventDefault();
-
-            const targetTabId = btn.getAttribute('data-tab');
-
-            navButtons.forEach(b => b.classList.remove('active'));
-            tabContents.forEach(tc => tc.classList.remove('active'));
-
-            btn.classList.add('active');
-            const activeSection = document.getElementById(targetTabId);
-            if (activeSection) {
-              activeSection.classList.add('active');
-            }
-          });
-        });
-      });
+      renderAllData();
     });
 
-    function salvaDatiEA() {
+    function elaboraESalvaDati() {
       const membersText = document.getElementById('json-members').value.trim();
       const matchesText = document.getElementById('json-matches').value.trim();
 
       localStorage.setItem('ea_members', membersText);
       localStorage.setItem('ea_matches', matchesText);
 
-      alert('Dati EA salvati con successo nel browser!');
+      const success = renderAllData();
+      if (success) {
+        alert('Dati EA elaborati con successo! Tutte le schede sono aggiornate.');
+      }
+    }
+
+    function renderAllData() {
+      const rawMembers = localStorage.getItem('ea_members');
+      const rawMatches = localStorage.getItem('ea_matches');
+
+      let membersData = null;
+      let matchesData = null;
+
+      try { if (rawMembers) membersData = JSON.parse(rawMembers); } catch(e){}
+      try { if (rawMatches) matchesData = JSON.parse(rawMatches); } catch(e){}
+
+      const statusBadge = document.getElementById('data-status');
+
+      if (!membersData && !matchesData) {
+        statusBadge.className = "status-badge";
+        statusBadge.innerText = "Dati non caricati o non validi";
+        return false;
+      }
+
+      statusBadge.className = "status-badge ok";
+      statusBadge.innerText = "Dati caricati e sincronizzati";
+
+      // 1. Render Tab Giocatori & Top 3
+      if (membersData) {
+        const membersList = Array.isArray(membersData) ? membersData : (membersData.members || Object.values(membersData.members || {}));
+        
+        if (membersList && membersList.length > 0) {
+          // Tab Giocatori Table
+          let htmlG = `<table><thead><tr><th>Giocatore</th><th>Pres.</th><th>Gol</th><th>Assist</th><th>Voto</th></tr></thead><tbody>`;
+          
+          membersList.forEach(m => {
+            const name = m.name || m.proName || 'Giocatore';
+            const games = m.gamesPlayed || m.games || 0;
+            const goals = m.goals || 0;
+            const assists = m.assists || 0;
+            const rating = m.ratingAve || m.rating || 'N/D';
+            htmlG += `<tr><td><strong>${name}</strong></td><td>${games}</td><td>${goals}</td><td>${assists}</td><td>${rating}</td></tr>`;
+          });
+          htmlG += `</tbody></table>`;
+          document.getElementById('giocatori-container').innerHTML = htmlG;
+
+          // Tab Top 3
+          const topGoals = [...membersList].sort((a,b) => (b.goals||0) - (a.goals||0)).slice(0, 3);
+          const topAssists = [...membersList].sort((a,b) => (b.assists||0) - (a.assists||0)).slice(0, 3);
+
+          let htmlTop = `<h3 style="color:var(--accent); margin-bottom:8px;">⚽ Top Marcatori</h3>`;
+          topGoals.forEach((m, i) => {
+            htmlTop += `<div class="top-rank-item"><span>${i+1}. ${m.name || m.proName}</span><strong>${m.goals||0} Gol</strong></div>`;
+          });
+
+          htmlTop += `<h3 style="color:var(--accent); margin-top:15px; margin-bottom:8px;">🎯 Top Assistman</h3>`;
+          topAssists.forEach((m, i) => {
+            htmlTop += `<div class="top-rank-item"><span>${i+1}. ${m.name || m.proName}</span><strong>${m.assists||0} Assist</strong></div>`;
+          });
+
+          document.getElementById('top3-container').innerHTML = htmlTop;
+        }
+      }
+
+      // 2. Render Tab Opposizioni (Storico Partite)
+      if (matchesData) {
+        const matchesList = Array.isArray(matchesData) ? matchesData : (matchesData.matches || []);
+        
+        if (matchesList && matchesList.length > 0) {
+          let htmlM = `<table><thead><tr><th>Risultato</th><th>Squadra Casa</th><th>Squadra Fuori</th></tr></thead><tbody>`;
+          
+          matchesList.slice(0, 10).forEach(match => {
+            const clubs = match.clubs || {};
+            const keys = Object.keys(clubs);
+            if (keys.length >= 2) {
+              const c1 = clubs[keys[0]];
+              const c2 = clubs[keys[1]];
+              htmlM += `<tr><td><strong>${c1.goals} - ${c2.goals}</strong></td><td>${c1.details?.name || 'Casa'}</td><td>${c2.details?.name || 'Ospiti'}</td></tr>`;
+            }
+          });
+          htmlM += `</tbody></table>`;
+          document.getElementById('matches-container').innerHTML = htmlM;
+
+          document.getElementById('squadra-summary').innerHTML = `<p>Partite recenti registrate: <strong>${matchesList.length}</strong></p><p>Sincronizzazione completata.</p>`;
+        }
+      }
+
+      return true;
     }
 
     async function chiediAssistente() {
-      const datiSquadra = document.getElementById('dati-squadra').value.trim();
+      const noteExtra = document.getElementById('dati-squadra').value.trim();
       const domanda = document.getElementById('ia-prompt').value.trim();
-      const membersText = localStorage.getItem('ea_members') || document.getElementById('json-members').value.trim();
-      const matchesText = localStorage.getItem('ea_matches') || document.getElementById('json-matches').value.trim();
+      const membersText = localStorage.getItem('ea_members') || "";
+      const matchesText = localStorage.getItem('ea_matches') || "";
       const responseDiv = document.getElementById('ia-response');
 
       if (!domanda) {
@@ -357,14 +458,14 @@
         return;
       }
 
-      responseDiv.innerText = "L'assistente sta elaborando la risposta...";
+      responseDiv.innerText = "L'assistente sta analizzando i dati salvati e preparando la risposta...";
 
       try {
         const res = await fetch('/api/assistente', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            comeGiochiamo: datiSquadra,
+            comeGiochiamo: noteExtra,
             formazione: membersText,
             clubData: matchesText,
             domandaUtente: domanda
