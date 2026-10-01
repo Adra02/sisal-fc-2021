@@ -100,6 +100,26 @@
       height: 70px;
     }
 
+    .btn-link {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background-color: #334155;
+      color: #38bdf8;
+      text-align: center;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+      box-sizing: border-box;
+    }
+
+    .btn-link:active {
+      background-color: #475569;
+    }
+
     button.btn-action {
       width: 100%;
       padding: 12px;
@@ -179,8 +199,18 @@
     <!-- 1. SQUADRA -->
     <section id="tab-squadra" class="tab-content active">
       <div class="card">
-        <h2>Panoramica Squadra</h2>
-        <p>Statistiche generali e andamento del club Sisal FC 2021.</p>
+        <h2>Panoramica & Dati EA Sports</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
+          Clicca sui pulsanti sottostanti per aprire le pagine API ufficiali della squadra e copiare i dati aggiornati:
+        </p>
+
+        <a href="https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=328794" target="_blank" class="btn-link">
+          📋 Apri Statistiche Membri (Members Stats)
+        </a>
+
+        <a href="https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794" target="_blank" class="btn-link">
+          ⚽ Apri Storico Partite (Matches Data)
+        </a>
       </div>
     </section>
 
