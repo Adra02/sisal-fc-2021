@@ -1,6 +1,8 @@
 {
-  "name": "sisal-fc-2021",
+  "name": "sisal-fc-pro-clubs-app",
   "version": "1.0.0",
   "private": true,
-  "dependencies": {}
+  "dependencies": {
+    "@google/genai": "^0.1.1"
+  }
 }
