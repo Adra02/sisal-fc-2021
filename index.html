@@ -92,12 +92,14 @@
       padding: 10px;
       margin-bottom: 15px;
       resize: vertical;
-      font-family: inherit;
-      font-size: 0.9rem;
+      font-family: monospace;
+      font-size: 0.8rem;
     }
 
     textarea#ia-prompt {
       height: 70px;
+      font-family: inherit;
+      font-size: 0.9rem;
     }
 
     .btn-link {
@@ -199,18 +201,26 @@
     <!-- 1. SQUADRA -->
     <section id="tab-squadra" class="tab-content active">
       <div class="card">
-        <h2>Panoramica & Dati EA Sports</h2>
+        <h2>Importazione Dati EA Sports</h2>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
-          Clicca sui pulsanti sottostanti per aprire le pagine API ufficiali della squadra e copiare i dati aggiornati:
+          Apri i link, copia tutto il testo presente nelle pagine e incollalo nelle due caselle sottostanti.
         </p>
 
+        <!-- LINK E CASELLA 1: MEMBRI -->
         <a href="https://proclubs.ea.com/api/fc/members/stats?platform=common-gen5&clubId=328794" target="_blank" class="btn-link">
-          📋 Apri Statistiche Membri (Members Stats)
+          📋 1. Apri e Copia: Statistiche Membri
         </a>
+        <label for="json-members">Incolla Dati Statistiche Membri (JSON):</label>
+        <textarea id="json-members" placeholder="Incolla qui il codice copiato dal primo link..."></textarea>
 
+        <!-- LINK E CASELLA 2: PARTITE -->
         <a href="https://proclubs.ea.com/api/fc/clubs/matches?matchType=leagueMatch&platform=common-gen5&clubIds=328794" target="_blank" class="btn-link">
-          ⚽ Apri Storico Partite (Matches Data)
+          ⚽ 2. Apri e Copia: Storico Partite
         </a>
+        <label for="json-matches">Incolla Dati Storico Partite (JSON):</label>
+        <textarea id="json-matches" placeholder="Incolla qui il codice copiato dal secondo link..."></textarea>
+
+        <button class="btn-action" onclick="salvaDatiEA()">💾 Salva Dati EA</button>
       </div>
     </section>
 
@@ -249,16 +259,13 @@
     <!-- 6. IA (ASSISTENTE TATTICO) -->
     <section id="tab-ia" class="tab-content">
       <div class="card">
-        <h2>Aggiornamento Dati & Assistente IA</h2>
+        <h2>Assistente Tattico IA</h2>
         
-        <label for="dati-squadra">Dati Squadra e Modulo (es. 3-4-2-1, istruzioni, stile):</label>
-        <textarea id="dati-squadra" placeholder="Incolla o inserisci i dati della squadra..."></textarea>
-
-        <label for="dati-giocatori">Dati Giocatori e Formazione (es. ruoli, presenze, gol, pagelle):</label>
-        <textarea id="dati-giocatori" placeholder="Incolla o inserisci la lista giocatori o la formazione..."></textarea>
+        <label for="dati-squadra">Istruzioni Modulo/Stile (es. 3-4-2-1, pressing, contenimento):</label>
+        <textarea id="dati-squadra" placeholder="Inserisci indicazioni di gioco..."></textarea>
 
         <label for="ia-prompt">Domanda per l'Assistente:</label>
-        <textarea id="ia-prompt" placeholder="Chiedi un'analisi tattica o un consiglio sulle sostituzioni..."></textarea>
+        <textarea id="ia-prompt" placeholder="Chiedi un'analisi tattica o consigli sulla squadra..."></textarea>
 
         <button class="btn-action" onclick="chiediAssistente()">Invia all'Assistente IA</button>
 
@@ -300,6 +307,14 @@
       const navButtons = document.querySelectorAll('.bottom-nav .nav-btn');
       const tabContents = document.querySelectorAll('.tab-content');
 
+      // Ripristina i dati salvati in precedenza nelle caselle
+      if (localStorage.getItem('ea_members')) {
+        document.getElementById('json-members').value = localStorage.getItem('ea_members');
+      }
+      if (localStorage.getItem('ea_matches')) {
+        document.getElementById('json-matches').value = localStorage.getItem('ea_matches');
+      }
+
       navButtons.forEach(btn => {
         ['click', 'touchstart'].forEach(eventType => {
           btn.addEventListener(eventType, (e) => {
@@ -320,14 +335,25 @@
       });
     });
 
+    function salvaDatiEA() {
+      const membersText = document.getElementById('json-members').value.trim();
+      const matchesText = document.getElementById('json-matches').value.trim();
+
+      localStorage.setItem('ea_members', membersText);
+      localStorage.setItem('ea_matches', matchesText);
+
+      alert('Dati EA salvati con successo nel browser!');
+    }
+
     async function chiediAssistente() {
       const datiSquadra = document.getElementById('dati-squadra').value.trim();
-      const datiGiocatori = document.getElementById('dati-giocatori').value.trim();
       const domanda = document.getElementById('ia-prompt').value.trim();
+      const membersText = localStorage.getItem('ea_members') || document.getElementById('json-members').value.trim();
+      const matchesText = localStorage.getItem('ea_matches') || document.getElementById('json-matches').value.trim();
       const responseDiv = document.getElementById('ia-response');
 
-      if (!domanda && !datiSquadra && !datiGiocatori) {
-        alert('Inserisci almeno una domanda o i dati della squadra.');
+      if (!domanda) {
+        alert('Inserisci una domanda per l\'assistente.');
         return;
       }
 
@@ -339,7 +365,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             comeGiochiamo: datiSquadra,
-            formazione: datiGiocatori,
+            formazione: membersText,
+            clubData: matchesText,
             domandaUtente: domanda
           })
         });
