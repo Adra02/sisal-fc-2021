@@ -1,13 +1,11 @@
 {
   "version": 2,
+  "builds": [
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "api/*.js", "use": "@vercel/node" }
+  ],
   "routes": [
-    {
-      "src": "/api/ea",
-      "dest": "/api/ea.js"
-    },
-    {
-      "src": "/api/assistente",
-      "dest": "/api/assistente.js"
-    }
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
