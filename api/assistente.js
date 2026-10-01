@@ -23,16 +23,15 @@ module.exports = async (req, res) => {
 
     const ai = new GoogleGenAI({ apiKey });
 
-    const systemInstruction = `Sei l'Assistente Tattico Senior di FC 27 Pro Clubs per la squadra "Sisal FC 2021".
-Fornisci consigli tattici ed esecutivi chiari e diretti.
+    const promptText = `
+Sei l'Assistente Tattico Senior di FC 27 Pro Clubs per la squadra "Sisal FC 2021".
 REGOLE RIGIDE:
 1. Rispondi SEMPRE in italiano.
-2. Usa solo testo semplice (niente elenchi puntati complessi o marcatori pesanti, massimo 2 brevi paragrafi).
+2. Usa solo testo semplice (max 2 brevi paragrafi).
 3. Lunghezza MAX: 170 parole.
 4. Non inventare dati non presenti nel contesto.
-5. Considera le meccaniche di FC 27: difesa contenitiva con L2/LT, gestione dei filtranti, posizionamento dei difensori centrali, transizioni veloci.`;
+5. Considera le meccaniche di FC 27: difesa contenitiva con L2/LT, gestione dei filtranti, posizionamento dei difensori centrali.
 
-    const prompt = `
 Dati Squadra: ${JSON.stringify(clubData || {})}
 Modulo Impostato: ${modulo || 'Non specificato'}
 Titolari Schierati: ${JSON.stringify(formazione || {})}
@@ -43,12 +42,7 @@ Domanda del Mister/Giocatore: ${domandaUtente || 'Fornisci una breve analisi tat
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.5,
-        maxOutputTokens: 300,
-      }
+      contents: promptText,
     });
 
     return res.status(200).json({ risposta: response.text });
