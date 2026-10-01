@@ -19,29 +19,33 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { clubData, modulo, formazione, comeGiochiamo, domandaUtente } = req.body || {};
+    const { clubData, formazione, comeGiochiamo, domandaUtente } = req.body || {};
+
+    // Tronca o sintetizza i contesti se troppo lunghi
+    const membersSummary = typeof formazione === 'string' ? formazione.slice(0, 3000) : JSON.stringify(formazione || {}).slice(0, 3000);
+    const matchesSummary = typeof clubData === 'string' ? clubData.slice(0, 3000) : JSON.stringify(clubData || {}).slice(0, 3000);
 
     const promptText = `Sei l'Assistente Tattico Senior di FC 27 Pro Clubs per la squadra "Sisal FC 2021".
 REGOLE RIGIDE:
 1. Rispondi SEMPRE in italiano.
 2. Usa solo testo semplice (max 2 brevi paragrafi).
 3. Lunghezza MAX: 170 parole.
-4. Non inventare dati non presenti nel contesto.
-5. Considera le meccaniche di FC 27: difesa contenitiva con L2/LT, gestione dei filtranti, posizionamento dei difensori centrali.
+4. Considera le meccaniche di FC 27 (difesa L2/LT, filtranti, modulo 3-4-2-1).
 
-Dati Squadra: ${JSON.stringify(clubData || {})}
-Modulo Impostato: ${modulo || 'Non specificato'}
-Titolari Schierati: ${JSON.stringify(formazione || {})}
-Stile/Istruzioni squadra: ${comeGiochiamo || 'Nessuna indicazione fornita'}
+Statistiche Membri/Rosa:
+${membersSummary}
 
-Domanda del Mister/Giocatore: ${domandaUtente || 'Fornisci una breve analisi tattica per migliorare il rendimento generale.'}`;
+Storico Partite:
+${matchesSummary}
+
+Note Tattiche Extra:
+${comeGiochiamo || 'Nessuna'}
+
+Domanda del Mister:
+${domandaUtente || 'Fornisci una breve analisi per migliorare.'}`;
 
     const requestBody = JSON.stringify({
-      contents: [
-        {
-          parts: [{ text: promptText }]
-        }
-      ]
+      contents: [{ parts: [{ text: promptText }] }]
     });
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -81,7 +85,7 @@ Domanda del Mister/Giocatore: ${domandaUtente || 'Fornisci una breve analisi tat
 
   } catch (error) {
     return res.status(500).json({ 
-      error: 'Errore nell\'elaborazione della risposta da parte dell\'Assistente IA.',
+      error: 'Errore nell\'elaborazione della risposta.',
       details: error.message 
     });
   }
