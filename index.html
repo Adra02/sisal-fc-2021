@@ -1,440 +1,303 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sisal FC 2021 - Pro Clubs FC 27 Hub</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sisal FC 2021 - Tactical Hub</title>
   <style>
     :root {
-      --bg-color: #0b0f19;
-      --card-bg: #141b2d;
-      --card-border: #1e293b;
-      --text-main: #f8fafc;
-      --text-sub: #94a3b8;
-      --primary: #00f2fe;
-      --primary-accent: #4facfe;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --field-bg: #0d3b1e;
-      --field-lines: rgba(255, 255, 255, 0.4);
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
     }
 
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg-color: #f1f5f9;
-        --card-bg: #ffffff;
-        --card-border: #e2e8f0;
-        --text-main: #0f172a;
-        --text-sub: #64748b;
-        --primary: #0284c7;
-        --primary-accent: #0369a1;
-        --field-bg: #15803d;
-      }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Manrope', sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text-main); padding-bottom: 80px; min-height: 100vh; }
-    h1, h2, h3, h4 { font-family: 'Sora', sans-serif; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text);
+      padding-bottom: 90px; /* Spazio per non coprire i contenuti con la barra in basso */
+    }
 
     header {
-      background: var(--card-bg);
-      border-bottom: 1px solid var(--card-border);
-      padding: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background-color: var(--card-bg);
+      padding: 15px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
       z-index: 100;
     }
 
-    .brand { display: flex; align-items: center; gap: 10px; }
-    .brand-title { font-size: 1.2rem; font-weight: 800; color: var(--text-main); }
-    .badge-club { background: linear-gradient(135deg, var(--primary), var(--primary-accent)); color: #000; font-weight: 700; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; }
-
-    .btn-action {
-      background: var(--card-border);
-      color: var(--text-main);
-      border: none;
-      padding: 8px 14px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
+    header h1 {
+      font-size: 1.2rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
-    nav {
+    main {
+      padding: 15px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .tab-content {
+      display: none; /* Di base tutte le sezioni sono nascoste */
+    }
+
+    .tab-content.active {
+      display: block; /* Mostra solo la sezione attiva */
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border: 1px solid var(--border);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+      color: var(--accent);
+    }
+
+    /* Barra di navigazione inferiore fissa */
+    .bottom-nav {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      background: var(--card-bg);
-      border-top: 1px solid var(--card-border);
+      width: 100%;
+      height: 65px;
+      background-color: var(--card-bg);
       display: flex;
       justify-content: space-around;
-      padding: 10px 0;
-      z-index: 100;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      z-index: 99999 !important; /* Mantiene la barra sempre in primo piano */
+      box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3);
     }
 
     .nav-btn {
       background: none;
       border: none;
-      color: var(--text-sub);
-      font-size: 0.75rem;
+      color: var(--text-muted);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      justify-content: center;
+      font-size: 0.7rem;
       cursor: pointer;
-      width: 16%;
+      flex: 1;
+      height: 100%;
+      touch-action: manipulation;
     }
 
-    .nav-btn.active { color: var(--primary); font-weight: 700; }
-    .nav-btn svg { width: 20px; height: 20px; fill: currentColor; }
-
-    .container { max-width: 900px; margin: 0 auto; padding: 16px; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 16px;
+    .nav-btn .icon {
+      font-size: 1.2rem;
+      margin-bottom: 2px;
     }
 
-    .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-
-    .stat-box {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--card-border);
-      padding: 12px;
-      border-radius: 12px;
-      text-align: center;
+    .nav-btn.active {
+      color: var(--accent);
+      font-weight: bold;
     }
-    .stat-val { font-size: 1.4rem; font-weight: 800; color: var(--primary); font-family: 'Sora', sans-serif; }
-    .stat-lbl { font-size: 0.75rem; color: var(--text-sub); }
 
-    .form-dots { display: flex; gap: 6px; justify-content: center; margin-top: 6px; }
-    .dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #fff; }
-    .dot-v { background-color: var(--success); }
-    .dot-n { background-color: var(--warning); }
-    .dot-p { background-color: var(--danger); }
-
-    .progress-bar-bg { background: var(--card-border); height: 8px; border-radius: 4px; overflow: hidden; margin-top: 6px; }
-    .progress-bar-fill { background: linear-gradient(90deg, var(--primary), var(--primary-accent)); height: 100%; width: 0%; transition: width 0.3s; }
-
-    .advice-box { background: rgba(0, 242, 254, 0.05); border-left: 4px solid var(--primary); padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 0.85rem; line-height: 1.4; }
-    .advice-box.warn { background: rgba(245, 158, 11, 0.05); border-left-color: var(--warning); }
-
-    input, select, textarea {
+    /* Stili form Assistente IA */
+    textarea {
       width: 100%;
-      padding: 10px 14px;
-      background: var(--bg-color);
-      border: 1px solid var(--card-border);
-      color: var(--text-main);
+      height: 80px;
+      background-color: var(--bg-color);
+      border: 1px solid var(--border);
+      color: var(--text);
       border-radius: 8px;
-      font-size: 0.9rem;
+      padding: 10px;
       margin-bottom: 10px;
+      resize: none;
     }
 
-    .btn-submit {
+    button.btn-action {
       width: 100%;
-      background: linear-gradient(135deg, var(--primary), var(--primary-accent));
-      color: #000;
-      font-weight: 700;
       padding: 12px;
+      background-color: var(--accent);
+      color: white;
       border: none;
       border-radius: 8px;
+      font-weight: bold;
       cursor: pointer;
-      font-size: 0.95rem;
     }
 
-    /* SVG Campo */
-    .pitch-container { position: relative; width: 100%; padding-top: 140%; background: var(--field-bg); border-radius: 16px; border: 2px solid var(--card-border); overflow: hidden; }
-    .pitch-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-    .player-node { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; width: 75px; }
-    .player-circle { width: 34px; height: 34px; border-radius: 50%; background: var(--card-bg); border: 2px solid var(--primary); color: var(--text-main); font-size: 0.75rem; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
-    .player-label { background: rgba(15, 23, 42, 0.85); color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; margin-top: 2px; text-align: center; white-space: nowrap; max-width: 75px; overflow: hidden; text-overflow: ellipsis; }
-
-    /* Radar Chart */
-    .radar-container { width: 100%; max-width: 300px; margin: 0 auto; }
-
-    /* Match History Item */
-    .match-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--card-border); font-size: 0.85rem; }
-    .match-score { font-family: 'Sora', sans-serif; font-weight: 800; font-size: 1rem; }
-
-    /* Table */
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--card-border); }
-    th { color: var(--text-sub); font-weight: 600; }
+    #ia-response {
+      margin-top: 15px;
+      padding: 10px;
+      background: var(--bg-color);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
 
   <header>
-    <div class="brand">
-      <span class="brand-title" id="club-display-name">Sisal FC 2021</span>
-      <span class="badge-club">PRO CLUBS</span>
-    </div>
-    <button class="btn-action" onclick="switchTab('tab-ricerca')">Cambia Club</button>
+    <h1>Sisal FC 2021</h1>
   </header>
 
-  <div class="container">
-
-    <!-- TAB 1: SQUADRA -->
-    <div id="tab-squadra" class="tab-content active">
+  <main>
+    <!-- 1. SQUADRA -->
+    <section id="tab-squadra" class="tab-content active">
       <div class="card">
-        <div class="card-title">Record Stagionale <span id="division-badge" style="font-size:0.8rem; color:var(--primary)">Div. -</span></div>
-        <div class="grid-3">
-          <div class="stat-box"><div class="stat-val" id="stat-wins">0</div><div class="stat-lbl">Vittorie</div></div>
-          <div class="stat-box"><div class="stat-val" id="stat-ties">0</div><div class="stat-lbl">Pareggi</div></div>
-          <div class="stat-box"><div class="stat-val" id="stat-losses">0</div><div class="stat-lbl">Sconfitte</div></div>
-        </div>
-        <div style="margin-top: 12px; text-align: center;">
-          <div style="font-size:0.8rem; color:var(--text-sub)">Forma Ultime Partite</div>
-          <div class="form-dots" id="form-dots-container">
-            <div class="dot dot-v">-</div>
-          </div>
-        </div>
+        <h2>Panoramica Squadra</h2>
+        <p>Statistiche generali e andamento del club Sisal FC 2021.</p>
       </div>
+    </section>
 
+    <!-- 2. GIOCATORI -->
+    <section id="tab-giocatori" class="tab-content">
       <div class="card">
-        <div class="card-title">Statistiche Gol & Difesa</div>
-        <div class="grid-3">
-          <div class="stat-box"><div class="stat-val" id="stat-goals">0</div><div class="stat-lbl">Gol Fatti</div></div>
-          <div class="stat-box"><div class="stat-val" id="stat-ga">0</div><div class="stat-lbl">Gol Subiti</div></div>
-          <div class="stat-box"><div class="stat-val" id="stat-cleansheets">0</div><div class="stat-lbl">Porte Inviolate</div></div>
-        </div>
+        <h2>Rosa Giocatori</h2>
+        <p>Elenco completo dei membri della squadra e dettagli dei ruoli.</p>
       </div>
+    </section>
 
+    <!-- 3. TOP 3 -->
+    <section id="tab-top3" class="tab-content">
       <div class="card">
-        <div class="card-title">Obiettivi Serata</div>
-        <div style="margin-bottom: 10px;">
-          <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
-            <span>3 Vittorie stasera</span>
-            <span id="obj-wins-text">0 / 3</span>
-          </div>
-          <div class="progress-bar-bg"><div class="progress-bar-fill" id="obj-wins-bar"></div></div>
-        </div>
-        <div>
-          <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
-            <span>Meno di 3 gol subiti complessivi</span>
-            <span id="obj-def-text">0 / 3</span>
-          </div>
-          <div class="progress-bar-bg"><div class="progress-bar-fill" id="obj-def-bar"></div></div>
-        </div>
+        <h2>Top 3 Classifica</h2>
+        <p>Migliori marcatori, assistman e MVP della settimana.</p>
       </div>
+    </section>
 
+    <!-- 4. CAMPO -->
+    <section id="tab-campo" class="tab-content">
       <div class="card">
-        <div class="card-title">Consigli di Squadra</div>
-        <div id="team-advice-container">
-          <div class="advice-box">Caricamento consigli tattici automatizzati...</div>
-        </div>
+        <h2>Schieramento in Campo</h2>
+        <p>Configurazione del modulo 3-4-2-1 e istruzioni di squadra.</p>
       </div>
+    </section>
 
+    <!-- 5. OPPOSIZIONI -->
+    <section id="tab-opposizioni" class="tab-content">
       <div class="card">
-        <div class="card-title">Ultime Partite</div>
-        <div id="matches-list">
-          <div style="font-size:0.85rem; color:var(--text-sub)">Nessuna partita recente caricata.</div>
-        </div>
+        <h2>Analisi Opposizioni</h2>
+        <p>Storico degli avversari incontrati e dati sui match ufficiali.</p>
       </div>
-    </div>
+    </section>
 
-    <!-- TAB 2: GIOCATORI -->
-    <div id="tab-giocatori" class="tab-content">
+    <!-- 6. IA (ASSISTENTE TATTICO) -->
+    <section id="tab-ia" class="tab-content">
       <div class="card">
-        <div class="card-title">Rosa Giocatori</div>
-        <select id="player-select" onchange="renderPlayerDetails()"></select>
+        <h2>Assistente Tattico IA</h2>
+        <textarea id="ia-prompt" placeholder="Fai una domanda tattica all'assistente..."></textarea>
+        <button class="btn-action" onclick="chiediAssistente()">Chiedi all'IA</button>
+        <div id="ia-response">In attesa di una domanda...</div>
       </div>
+    </section>
+  </main>
 
-      <div id="player-details-card" class="card">
-        <div class="card-title" id="player-name-title">Nome Giocatore</div>
-        <div class="grid-3" style="margin-bottom: 12px;">
-          <div class="stat-box"><div class="stat-val" id="p-games">0</div><div class="stat-lbl">Presenze</div></div>
-          <div class="stat-box"><div class="stat-val" id="p-rating">0.0</div><div class="stat-lbl">Voto Medio</div></div>
-          <div class="stat-box"><div class="stat-val" id="p-motm">0</div><div class="stat-lbl">Migliore in Campo</div></div>
-        </div>
-        <div class="grid-2" style="margin-bottom: 12px;">
-          <div class="stat-box"><div class="stat-val" id="p-goals">0</div><div class="stat-lbl">Gol</div></div>
-          <div class="stat-box"><div class="stat-val" id="p-assists">0</div><div class="stat-lbl">Assist</div></div>
-        </div>
-
-        <div class="radar-container" id="player-radar-svg"></div>
-
-        <div id="p-advice-sfrutta" class="advice-box" style="margin-top:12px;">-</div>
-        <div id="p-advice-migliora" class="advice-box warn" style="margin-top:8px;">-</div>
-        <div id="p-advice-role" class="advice-box" style="margin-top:8px; border-left-color:var(--primary-accent);">-</div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Confronto Giocatori</div>
-        <div class="grid-2">
-          <select id="compare-p1" onchange="renderComparison()"></select>
-          <select id="compare-p2" onchange="renderComparison()"></select>
-        </div>
-        <div class="radar-container" id="compare-radar-svg" style="margin-top:12px;"></div>
-      </div>
-    </div>
-
-    <!-- TAB 3: CLASSIFICA SETTIMANALE -->
-    <div id="tab-classifica" class="tab-content">
-      <div class="card">
-        <div class="card-title">Migliori della Settimana (Min. 3 Partite)</div>
-        <p style="font-size:0.8rem; color:var(--text-sub); margin-bottom:12px;">
-          Punteggio = Voto Medio × 10 + Gol × 4 + Assist × 3 + MVP × 5
-        </p>
-        <div id="weekly-top3-container"></div>
-      </div>
-    </div>
-
-    <!-- TAB 4: FORMAZIONE -->
-    <div id="tab-formazione" class="tab-content">
-      <div class="card">
-        <div class="card-title">Configura Formazione</div>
-        <select id="formation-select" onchange="updatePitchLayout()">
-          <option value="4-4-2">4-4-2</option>
-          <option value="4-3-3">4-3-3</option>
-          <option value="4-2-3-1">4-2-3-1</option>
-          <option value="4-4-1-1">4-4-1-1</option>
-          <option value="3-4-2-1" selected>3-4-2-1</option>
-          <option value="3-5-2">3-5-2</option>
-          <option value="5-3-2">5-3-2</option>
-        </select>
-        <button class="btn-action" style="width:100%; margin-top:4px;" onclick="autoSuggestLineup()">Suggerisci Formazione Ideale</button>
-      </div>
-
-      <div class="pitch-container" id="pitch-area">
-        <svg class="pitch-svg" viewBox="0 0 300 420">
-          <rect width="300" height="420" fill="none" stroke="var(--field-lines)" stroke-width="2"/>
-          <line x1="0" y1="210" x2="300" y2="210" stroke="var(--field-lines)" stroke-width="2"/>
-          <circle cx="150" cy="210" r="45" fill="none" stroke="var(--field-lines)" stroke-width="2"/>
-          <rect x="75" y="0" width="150" height="60" fill="none" stroke="var(--field-lines)" stroke-width="2"/>
-          <rect x="75" y="360" width="150" height="60" fill="none" stroke="var(--field-lines)" stroke-width="2"/>
-        </svg>
-        <div id="pitch-players"></div>
-      </div>
-
-      <div class="card" style="margin-top:16px;">
-        <div class="card-title">Analisi Tattica Modulo</div>
-        <div id="formation-analysis" class="advice-box">Nessuna criticità rilevata.</div>
-      </div>
-    </div>
-
-    <!-- TAB 5: AVVERSARI -->
-    <div id="tab-avversari" class="tab-content">
-      <div class="card">
-        <div class="card-title">Analizza Avversario</div>
-        <input type="text" id="opponent-search-input" placeholder="Nome club avversario..." />
-        <button class="btn-submit" onclick="analyzeOpponent()">Cerca e Analizza</button>
-      </div>
-
-      <div id="opponent-results" style="display:none;">
-        <div class="card">
-          <div class="card-title" id="opp-name">Nome Avversario</div>
-          <div id="opp-strengths-field" style="margin-bottom:12px;"></div>
-          <div id="opp-key-player" class="advice-box warn"></div>
-          <div id="opp-game-plan" class="advice-box" style="margin-top:8px;"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 6: IA -->
-    <div id="tab-ia" class="tab-content">
-      <div class="card">
-        <div class="card-title">Assistente Tattico Gemini</div>
-        <textarea id="ai-style-input" rows="2" placeholder="Come volete giocare? (es. Contropiede rapido, Possesso palla, Pressing alto)..."></textarea>
-        <textarea id="ai-question-input" rows="2" placeholder="Fai una domanda specifica al mister IA..."></textarea>
-        <button class="btn-submit" onclick="askAIAssistant()">Chiedi all'Assistente</button>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Risposta Tattica</div>
-        <div id="ai-response-container" style="font-size:0.9rem; line-height:1.5; color:var(--text-main);">
-          Invia una richiesta per ricevere l'analisi tattica personalizzata.
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 7: RICERCA & IMPORTA -->
-    <div id="tab-ricerca" class="tab-content">
-      <div class="card">
-        <div class="card-title">Cerca Club EA Sports</div>
-        <input type="text" id="club-search-input" placeholder="Es. Sisal FC 2021" value="Sisal FC 2021" />
-        <button class="btn-submit" onclick="searchAndSetClub()">Carica Club</button>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Importa Dati Manuale (Fallback)</div>
-        <p style="font-size:0.75rem; color:var(--text-sub); margin-bottom:8px;">Incolla i JSON se i server EA sono bloccati.</p>
-        <label style="font-size:0.75rem;">JSON Statistiche Membri:</label>
-        <textarea id="manual-members-json" rows="3" placeholder="Incolla JSON membri..."></textarea>
-        <label style="font-size:0.75rem;">JSON Partite:</label>
-        <textarea id="manual-matches-json" rows="3" placeholder="Incolla JSON partite..."></textarea>
-        <button class="btn-action" style="width:100%;" onclick="importManualData()">Importa Dati Manualmente</button>
-      </div>
-    </div>
-
-  </div>
-
-  <nav>
-    <button class="nav-btn active" onclick="switchTab('tab-squadra')">
-      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      Squadra
+  <!-- BARRA DI NAVIGAZIONE IN BASSO -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="tab-squadra">
+      <span class="icon">🛡️</span>
+      <span>Squadra</span>
     </button>
-    <button class="nav-btn" onclick="switchTab('tab-giocatori')">
-      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-      Giocatori
+    <button class="nav-btn" data-tab="tab-giocatori">
+      <span class="icon">👥</span>
+      <span>Giocatori</span>
     </button>
-    <button class="nav-btn" onclick="switchTab('tab-classifica')">
-      <svg viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V18H8v2h8v-2h-3v-2.1c2.12-.39 3.79-2.07 3.98-4.24C19.08 11.35 21 9.3 21 7V5h-2z"/></svg>
-      Top 3
+    <button class="nav-btn" data-tab="tab-top3">
+      <span class="icon">🏆</span>
+      <span>Top 3</span>
     </button>
-    <button class="nav-btn" onclick="switchTab('tab-formazione')">
-      <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4V4zm2 2v12h12V6H6z"/></svg>
-      Campo
+    <button class="nav-btn" data-tab="tab-campo">
+      <span class="icon">⚽</span>
+      <span>Campo</span>
     </button>
-    <button class="nav-btn" onclick="switchTab('tab-avversari')">
-      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-      Opposizioni
+    <button class="nav-btn" data-tab="tab-opposizioni">
+      <span class="icon">📊</span>
+      <span>Opposizioni</span>
     </button>
-    <button class="nav-btn" onclick="switchTab('tab-ia')">
-      <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
-      IA
+    <button class="nav-btn" data-tab="tab-ia">
+      <span class="icon">🤖</span>
+      <span>IA</span>
     </button>
   </nav>
 
   <script>
-    // Stato Applicazione
-    let currentClubId = localStorage.getItem('sisal_club_id') || '328794';
-    let currentClubName = localStorage.getItem('sisal_club_name') || 'Sisal FC 2021';
-    let clubOverallStats = null;
-    let membersStats = [];
-    let recentMatches = [];
-    let currentFormationAssignments = {};
+    // Gestione cambio schede garantita al caricamento del DOM
+    document.addEventListener('DOMContentLoaded', () => {
+      const navButtons = document.querySelectorAll('.bottom-nav .nav-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
 
-    const FORMATIONS_LAYOUTS = {
-      '4-4-2': [
-        { role: 'Portiere', pos: [50, 90] },
-        { role: 'Terzino sinistro', pos: [15, 72] }, { role: 'Difensore centrale', pos: [38, 75] }, { role: 'Difensore centrale', pos: [62, 75] }, { role: 'Terzino destro', pos: [85, 72] },
-        { role: 'Esterno sinistro', pos: [15, 45] }, { role: 'Centrocampista', pos: [38, 50] }, { role: 'Centrocampista', pos: [62, 50] }, { role: 'Esterno destro', pos: [85, 45] },
-        { role: 'Attaccante', pos: [35, 20] }, { role: 'Attaccante', pos: [65, 20] }
-      ],
-      '4-3-3': [
-        { role: 'Portiere', pos: [50, 90] },
-        { role: 'Terzino sinistro', pos: [15, 72] }, { role: 'Difensore centrale', pos: [38, 75] }, { role: 'Difensore centrale', pos: [62, 75] }, { role: 'Terzino destro', pos: [85, 72] },
-        { role: 'Centrocampista', pos: [30, 50] }, { role: 'Mediano', pos: [50, 58] }, { role: 'Centrocampista', pos: [70, 50] },
-        { role: 'Ala sinistra', pos: [20, 22] }, { role: 'Attaccante', pos: [50, 18] }, { role: 'Ala destra', pos: [80, 22] }
-      ],
-      '4-2-3-1': [
-        { role: 'Portiere', pos: [50, 90] },
-        { role: 'Terzino sinistro', pos: [15, 72] }, { role: 'Difensore centrale', pos: [38, 75] }, { role: 'Difensore centrale', pos: [62, 75] }, { role: 'Terzino destro', pos: [85, 72] },
-        { role: 'Me
+      navButtons.forEach(btn => {
+        // Supporta sia touch che click per la massima reattività su mobile
+        ['click', 'touchstart'].forEach(eventType => {
+          btn.addEventListener(eventType, (e) => {
+            if (eventType === 'touchstart') e.preventDefault(); // Evita il doppio tap
+
+            const targetTabId = btn.getAttribute('data-tab');
+
+            // Disattiva tutti i pulsanti e nascondi tutte le schede
+            navButtons.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(tc => tc.classList.remove('active'));
+
+            // Attiva il pulsante selezionato e mostra la relativa scheda
+            btn.classList.add('active');
+            const activeSection = document.getElementById(targetTabId);
+            if (activeSection) {
+              activeSection.classList.add('active');
+            }
+          });
+        });
+      });
+    });
+
+    // Chiamata all'API dell'Assistente IA
+    async function chiediAssistente() {
+      const promptInput = document.getElementById('ia-prompt');
+      const responseDiv = document.getElementById('ia-response');
+      const domanda = promptInput.value.trim();
+
+      if (!domanda) {
+        alert('Inserisci una domanda prima di inviare.');
+        return;
+      }
+
+      responseDiv.innerText = "L'assistente sta elaborando la risposta...";
+
+      try {
+        const res = await fetch('/api/assistente', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domandaUtente: domanda })
+        });
+
+        const data = await res.json();
+        if (data.risposta) {
+          responseDiv.innerText = data.risposta;
+        } else if (data.error) {
+          responseDiv.innerText = "Errore: " + data.error;
+        } else {
+          responseDiv.innerText = "Nessuna risposta ricevuta.";
+        }
+      } catch (err) {
+        responseDiv.innerText = "Errore nella comunicazione con il server.";
+      }
+    }
+  </script>
+</body>
+</html>
