@@ -1,3 +1,14 @@
 {
-  "cleanUrls": true
+  "version": 2,
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/ea",
+      "destination": "/api/ea.js"
+    },
+    {
+      "source": "/api/assistente",
+      "destination": "/api/assistente.js"
+    }
+  ]
 }
