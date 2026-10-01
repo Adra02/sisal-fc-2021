@@ -1,4 +1,4 @@
-const { GoogleGenAI } = require('@google/genai');
+const https = require('https');
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -19,12 +19,9 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { clubData, modulo, formazione, comeGiochiamo, domandaUtente } = req.body;
+    const { clubData, modulo, formazione, comeGiochiamo, domandaUtente } = req.body || {};
 
-    const ai = new GoogleGenAI({ apiKey });
-
-    const promptText = `
-Sei l'Assistente Tattico Senior di FC 27 Pro Clubs per la squadra "Sisal FC 2021".
+    const promptText = `Sei l'Assistente Tattico Senior di FC 27 Pro Clubs per la squadra "Sisal FC 2021".
 REGOLE RIGIDE:
 1. Rispondi SEMPRE in italiano.
 2. Usa solo testo semplice (max 2 brevi paragrafi).
@@ -37,15 +34,50 @@ Modulo Impostato: ${modulo || 'Non specificato'}
 Titolari Schierati: ${JSON.stringify(formazione || {})}
 Stile/Istruzioni squadra: ${comeGiochiamo || 'Nessuna indicazione fornita'}
 
-Domanda del Mister/Giocatore: ${domandaUtente || 'Fornisci una breve analisi tattica per migliorare il rendimento generale.'}
-`;
+Domanda del Mister/Giocatore: ${domandaUtente || 'Fornisci una breve analisi tattica per migliorare il rendimento generale.'}`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: promptText,
+    const requestBody = JSON.stringify({
+      contents: [
+        {
+          parts: [{ text: promptText }]
+        }
+      ]
     });
 
-    return res.status(200).json({ risposta: response.text });
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const data = await new Promise((resolve, reject) => {
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(requestBody)
+        }
+      };
+
+      const request = https.request(url, options, (response) => {
+        let body = '';
+        response.on('data', chunk => body += chunk);
+        response.on('end', () => {
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            try {
+              resolve(JSON.parse(body));
+            } catch (e) {
+              reject(new Error('Risposta API non in formato JSON valido'));
+            }
+          } else {
+            reject(new Error(`Errore API Gemini: Status ${response.statusCode} - ${body}`));
+          }
+        });
+      });
+
+      request.on('error', (err) => reject(err));
+      request.write(requestBody);
+      request.end();
+    });
+
+    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Nessuna risposta generata dall\'assistente.';
+    return res.status(200).json({ risposta: aiText });
 
   } catch (error) {
     return res.status(500).json({ 
