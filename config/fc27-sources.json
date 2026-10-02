@@ -1,33 +1,25 @@
 {
-  "version": 1,
-  "updatedAt": "2026-10-02",
-  "sources": [
-    {
-      "id": "whitegamer7",
-      "name": "WhiteGamer7",
-      "type": "community",
-      "channelId": "UC_7JtaIIvjBwGnf1kERlQnw",
-      "channelUrl": "https://www.youtube.com/@WhiteGamer7",
-      "priority": 10,
-      "focus": ["Clubs", "gameplay", "guides", "tactics", "archetypes", "AI"]
-    },
-    {
-      "id": "proclubsweekly",
-      "name": "Pro Clubs Weekly",
-      "type": "community",
-      "channelId": "UCp4c0UH6yWUk-NqNDy5E_rg",
-      "channelUrl": "https://www.youtube.com/@Proclubsweekly",
-      "priority": 10,
-      "focus": ["competitive 11v11", "match analysis", "builds", "tactics", "competitive Clubs"]
-    },
-    {
-      "id": "easportsfc",
-      "name": "EA SPORTS FC",
-      "type": "official",
-      "channelId": "UCoyaxd5LQSuP4ChkxK0pnZQ",
-      "channelUrl": "https://www.youtube.com/@easportsfc",
-      "priority": 12,
-      "focus": ["official gameplay", "Clubs", "patches", "deep dives", "official mechanics"]
-    }
-  ]
+  "_note": "Le fonti YouTube si leggono dai feed RSS pubblici (nessuna YouTube Data API). Se channelId è null lo script lo ricava dall'handle. Controlla gli handle: quelli segnati da_verificare potrebbero non essere esatti.",
+  "channels": [
+    { "name": "WhiteGamer7", "handle": "@WhiteGamer7", "channelId": null, "enabled": true, "da_verificare": true },
+    { "name": "Pro Clubs Weekly", "handle": "@ProClubsWeekly", "channelId": null, "enabled": true, "da_verificare": true },
+    { "name": "EA SPORTS FC", "handle": "@EASPORTSFC", "channelId": null, "enabled": true, "da_verificare": true }
+  ],
+  "filters": {
+    "requireAll": ["fc ?27|fc27"],
+    "requireAny": ["clubs", "pro clubs", "proclubs", "pro-clubs"],
+    "exclude": ["fc ?26 only|fc ?25"],
+    "maxAgeDays": 30
+  },
+  "limits": {
+    "maxVideosPerRun": 3,
+    "maxEntriesPerVideo": 6,
+    "maxKnowledgeEntries": 80,
+    "maxProcessedVideos": 200,
+    "pauseBetweenCallsMs": 2500
+  },
+  "gemini": {
+    "model": "gemini-3.6-flash",
+    "fallbackModels": ["gemini-3.5-flash", "gemini-3.1-flash-lite"]
+  }
 }
