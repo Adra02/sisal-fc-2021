@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "cleanUrls": true,
+  "functions": {
+    "api/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/api/club-data", "destination": "/api/club-data.js" },
+    { "source": "/api/assistente", "destination": "/api/assistente.js" },
+    { "source": "/api/health", "destination": "/api/health.js" }
+  ]
+}
