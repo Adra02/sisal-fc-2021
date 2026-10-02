@@ -1,0 +1,42 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+
+const root = process.cwd();
+const required = [
+  'index.html','package.json','vercel.json','.nvmrc','manifest.webmanifest','sw.js',
+  'api/club-ai-sync.js','api/assistente.js','api/health.js',
+  'knowledge/fc27-knowledge.json','config/fc27-sources.json',
+  'scripts/update-fc27-knowledge.mjs','scripts/test-club-ai-sync.mjs'
+];
+
+for (const file of required) {
+  const full = path.join(root, file);
+  if (!fs.existsSync(full)) throw new Error(`File mancante: ${file}`);
+}
+
+const pkg = JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+if (pkg.engines?.node !== '24.x') throw new Error('package.json deve richiedere Node 24.x.');
+
+const vercel = JSON.parse(fs.readFileSync(path.join(root,'vercel.json'),'utf8'));
+if ('functions' in vercel) throw new Error('vercel.json contiene ancora il blocco functions: rimuoverlo.');
+
+const manifest = JSON.parse(fs.readFileSync(path.join(root,'manifest.webmanifest'),'utf8'));
+if (!manifest.start_url || !manifest.display) throw new Error('manifest.webmanifest incompleto.');
+JSON.parse(fs.readFileSync(path.join(root,'knowledge/fc27-knowledge.json'),'utf8'));
+JSON.parse(fs.readFileSync(path.join(root,'config/fc27-sources.json'),'utf8'));
+
+for (const js of ['api/club-ai-sync.js','api/assistente.js','api/health.js','scripts/update-fc27-knowledge.mjs']) {
+  execFileSync(process.execPath,['--check',path.join(root,js)],{stdio:'pipe'});
+}
+
+const html = fs.readFileSync(path.join(root,'index.html'),'utf8');
+if (!/^<!doctype html>/i.test(html) || !/<\/html>/i.test(html)) throw new Error('index.html non è un documento HTML completo.');
+if (!html.includes('id="ownName"') || !html.includes('id="opName"')) throw new Error('Campi nome squadra/avversario mancanti.');
+if (!html.includes('/api/club-ai-sync')) throw new Error('index.html non chiama /api/club-ai-sync.');
+if (!html.includes("data-tab=\"fun\"")) throw new Error('Tab Fun mancante.');
+if (html.includes('incolla il link Pro Clubs Tracker')) throw new Error('Testo vecchio del flusso URL ancora presente.');
+if (html.includes('K.ownUrl') || html.includes('K.opUrl')) throw new Error('Vecchie chiavi URL ancora usate.');
+if (!html.includes('adaptAIMatches')) throw new Error('Adattatore delle partite IA mancante.');
+
+console.log('VERIFY OK — struttura, JSON, Vercel, sintassi JS e controlli dashboard superati.');
