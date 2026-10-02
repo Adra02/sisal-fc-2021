@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/assistente.js": {
+      "maxDuration": 30,
+      "includeFiles": "knowledge/fc27-knowledge.json"
+    }
+  }
+}
