@@ -1,0 +1,20 @@
+{
+  "name": "sisal-fc-2021-fc27-command-center",
+  "version": "6.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "verify": "node scripts/verify-project.mjs",
+    "test:ea": "node scripts/test-ea-client.mjs",
+    "test:sync": "node scripts/test-ea-client.mjs",
+    "test:ai": "node scripts/test-assistente.mjs",
+    "test:ai-connection": "node scripts/test-ai-connection.mjs"
+  },
+  "dependencies": {
+    "@sparticuz/chromium": "153.0.0",
+    "puppeteer-core": "25.11.0"
+  }
+}
