@@ -1,0 +1,11 @@
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const s=await fs.readFile(new URL('../api/assistente.js',import.meta.url),'utf8');
+assert.match(s,/gemini-3\.5-flash-lite/);
+assert.match(s,/readAllFiles/);
+assert.match(s,/buildTeam/);
+assert.match(s,/central-shared-dataset/);
+assert.doesNotMatch(s,/proclubs\.ea\.com/);
+assert.doesNotMatch(s,/Google Search/);
+assert.doesNotMatch(s,/GROQ/);
+console.log('test-assistente: OK');
