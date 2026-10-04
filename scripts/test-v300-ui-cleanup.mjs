@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const html=fs.readFileSync('index.html','utf8');
+const js=fs.readFileSync('index-inline.js','utf8');
+assert.match(html,/index-inline\.js\?v=31\.0/);
+assert.doesNotMatch(js,/data-edit-totals/);
+assert.doesNotMatch(js,/data-save-totals/);
+assert.doesNotMatch(js,/data-save-and-import-tracker/);
+assert.doesNotMatch(js,/data-update-tracker/);
+assert.doesNotMatch(js,/trackerUrl_/);
+assert.doesNotMatch(js,/Modifica totale storico/);
+assert.doesNotMatch(js,/Link ProClubTracker/);
+assert.doesNotMatch(html,/tracker-import/);
+assert.doesNotMatch(html,/trackerUrl_/);
+console.log('v300 ui cleanup tests passed');
