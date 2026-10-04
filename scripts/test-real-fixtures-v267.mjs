@@ -1,0 +1,16 @@
+import fs from 'node:fs/promises';
+import assert from 'node:assert/strict';
+import { normalizePlayersFile, normalizeMatchesFile, buildTeam } from '../lib/data-pipeline.js';
+const matches=JSON.parse(await fs.readFile('/mnt/data/matches.json','utf8'));
+const stats=JSON.parse(await fs.readFile('/mnt/data/stats.json','utf8'));
+const team=buildTeam({role:'own',fileRecords:{players:{parsed:stats},league:{parsed:matches},playoffs:null,friendlies:null}});
+assert.equal(team.matches.length,5);
+assert.equal(team.overall.matches,5);
+assert.equal(team.overall.wins,2);
+assert.equal(team.overall.draws,0);
+assert.equal(team.overall.losses,3);
+assert.equal(team.overall.goals,14);
+assert.equal(team.overall.against,18);
+assert.equal(team.recent5.team.matches,5);
+assert.ok(team.players.some(p=>p.name==='AdraTheTrue02'));
+console.log('test-real-fixtures-v267: OK');
