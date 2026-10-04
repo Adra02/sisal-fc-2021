@@ -1,7 +1,7 @@
-# Sisal FC 2021 — FC27 Command Center v26.6
+# Sisal FC 2021 — FC27 Command Center v26.7
 
 ## Sorgente dati
-I dati del club arrivano esclusivamente dai file JSON/TXT caricati nell’archivio centrale del sito. Per i dati storici Totale è disponibile un import verificato da un link pubblico di ProClubTracker; i quattro file JSON/TXT restano la fonte per il roster e per le ultime 5.
+I dati del club arrivano esclusivamente dai file JSON/TXT caricati nell’archivio centrale del sito. Per i dati storici Totale è disponibile un import verificato dal link pubblico di ProClubTracker: il link viene letto da Gemini tramite URL Context, mentre i quattro file JSON/TXT restano la fonte per il roster e per le ultime 5.
 
 ## fino a 4 file per squadra
 Per ogni squadra esistono esattamente quattro categorie: Giocatori, Partite di campionato, Playoff, Amichevoli. La stessa struttura esiste per la squadra avversaria.
@@ -10,7 +10,7 @@ Per ogni squadra esistono esattamente quattro categorie: Giocatori, Partite di c
 I file vengono salvati su Vercel Blob privato. Una volta caricati, tutti i visitatori del sito leggono lo stesso dataset. Chiunque abbia il link può caricare, sostituire o cancellare i file: non è presente alcun PIN, login o controllo amministrativo. Nessuna delle quattro categorie è obbligatoria: il dataset può essere parziale e completato in seguito.
 
 ## IA
-`api/assistente.js` legge direttamente dal Blob centrale, ricompone le quattro categorie e invia a Gemini `gemini-3.5-flash-lite` solo dati già presenti nel dataset. Nessun web search e nessuna chiamata EA.
+`api/assistente.js` legge direttamente dal Blob centrale, ricompone le quattro categorie e invia a Gemini `gemini-3.5-flash-lite` solo dati già presenti nel dataset. L’import ProClubTracker usa invece il tool URL Context di Gemini per leggere esclusivamente il link del club fornito dall’utente e verificare il record storico. Non viene usato Google Search e non viene chiamata l’API EA dal sito.
 
 ## Fun
 La sezione Fun calcola automaticamente premi e curiosità dai dati di Giocatori, Campionato, Playoff e Amichevoli: capocannoniere, assistman, presenze, rating, precisione passaggi, contrasti, vittorie/sconfitte più larghe, clean sheet, partita più spettacolare, miglior prestazione singola e strisce di vittorie.
