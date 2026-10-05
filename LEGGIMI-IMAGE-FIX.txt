@@ -1,8 +1,0 @@
-SISAL FC 2021 — V32.1.3 IMAGE FIX
-
-Il file assets/sisal-branding.png è stato ricreato in PNG RGBA 1536x857 con il fondo nero rimosso.
-L’immagine mantiene logo, testo, ombre e bagliori; il nero che resta dentro gli elementi grafici fa parte del logo e non è il fondo.
-
-Per evitare che il browser/PWA riutilizzi il vecchio asset, index.html usa il suffisso ?v=32.1.3-logo e il Service Worker usa una cache dedicata.
-
-NON serve cambiare APP_VERSION: il codice applicativo resta V32.1.3.
