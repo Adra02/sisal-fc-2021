@@ -81,6 +81,113 @@ function displayTeamTotals(t){
   return {matches:null,wins:null,draws:null,losses:null,goals:null,against:null,winRate:null,source:'unset'};
 }
 function displayValue(value){return value==null?'—':num(value)}
+            function finiteValue(value){
+  const n=Number(value);
+  return Number.isFinite(n)?n:null;
+}
+function historicalProfileValue(t,key){
+  const totals=t?.shooting?.totalsProfile||{};
+  const overall=t?.shooting?.overallProfile||{};
+  return finiteValue(totals[key]) ?? finiteValue(overall[key]);
+}
+function shootingRate(value){
+  const n=finiteValue(value);
+  return n==null?'—':n.toFixed(1)+'%';
+}
+function shootingAvg(value){
+  const n=finiteValue(value);
+  return n==null?'—':n.toFixed(2);
+}
+function shootingCount(value){
+  const n=finiteValue(value);
+  return n==null?'—':Math.round(n);
+}
+function shootingMetricRow(label,value){
+  return '<div class="profile-row"><span>'+esc(label)+'</span><span>'+esc(value)+'</span></div>';
+}
+function shootingAnalyticsCard(t,title,scope){
+  const recent=scope==='recent5';
+  const o=recent?(t?.recent5?.team||{}):displayTeamTotals(t);
+  const matches=finiteValue(o.matches);
+  const wins=finiteValue(o.wins);
+  const draws=finiteValue(o.draws);
+  const losses=finiteValue(o.losses);
+  const goals=finiteValue(o.goals);
+  const against=finiteValue(o.against);
+  const gd=goals!=null&&against!=null?goals-against:null;
+  const points=finiteValue(o.points) ?? (wins!=null&&draws!=null?wins*3+draws:null);
+
+  let shots=recent?finiteValue(t?.shooting?.recent5?.shots):historicalProfileValue(t,'shots');
+  let conversion=null;
+  let shotsLabel='non disponibili';
+  const explicitConversion=recent?null:historicalProfileValue(t,'goalConversionRate');
+
+  if(recent){
+    const s=t?.shooting?.recent5;
+    if(s?.complete&&shots!=null){
+      conversion=goals!=null&&shots>0?100*goals/shots:null;
+      shotsLabel='osservati';
+    }else{
+      shots=null;
+      const known=s?.knownMatches||0;
+      const total=s?.totalMatches||0;
+      shotsLabel=total?'dati incompleti ('+known+'/'+total+' gare)':'non disponibili';
+    }
+  }else if(shots!=null){
+    conversion=goals!=null&&shots>0?100*goals/shots:null;
+    shotsLabel='osservati';
+  }else if(explicitConversion!=null&&goals!=null&&explicitConversion>0){
+    shots=Math.round((goals/explicitConversion)*100);
+    conversion=explicitConversion;
+    shotsLabel='stimati dalla % realizzativa';
+  }else{
+    conversion=explicitConversion;
+  }
+
+  const shotsPerGoal=shots!=null&&goals!=null&&goals>0?shots/goals:null;
+  const shotsPerMatch=shots!=null&&matches>0?shots/matches:null;
+  const goalsPerMatch=goals!=null&&matches>0?goals/matches:null;
+  const concededPerMatch=against!=null&&matches>0?against/matches:null;
+  const gdPerMatch=gd!=null&&matches>0?gd/matches:null;
+  const cleanSheets=recent?finiteValue(o.cleanSheets):historicalProfileValue(t,'cleanSheets');
+  const cleanSheetRate=cleanSheets!=null&&matches>0?100*cleanSheets/matches:null;
+  const winRate=wins!=null&&matches>0?100*wins/matches:null;
+  const drawRate=draws!=null&&matches>0?100*draws/matches:null;
+  const lossRate=losses!=null&&matches>0?100*losses/matches:null;
+  const pointsPerMatch=points!=null&&matches>0?points/matches:null;
+  const pointsRate=points!=null&&matches>0?100*points/(3*matches):null;
+
+  const rows=[
+    shootingMetricRow('Tiri totali',shots==null?'—':shootingCount(shots)+' · '+shotsLabel),
+    shootingMetricRow('Percentuale realizzativa',shootingRate(conversion)),
+    shootingMetricRow('Tiri per gol',shootingAvg(shotsPerGoal)),
+    shootingMetricRow('Tiri per partita',shootingAvg(shotsPerMatch)),
+    shootingMetricRow('Gol per partita',shootingAvg(goalsPerMatch)),
+    shootingMetricRow('Gol subiti per partita',shootingAvg(concededPerMatch)),
+    shootingMetricRow('Differenza reti media per partita',shootingAvg(gdPerMatch)),
+    shootingMetricRow('Clean sheet %',shootingRate(cleanSheetRate)),
+    shootingMetricRow('Vittorie %',shootingRate(winRate)),
+    shootingMetricRow('Pareggi %',shootingRate(drawRate)),
+    shootingMetricRow('Sconfitte %',shootingRate(lossRate)),
+    shootingMetricRow('Punti per partita',shootingAvg(pointsPerMatch)),
+    shootingMetricRow('Punti % · sistema 3-1-0',shootingRate(pointsRate))
+  ].join('');
+
+  const note=recent
+    ? 'Calcolato esclusivamente sulle ultime 5 partite archiviate.'
+    : 'Storico: i tiri vengono presi dai profili storici espliciti; se manca il numero dei tiri ma esiste una % realizzativa storica, il totale viene stimato e arrotondato.';
+
+  return '<div class="card rich-card"><div class="table-caption">'+title+'</div><div class="profile-list">'+rows+'</div><div class="analytics-note">'+esc(note)+'</div></div>';
+}
+function shootingAnalyticsPanel(t){
+  if(!t)return '';
+  return '<div class="rich-grid" style="margin-top:10px"><div class="grid2">'+
+    shootingAnalyticsCard(t,'⚽ Efficienza offensiva e rendimento · STORICO','overall')+
+    shootingAnalyticsCard(t,'⚡ Efficienza offensiva e rendimento · ULTIME 5','recent5')+
+    '</div></div>';
+}
+function totalTable
+
 function totalTable(t,scope='overall'){
   const o=scope==='recent5'?(t?.recent5?.team||{}):displayTeamTotals(t); const src=scope==='recent5'?'Calcolato esclusivamente sulle ultime 5 partite':'Fonte: '+(o.source==='proclubtracker'?'ProClubTracker · Gemini':o.source==='dati-totali-ai'?'Dati totali JSON · IA':o.source==='dati-totali-json'?'Dati totali JSON · automatico':'modifica manuale')+(o.source==='unset'?' · totale storico non ancora impostato':'');
   const gd=o.goals==null||o.against==null?null:num(o.goals)-num(o.against);
@@ -256,5 +363,5 @@ async function loadKnowledge(){try{const r=await fetch('./knowledge/fc27-knowled
 function render(){setHeader();document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));const t=state.tab;el('content').innerHTML=t==='team'?teamPage():t==='players'?playersPage():t==='top'?topPage():t==='pitch'?pitchPage():t==='matches'?matchesPage():t==='fun'?funPage():t==='opponent'?opponentPage():t==='ai'?aiPage():dataPage();bind()}
 function boot(){render();loadSharedData();loadKnowledge()}
 boot();
-if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=32.1.5').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=32.1.6').catch(()=>{});
 })();
