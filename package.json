@@ -1,0 +1,38 @@
+{
+  "name": "sisal-fc-2021-fc27-command-center",
+  "version": "32.1.27",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "verify": "node scripts/verify-project.mjs",
+    "test:pipeline": "node scripts/test-data-pipeline.mjs",
+    "test:shared": "node scripts/test-shared-contract.mjs",
+    "test:ai": "node scripts/test-assistente.mjs",
+    "test:ai-connection": "node scripts/test-ai-connection.mjs",
+    "test:frontend": "node scripts/test-frontend-runtime.mjs",
+    "test:tracker-import": "node scripts/test-tracker-import.mjs",
+    "test:file-recognition": "node scripts/test-file-recognition.mjs",
+    "test:proclubs-schema": "node scripts/test-proclubs-schema.mjs",
+    "test:rich-data": "node scripts/test-rich-data.mjs",
+    "test:v290-behavior": "node scripts/test-v290-behavior.mjs",
+    "test:fixtures-v290": "node scripts/test-real-fixtures-v290.mjs",
+    "test:rich-ui": "node scripts/test-rich-ui-v290.mjs",
+    "test:v300-ui-cleanup": "node scripts/test-v300-ui-cleanup.mjs",
+    "test:analytics-v31": "node scripts/test-analytics-v31.mjs",
+    "test:v32.1-ui": "node scripts/test-v32.1-ui.mjs",
+    "test:v321-metrics": "node scripts/test-v321-metrics.mjs",
+    "test:v3212-profiles": "node scripts/test-v3212-profiles.mjs",
+    "test:v3213-profile-ai": "node scripts/test-v3213-profile-ai.mjs",
+    "test:formation": "node scripts/test-formation.mjs",
+    "test:v3215-recent-tech": "node scripts/test-v3215-recent-tech.mjs",
+    "test:v32124": "node scripts/test-v32124-realism-blob.mjs",
+    "test:v32125": "node scripts/test-v32125-ai-race-director.mjs",
+    "test:v32126": "node scripts/test-v32126-ai-race-director-visible.mjs"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.6.1"
+  }
+}
