@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1100" fill="none">
+<defs><radialGradient id="sky"><stop stop-color="#113b24"/><stop offset="1" stop-color="#020e08"/></radialGradient><linearGradient id="grass" x2="0" y2="1"><stop stop-color="#0a301a"/><stop offset="1" stop-color="#04190d"/></linearGradient></defs>
+<path fill="url(#sky)" d="M0 0h1600v1100H0z"/>
+<g stroke="#255e39" stroke-width="2"><path d="M-90 460Q800-190 1690 460M-90 480Q800-80 1690 480M-90 520Q800 60 1690 520M-90 560Q800 200 1690 560M-90 610Q800 320 1690 610M-90 660Q800 430 1690 660"/><path d="M80 372l220 255M220 280l210 300M400 220l140 330M620 180l60 345M980 180l-60 345M1200 220l-140 330M1380 280l-210 300M1520 372l-220 255"/></g>
+<path d="M0 370Q800-170 1600 370L1600 425Q800-50 0 425Z" fill="#061b0f" stroke="#347549" stroke-width="3"/>
+<g fill="#639a70" opacity=".28"><path d="M210 222h120v9H210zM440 150h120v9H440zM1040 150h120v9h-120zM1270 222h120v9h-120z"/></g>
+<text x="800" y="160" text-anchor="middle" fill="#72b582" font-family="Arial,sans-serif" font-size="32" letter-spacing="9">SISAL FC 2021 ARENA</text>
+<path d="M365 555h870l400 545H-35Z" fill="url(#grass)"/>
+<g stroke="#43ec7c" stroke-width="3" opacity=".5"><path d="M395 580h810l340 480H55Z"/><path d="M240 820h1120M690 580l-90 135h400l-90-135M610 1060l30-100h320l30 100"/><ellipse cx="800" cy="820" rx="130" ry="64"/><ellipse cx="800" cy="820" rx="4" ry="3"/><path d="M746 580l-25 45h158l-25-45M711 1060l12-37h154l12 37"/></g>
+</svg>
