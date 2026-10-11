@@ -1,0 +1,18 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';import {createHash} from 'node:crypto';import {normalizePlayerName,photoIdentity} from '../lib/player-identity.js';
+const records=new Map(),reads=[],writes=[];
+const path=key=>'sisal-fc/fc27/shared/own/_meta/player-photos/'+createHash('sha256').update(key).digest('hex').slice(0,32)+'.json';
+for(const [key,name] of [['player-9','pinuzzuupazzu'],['player-4','AdraTheTrue02']])records.set(path(key),{schemaVersion:1,playerKey:key,playerName:name,dataUrl:'data:image/jpeg;base64,YQ==',updatedAt:'2026-10-09T00:00:00Z'});
+const ctx={console,Response,URL,Date,Map,Set,JSON,String,Array,Object,Error,createHash,normalizePlayerName,photoIdentity,process:{env:{BLOB_READ_WRITE_TOKEN:'mock-only'}},get:async(p,opts)=>{assert.equal(opts.useCache,true);reads.push(p);return records.has(p)?{statusCode:200,stream:new Response(JSON.stringify(records.get(p))).body}:null;},put:async(p,data,opts)=>{writes.push(p);records.set(p,JSON.parse(data));return{pathname:p};}};
+const source=fs.readFileSync(new URL('../api/player-photo.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/export /g,'')+'\nglobalThis.testAPI={GET,POST};';vm.runInNewContext(source,ctx);const {GET,POST}=ctx.testAPI;
+const ident=(name,clubId='328794')=>({clubId,playerName:name,playerKey:photoIdentity(clubId,name)});
+const get=async(name,keys=[],club)=>{const query=new URLSearchParams({...ident(name,club),legacyKeys:JSON.stringify(keys)});const r=await GET(new Request('https://test/api/player-photo?'+query));return {status:r.status,...await r.json()};};
+const post=async(name,action,dataUrl='')=>{const r=await POST(new Request('https://test/api/player-photo',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...ident(name),action,dataUrl})}));return {status:r.status,...await r.json()};};
+let pin=await get('pinuzzuupazzu',['player-10']);assert(pin.found);assert.equal(pin.playerName,'pinuzzuupazzu');assert.equal(pin.dataUrl,records.get(path('player-9')).dataUrl);
+let lym=await get('lym1t adriqx551',['player-9']);assert.equal(lym.found,false,'live swapped photo must never be served to Lym');
+assert((await get('AdraTheTrue02',['player-4'])).found);assert.equal((await get('pinuzzuupazzu',['player-9'],'another-club')).found,false);
+const readCount=reads.length;await get('pinuzzuupazzu',['player-10']);assert.equal(readCount,reads.length,'hot cache prevents repeated Blob reads');assert.equal(writes.length,0,'reads and recovery do not write Blob');
+assert.equal((await post('pinuzzuupazzu','remove')).status,200);assert.equal((await get('pinuzzuupazzu',['player-9'])).found,false,'tombstone prevents resurrection');assert(records.has(path('player-9')),'legacy original retained');
+const newPhoto='data:image/jpeg;base64,YQ==';assert.equal((await post('pinuzzuupazzu','save',newPhoto)).status,200);assert.equal((await get('pinuzzuupazzu')).dataUrl,newPhoto);
+const bad=await POST(new Request('https://test/api/player-photo',{method:'POST',body:JSON.stringify({action:'save',playerKey:'player-9',playerName:'lym1t adriqx551',dataUrl:newPhoto})}));assert.equal(bad.status,400);
+const foreign=await GET(new Request('https://test/api/player-photo?'+new URLSearchParams({...ident('pinuzzuupazzu'),playerKey:photoIdentity('328794','lym1t adriqx551')})));assert.equal(foreign.status,400);
+console.log('PASS: stored-photo recovery for Pinuzzu and Adra, foreign-owner rejection, club isolation, zero-write recovery, cached reads, stale-client rejection, save/delete tombstones; '+writes.length+' writes for two explicit mutations.');
