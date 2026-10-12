@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {execFileSync} from 'node:child_process';
+const base=process.argv[2]||'d83832e';
+const git=(...args)=>execFileSync('git',args,{encoding:'utf8'});
+const before=git('show',base+':index-inline.js'),after=fs.readFileSync('index-inline.js','utf8');
+const strip=s=>s.replace(/function top3Card\([\s\S]*?(?=function top3RaceSceneProfile)/,'').replace(/async function startTop3Race\([\s\S]*?(?=function setHeader)/,'');
+assert.equal(strip(after),strip(before),'Only the race card and race launcher may change in the application');
+const html=git('show',base+':index.html').replace('<script src="./race-audio.js?v=32.1.39" defer></script>','').replace('./index-inline.js?v=32.1.41-identity','./index-inline.js?v=32.1.41-racing');
+assert.equal(fs.readFileSync('index.html','utf8'),html,'HTML layout, global CSS and other scripts must remain unchanged');
+const allowed=new Set(['index-inline.js','index.html','sw.js','package.json','package-lock.json','race-3d.js','race-audio.js','race-visuals.js','.gitignore','race-app.js','race-engine.js','race-premium.css','api/horse-races.js','lib/horse-racing/service.js','lib/horse-racing/store.js','scripts/test-horse-api.mjs','scripts/test-horse-engine.mjs','scripts/test-horse-scope.mjs','docs/HORSE_RACING.md']);
+const changed=git('diff','--name-only',base).trim().split('\n').filter(Boolean);
+for(const file of changed)assert.ok(allowed.has(file),'Out-of-scope change: '+file);
+assert.equal(JSON.parse(fs.readFileSync('package.json')).dependencies['@vercel/blob'],JSON.parse(git('show',base+':package.json')).dependencies['@vercel/blob']);
+for(const file of ['api/assistente.js','api/club-data.js','api/health.js','api/player-photo.js','lib/shared-store.js','race-motion.js','sisal-ui.css','sisal-pro.css','sisal-pro.js'])assert.equal(fs.readFileSync(file,'utf8'),git('show',base+':'+file),file+' must be unchanged');
+console.log('PASS: all application code outside race launcher/cards, original APIs, Blob store, navigation, global CSS, football ranking functions unchanged from '+base+'.');
