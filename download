@@ -1,6 +1,0 @@
-# Private MongoDB configuration and local installations must never be committed.
-.env
-.env.local
-.env.*.local
-.vercel/
-node_modules/
