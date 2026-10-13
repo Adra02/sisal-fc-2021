@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import vm from 'node:vm';
+const html=await fs.readFile(new URL('../index.html',import.meta.url),'utf8');
+const js=await fs.readFile(new URL('../index-inline.js',import.meta.url),'utf8');
+assert.match(html,/assets\/sisal-header\.png/);
+assert.match(html,/index-inline\.js\?v=32\.0/);
+assert.doesNotMatch(js,/Storico codici recenti dell'export/);
+assert.doesNotMatch(js,/Finish gruppo 1/);
+assert.match(js,/data-pitch-slot/);
+assert.match(js,/openPitchSlotEditor/);
+assert.match(js,/kitPreview/);
+const context={document:{getElementById(){return {textContent:'',innerHTML:'',value:'',className:'',style:{}}},querySelectorAll(){return[]},createElement(){return {}}},localStorage:{getItem(){return null},setItem(){}},sessionStorage:{getItem(){return null}},navigator:{serviceWorker:{register:async()=>({})}},window:{addEventListener(){},scrollTo(){}},location:{protocol:'http:',href:'http://localhost/'},fetch:async()=>({ok:false,status:503,json:async()=>({})}),console,Intl,Date,Number,String,Boolean,Object,Array,Map,Set,Math,JSON,Error,Promise,encodeURIComponent,decodeURIComponent,URL,setTimeout,clearTimeout,confirm:()=>false,alert:()=>{},prompt:()=>null};
+context.globalThis=context;vm.createContext(context);vm.runInContext(js,context,{filename:'index-inline.js'});
+console.log('test-v320-ui-branding: OK');

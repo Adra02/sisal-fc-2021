@@ -30,9 +30,12 @@
     "test:v3215-recent-tech": "node scripts/test-v3215-recent-tech.mjs",
     "test:v32124": "node scripts/test-v32124-realism-blob.mjs",
     "test:v32125": "node scripts/test-v32125-ai-race-director.mjs",
-    "test:v32126": "node scripts/test-v32126-ai-race-director-visible.mjs"
+    "test:v32126": "node scripts/test-v32126-ai-race-director-visible.mjs",
+    "test:migration": "node scripts/test-shared-contract.mjs && node scripts/test-supabase.mjs && node scripts/test-supabase-api.mjs && node scripts/test-migration.mjs && node scripts/test-news-client.mjs && node scripts/test-export.mjs && node scripts/test-no-legacy-storage.mjs"
   },
-  "dependencies": {
-    "@vercel/blob": "2.6.1"
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.9",
+    "@napi-rs/canvas": "^1.0.11",
+    "jsdom": "^30.1.2"
   }
 }

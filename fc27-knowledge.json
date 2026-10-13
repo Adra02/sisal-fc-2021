@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "updatedAt": "2026-10-02",
+  "source": "official_seed_plus_youtube_rss",
+  "videosAnalyzed": 0,
+  "insights": [
+    {
+      "id": "ea-fc27-gameplay",
+      "sourceType": "official",
+      "title": "EA SPORTS FC 27 official gameplay information",
+      "url": "https://www.ea.com/games/ea-sports-fc/fc-27/news/pitch-notes-fc27-gameplay-deep-dive",
+      "publishedAt": "2026-07-29",
+      "evidenceLevel": "official",
+      "summary": "Le informazioni ufficiali di FC 27 evidenziano maggiore importanza della difesa manuale, minore affidamento sui difensori IA e maggiore attenzione al movimento senza palla.",
+      "coachingPoints": [
+        "dare priorità al controllo manuale del difensore",
+        "curare il posizionamento prima di uscire in pressione",
+        "osservare i movimenti senza palla e le sovrapposizioni"
+      ],
+      "tacticalFindings": [
+        "la difesa manuale va valutata come fattore centrale nelle analisi",
+        "uscire con un difensore può aprire spazio e va coordinato con la linea"
+      ],
+      "patchOrMetaClaims": [],
+      "caveats": [
+        "Le osservazioni ufficiali descrivono il design del gameplay; non garantiscono che una specifica tattica sia sempre superiore in Clubs competitivo."
+      ]
+    }
+  ],
+  "videos": [],
+  "sources": [
+    "WhiteGamer7",
+    "Pro Clubs Weekly",
+    "EA SPORTS FC"
+  ]
+}

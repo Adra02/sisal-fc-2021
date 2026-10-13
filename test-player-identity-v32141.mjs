@@ -1,0 +1,45 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+import {normalizePlayersFile,normalizeMatchesFile,buildTeam} from '../lib/data-pipeline.js';
+import {photoIdentity} from '../lib/player-identity.js';
+const names=['pinuzzuupazzu','lym1t adriqx551'];
+const before=normalizePlayersFile(names.map(name=>({name,goals:4}))),after=normalizePlayersFile([...names].reverse().map(name=>({name,goals:4})));
+assert.equal(before[0].id,after[1].id);assert.equal(before[1].id,after[0].id);assert.notEqual(before[0].id,before[1].id);
+const renamed=normalizePlayersFile([{id:'player-9',name:names[0]},{id:'player-10',name:names[1]}]);assert.equal(renamed[0].id,before[0].id);
+const accents=normalizePlayersFile([{name:'Jose'},{name:'José'},{name:'foo_bar'},{name:'foobar'}]);assert.equal(accents.length,4);
+const match=normalizeMatchesFile([{matchId:'m1',clubs:{a:{name:'A'},b:{name:'B'}},players:{a:[{name:names[0],goals:1},{name:names[1],goals:2}]}}],'league')[0];assert.equal(match.players[0].id,before[0].id,'array positions are not player IDs');
+console.log('PASS: stable identities through reordered inputs, distinct names and nested match arrays.');
+function frontend(){
+ const source=fs.readFileSync(new URL('../index-inline.js',import.meta.url),'utf8').replace('\nboot();\n','\nwindow.qa={state,K,resolvePlayerProfile,playerPhotoKey,playerReference,assignedPlayer,activateClubLineups,fetchSharedPlayerPhoto,saveSharedPlayerPhoto,removeSharedPlayerPhoto,loadPlayerPhotoIntoModal,applyAIFormation};\n');
+ const store=new Map(),ctx={window:{addEventListener(){}},document:{addEventListener(){},getElementById(){return null}},localStorage:{getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)},navigator:{},location:{protocol:'file:'},matchMedia:()=>({matches:false}),console,Intl,Date,URLSearchParams,URL,setTimeout,clearTimeout,fetch:()=>{throw Error('Unconfigured mock')}};
+ vm.runInNewContext(source,ctx);return {ctx,api:ctx.window.qa,store};
+}
+const {ctx,api,store}=frontend();const pin={id:'player-9',name:names[0]},lym={id:'player-10',name:names[1]};
+api.state.own={club:{id:'328794'},players:[pin,lym],recent5:{players:[{id:'player-9',name:names[1],goals:99},{id:'real-pin',name:names[0],goals:3}]}};
+assert.equal(api.resolvePlayerProfile(api.state.own,'player-9',names[0]).recent5.goals,3,'ID collision cannot attach Lym U5 to Pin');
+assert.equal(api.resolvePlayerProfile(api.state.own,'player-9',names[1]).name,names[1]);
+assert.equal(api.playerPhotoKey(pin),photoIdentity('328794',names[0]));
+api.activateClubLineups();const ref=api.playerReference(pin);api.state.lineups['4-4-2']={0:ref};assert.equal(api.assignedPlayer(ref).name,names[0]);
+api.state.own.players=[{...lym,id:'player-9'},{...pin,id:'player-10'}];assert.equal(api.assignedPlayer(ref).name,names[0]);
+api.state.own.club.id='different';api.activateClubLineups();assert.equal(Object.keys(api.state.lineups).length,0);assert.equal(api.assignedPlayer(ref),null);
+api.state.own.club.id='328794';let calls=0,release;
+const photo='data:image/jpeg;base64,YQ==';
+const response=data=>({ok:true,json:async()=>data});
+ctx.fetch=async()=>{calls++;return response({ok:true,playerKey:api.playerPhotoKey(pin),playerName:names[1],clubId:'328794',dataUrl:photo,revision:1})};
+await assert.rejects(api.fetchSharedPlayerPhoto(pin),/proprietario/);
+ctx.fetch=async()=>{calls++;return new Promise(resolve=>{release=()=>resolve(response({ok:true,playerKey:api.playerPhotoKey(pin),playerName:names[0],clubId:'328794',dataUrl:photo,revision:1}));})};
+const a=api.fetchSharedPlayerPhoto(pin),b=api.fetchSharedPlayerPhoto(pin);release();assert.equal(await a,photo);assert.equal(await b,photo);assert.equal(calls,2,'parallel reads coalesced');
+let staleRelease;
+ctx.fetch=async(url,options)=>{if(options?.method==='POST')return response({ok:true,playerKey:api.playerPhotoKey(pin),revision:2});return new Promise(resolve=>{staleRelease=()=>resolve(response({ok:true,playerKey:api.playerPhotoKey(pin),playerName:names[0],clubId:'328794',dataUrl:photo,revision:1}));});};
+const stale=api.fetchSharedPlayerPhoto(pin,{force:true});await api.removeSharedPlayerPhoto(pin);staleRelease();assert.equal(await stale,'');assert.equal(await api.fetchSharedPlayerPhoto(pin),'');
+console.log('PASS: U5 ownership, club-scoped stable lineup references, rejected foreign photo, concurrent read coalescing and stale-read-after-delete protection.');
+const collisions=normalizePlayersFile([{id:'123',name:'Alice',goals:2},{id:'123',name:'Bob',goals:8}]);
+assert.equal(collisions.length,2);assert.notEqual(collisions[0].id,collisions[1].id);assert.equal(collisions[0].goals,2);
+const modalTest=frontend(),ui=modalTest.api;ui.state.own={club:{id:'328794'},players:[pin,lym]};
+function cardFor(player){const elements=Object.fromEntries(['img','art','remove','status'].map(k=>[k,{hidden:true,textContent:'',src:'',removeAttribute(){this.src=''}}]));return {dataset:{profileIdentity:ui.playerPhotoKey(player)},isConnected:true,elements,querySelector(selector){return elements[selector.includes('-img')?'img':selector.includes('-art')?'art':selector.includes('-remove')?'remove':'status']}};}
+let active=cardFor(pin),oldCard=active;const wrap={querySelector:s=>s==='[data-profile-identity]'?active:active.querySelector(s),contains:img=>img===active.elements.img};
+modalTest.ctx.document.getElementById=id=>id==='modalRoot'?wrap:null;
+let delayed;modalTest.ctx.fetch=async()=>new Promise(resolve=>delayed=()=>resolve(response({ok:true,playerKey:ui.playerPhotoKey(pin),playerName:pin.name,clubId:'328794',dataUrl:photo,revision:1})));
+const loading=ui.loadPlayerPhotoIntoModal(pin);oldCard.isConnected=false;active=cardFor(lym);delayed();await loading;
+assert.equal(active.elements.img.src,'');assert.equal(oldCard.elements.img.src,'');
+await ui.loadPlayerPhotoIntoModal(pin);assert.equal(active.elements.img.src,'','completion of a Pin upload cannot load into the Lym modal');
+console.log('PASS: duplicated source IDs stay separate; delayed profile photo and upload callbacks cannot paint another profile.');
