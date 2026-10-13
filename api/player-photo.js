@@ -38,7 +38,6 @@ export async function GET(request){
  }catch(e){return json({ok:false,error:e?.message||'Impossibile leggere la foto.'},e?.status||400);}
 }
 export async function POST(request){
- return json({ok:false,error:'Migrazione in corso: salvataggi temporaneamente sospesi.'},503);
  try{
   const body=await request.json(),id=identity(body),action=String(body.action||'');
   if(!['save','remove'].includes(action))return json({ok:false,error:'Azione foto non valida.'},400);
