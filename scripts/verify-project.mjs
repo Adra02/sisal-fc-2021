@@ -14,9 +14,9 @@ for(const f of must)await fs.access(path.join(root,f));
 const pkg=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8'));
 assert.equal(pkg.version,'32.1.26');
 assert.equal(pkg.engines.node,'24.x');
-assert.ok(pkg.dependencies['@vercel/blob']);
-assert.equal(Boolean(pkg.dependencies.puppeteer),false);
-assert.equal(Boolean(pkg.dependencies['puppeteer-core']),false);
+assert.equal(pkg.dependencies?.['@vercel/blob'],undefined);
+assert.equal(Boolean(pkg.dependencies?.puppeteer),false);
+assert.equal(Boolean(pkg.dependencies?.['puppeteer-core']),false);
 
 const html=await fs.readFile(path.join(root,'index.html'),'utf8');
 const js=await fs.readFile(path.join(root,'index-inline.js'),'utf8');
@@ -69,14 +69,6 @@ assert.match(assistant,/proHeight/);
 assert.match(await fs.readFile(path.join(root,'lib/file-ai-recognizer.js'),'utf8'),/parseProfileFields|profileFields/);
 
 // Blob Saver: cache normale attiva, fresh solo quando esplicitamente richiesto.
-assert.match(shared,/BUNDLE_PATH/);
-assert.match(shared,/team-bundle-v1\.json/);
-assert.match(shared,/authoritativeUntil/);
-assert.doesNotMatch(shared,/await put\(TOTALS_PATH/);
-assert.doesNotMatch(shared,/await put\(MEMORY_PATH/);
-assert.match(shared,/useCache: !fresh/);
-assert.doesNotMatch(shared,/useCache: false/);
-assert.match(photo,/useCache: true/);
 
 // I due effetti V32.1.21 devono restare puramente locali.
 const introStart=js.indexOf('function showDailyStadiumIntro()');
@@ -104,3 +96,6 @@ const raceEnd=js.indexOf('function setHeader',raceStart);
 assert.ok(raceStart>=0&&raceEnd>raceStart);
 assert.doesNotMatch(js.slice(raceStart,raceEnd),/fetch\s*\(|\/api\/|Blob|readAllFiles|readRoleBundle/i);
 console.log('verify-project: OK · V32.1.26 · AI Race Director visibile · 0 Blob extra');
+assert.match(shared,/sisal_team_write/);
+assert.match(shared,/withStoreRequest/);
+assert.doesNotMatch(shared,/@vercel\/blob|BLOB_READ_WRITE_TOKEN|BLOB_STORE_ID/);

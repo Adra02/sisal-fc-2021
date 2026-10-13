@@ -24,12 +24,12 @@ api.state.own.club.id='different';api.activateClubLineups();assert.equal(Object.
 api.state.own.club.id='328794';let calls=0,release;
 const photo='data:image/jpeg;base64,YQ==';
 const response=data=>({ok:true,json:async()=>data});
-ctx.fetch=async()=>{calls++;return response({ok:true,playerKey:api.playerPhotoKey(pin),playerName:names[1],clubId:'328794',dataUrl:photo})};
+ctx.fetch=async()=>{calls++;return response({ok:true,playerKey:api.playerPhotoKey(pin),playerName:names[1],clubId:'328794',dataUrl:photo,revision:1})};
 await assert.rejects(api.fetchSharedPlayerPhoto(pin),/proprietario/);
-ctx.fetch=async()=>{calls++;return new Promise(resolve=>{release=()=>resolve(response({ok:true,playerKey:api.playerPhotoKey(pin),playerName:names[0],clubId:'328794',dataUrl:photo}));})};
+ctx.fetch=async()=>{calls++;return new Promise(resolve=>{release=()=>resolve(response({ok:true,playerKey:api.playerPhotoKey(pin),playerName:names[0],clubId:'328794',dataUrl:photo,revision:1}));})};
 const a=api.fetchSharedPlayerPhoto(pin),b=api.fetchSharedPlayerPhoto(pin);release();assert.equal(await a,photo);assert.equal(await b,photo);assert.equal(calls,2,'parallel reads coalesced');
 let staleRelease;
-ctx.fetch=async(url,options)=>{if(options?.method==='POST')return response({ok:true,playerKey:api.playerPhotoKey(pin)});return new Promise(resolve=>{staleRelease=()=>resolve(response({ok:true,playerKey:api.playerPhotoKey(pin),playerName:names[0],clubId:'328794',dataUrl:photo}));});};
+ctx.fetch=async(url,options)=>{if(options?.method==='POST')return response({ok:true,playerKey:api.playerPhotoKey(pin),revision:2});return new Promise(resolve=>{staleRelease=()=>resolve(response({ok:true,playerKey:api.playerPhotoKey(pin),playerName:names[0],clubId:'328794',dataUrl:photo,revision:1}));});};
 const stale=api.fetchSharedPlayerPhoto(pin,{force:true});await api.removeSharedPlayerPhoto(pin);staleRelease();assert.equal(await stale,'');assert.equal(await api.fetchSharedPlayerPhoto(pin),'');
 console.log('PASS: U5 ownership, club-scoped stable lineup references, rejected foreign photo, concurrent read coalescing and stale-read-after-delete protection.');
 const collisions=normalizePlayersFile([{id:'123',name:'Alice',goals:2},{id:'123',name:'Bob',goals:8}]);
@@ -38,7 +38,7 @@ const modalTest=frontend(),ui=modalTest.api;ui.state.own={club:{id:'328794'},pla
 function cardFor(player){const elements=Object.fromEntries(['img','art','remove','status'].map(k=>[k,{hidden:true,textContent:'',src:'',removeAttribute(){this.src=''}}]));return {dataset:{profileIdentity:ui.playerPhotoKey(player)},isConnected:true,elements,querySelector(selector){return elements[selector.includes('-img')?'img':selector.includes('-art')?'art':selector.includes('-remove')?'remove':'status']}};}
 let active=cardFor(pin),oldCard=active;const wrap={querySelector:s=>s==='[data-profile-identity]'?active:active.querySelector(s),contains:img=>img===active.elements.img};
 modalTest.ctx.document.getElementById=id=>id==='modalRoot'?wrap:null;
-let delayed;modalTest.ctx.fetch=async()=>new Promise(resolve=>delayed=()=>resolve(response({ok:true,playerKey:ui.playerPhotoKey(pin),playerName:pin.name,clubId:'328794',dataUrl:photo})));
+let delayed;modalTest.ctx.fetch=async()=>new Promise(resolve=>delayed=()=>resolve(response({ok:true,playerKey:ui.playerPhotoKey(pin),playerName:pin.name,clubId:'328794',dataUrl:photo,revision:1})));
 const loading=ui.loadPlayerPhotoIntoModal(pin);oldCard.isConnected=false;active=cardFor(lym);delayed();await loading;
 assert.equal(active.elements.img.src,'');assert.equal(oldCard.elements.img.src,'');
 await ui.loadPlayerPhotoIntoModal(pin);assert.equal(active.elements.img.src,'','completion of a Pin upload cannot load into the Lym modal');
