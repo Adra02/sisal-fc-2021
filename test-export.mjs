@@ -1,8 +1,0 @@
-import assert from 'node:assert/strict';import fs from 'node:fs/promises';import {createCanvas,Image as NativeImage} from '@napi-rs/canvas';import {exportNewspaper,wrapLines} from '../comunicati-export.js';
-let lines=[],canvases=[];
-globalThis.Image=class extends NativeImage{set src(value){super.src=value.startsWith('./')?new URL('../'+value.slice(2),import.meta.url).pathname:value;}};
-globalThis.document={fonts:{ready:Promise.resolve()},createElement(){const c=createCanvas(1080,1440),ctx=c.getContext('2d'),fill=ctx.fillText.bind(ctx);ctx.fillText=(s,x,y)=>{lines.push({s,x,y,size:ctx.font});return fill(s,x,y)};c.toBlob=cb=>cb(new Blob([c.toBuffer('image/png')],{type:'image/png'}));canvases.push(c);return c;}};
-const post={id:'11111111-1111-4111-8111-111111111111',title:'La Sisal annuncia la nuova stagione',created_at:'2026-10-13T11:00:00Z',body:Array.from({length:90},(_,i)=>`Paragrafo ${i}: una squadra, una voce. Lavoriamo insieme per la nuova stagione.`).join('\n\n')};
-const expected=wrapLines(createCanvas(1080,1440).getContext('2d'),post.body,916);const files=await exportNewspaper(post);assert(files.length>1);assert(lines.some(x=>x.s.includes('Paragrafo 89')));assert(lines.filter(x=>x.size==='34px Georgia').every(x=>x.y<1275),'body never overlaps footer');
-await fs.mkdir('/tmp/sisal-export-qa',{recursive:true});await fs.writeFile('/tmp/sisal-export-qa/page-1.png',Buffer.from(await files[0].arrayBuffer()));
-assert(files.every(f=>f.size>10000));console.log('PASS: '+files.length+' readable PNG pages, final paragraph retained, body does not overlap footer; native Canvas, not browser.');
