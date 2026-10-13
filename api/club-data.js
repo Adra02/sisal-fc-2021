@@ -1,5 +1,6 @@
+import { withStoreRequest } from '../lib/shared-store.js';
 import { buildTeam, parseJsonText, normalizePlayersFile, normalizeMatchesFile, detectDataFile, extractHistoricalTotals } from '../lib/data-pipeline.js';
-import { CATEGORIES, ROLES, assertCategory, assertRole, hasBlobConfig, readAllFiles, writeFile, deleteRole, readRoleTotals, writeRoleTotals, readRoleMemory, writeRoleMemory } from '../lib/shared-store.js';
+import { CATEGORIES, ROLES, assertCategory, assertRole, hasStorageConfig, readAllFiles, writeFile, deleteRole, readRoleTotals, writeRoleTotals, readRoleMemory, writeRoleMemory } from '../lib/shared-store.js';
 import { importTrackerTotals, validateTotals, normalizeTrackerUrl } from '../lib/tracker-import.js';
 import { recognizeDataFile } from '../lib/file-ai-recognizer.js';
 
@@ -78,7 +79,7 @@ async function repairMissingClubProfiles(role, files) {
  *
  * Lettura normale:
  *   loadTeam(role)
- *   -> usa la cache di Vercel Blob.
+ *   -> usa la cache di Supabase.
  *
  * Dopo una scrittura:
  *   loadTeam(role, { fresh: true })
@@ -98,7 +99,7 @@ async function loadTeam(role, { fresh = false } = {}) {
 
   // V32.1.3: if the JSON is present but the club-profile block could not be read,
   // ask the already integrated Gemini recognizer to recover only explicit source fields.
-  // It runs only once per file because the recovered profileFields are saved back to Blob.
+  // It runs only once per file because the recovered profileFields are saved back to database.
   if (await repairMissingClubProfiles(role, files)) {
     // A file has just been overwritten, therefore this read must bypass the cache.
     files = await readAllFiles(role, { fresh: true });
@@ -129,12 +130,12 @@ async function loadTeam(role, { fresh = false } = {}) {
   };
 }
 
-export async function GET() {
-  if (!hasBlobConfig()) {
+async function handleGET() {
+  if (!hasStorageConfig()) {
     return json({
       ok: false,
-      code: 'BLOB_NOT_CONFIGURED',
-      error: 'Collega un Vercel Blob al progetto prima di usare i dati condivisi.'
+      code: 'SUPABASE_NOT_CONFIGURED',
+      error: 'Configura Supabase su Vercel prima di usare i dati condivisi.'
     }, 503);
   }
 
@@ -377,12 +378,12 @@ async function updateMemory(role, team, existingMemory = null) {
   });
 }
 
-export async function POST(request) {
-  if (!hasBlobConfig()) {
+async function handlePOST(request) {
+  if (!hasStorageConfig()) {
     return json({
       ok: false,
-      code: 'BLOB_NOT_CONFIGURED',
-      error: 'Collega un Vercel Blob al progetto prima di caricare i dati.'
+      code: 'SUPABASE_NOT_CONFIGURED',
+      error: 'Configura Supabase su Vercel prima di caricare i dati.'
     }, 503);
   }
 
@@ -416,7 +417,7 @@ export async function POST(request) {
         const team = await loadTeam(role, { fresh: true });
 
         // team.memory è già stata letta nella stessa richiesta:
-        // non facciamo una seconda lettura dello stesso Blob.
+        // non facciamo una seconda lettura dello stesso database.
         await updateMemory(role, team, team.memory);
 
         return json({
@@ -809,7 +810,7 @@ export async function POST(request) {
     const team = await loadTeam(role, { fresh: true });
 
     // La memoria è già stata letta dentro loadTeam.
-    // Non facciamo una seconda lettura dello stesso Blob.
+    // Non facciamo una seconda lettura dello stesso database.
     await updateMemory(role, team, team.memory);
 
     return json({
@@ -828,16 +829,16 @@ export async function POST(request) {
       error:
         error?.message ||
         'Impossibile salvare il file.'
-    }, 400);
+    }, error?.status || 400);
   }
 }
 
-export async function DELETE(request) {
-  if (!hasBlobConfig()) {
+async function handleDELETE(request) {
+  if (!hasStorageConfig()) {
     return json({
       ok: false,
-      code: 'BLOB_NOT_CONFIGURED',
-      error: 'Collega un Vercel Blob al progetto prima di cancellare i dati.'
+      code: 'SUPABASE_NOT_CONFIGURED',
+      error: 'Configura Supabase su Vercel prima di cancellare i dati.'
     }, 503);
   }
 
@@ -864,7 +865,7 @@ export async function DELETE(request) {
       error:
         error?.message ||
         'Impossibile cancellare i dati.'
-    }, 400);
+    }, error?.status || 400);
   }
 }
 
@@ -872,3 +873,7 @@ export {
   ROLES,
   CATEGORIES
 };
+
+export async function GET(...args){return withStoreRequest(()=>handleGET(...args));}
+export async function POST(...args){return withStoreRequest(()=>handlePOST(...args));}
+export async function DELETE(...args){return withStoreRequest(()=>handleDELETE(...args));}

@@ -1,5 +1,6 @@
+import { withStoreRequest } from '../lib/shared-store.js';
 import { buildTeam } from '../lib/data-pipeline.js';
-import { hasBlobConfig, readAllFiles } from '../lib/shared-store.js';
+import { hasStorageConfig, readAllFiles, readRoleMemory, readRoleTotals } from '../lib/shared-store.js';
 
 const GEMINI_MODEL = 'gemini-3.5-flash-lite';
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
@@ -616,19 +617,16 @@ function formationAnswer(recommendation) {
 }
 
 async function loadCentralTeams() {
-  const [ownFiles, opponentFiles] = await Promise.all([
-    readAllFiles('own'),
-    readAllFiles('opponent')
-  ]);
-  return {
-    own: buildTeam({ fileRecords: ownFiles, role: 'own' }),
-    opponent: buildTeam({ fileRecords: opponentFiles, role: 'opponent' })
-  };
+  const teams=await Promise.all(['own','opponent'].map(async role=>{
+    const [files,memory,manualTotals]=await Promise.all([readAllFiles(role),readRoleMemory(role),readRoleTotals(role)]);
+    return {...buildTeam({fileRecords:files,role}),memory,manualTotals};
+  }));
+  return {own:teams[0],opponent:teams[1]};
 }
 
-export async function POST(request) {
+async function handlePOST(request) {
   if (request.method !== 'POST') return json({ ok:false, code:'METHOD_NOT_ALLOWED', error:'Metodo non consentito.' }, 405);
-  if (!hasBlobConfig()) return json({ ok:false, code:'BLOB_NOT_CONFIGURED', error:'Archivio centrale non configurato su Vercel. Collega un Vercel Blob al progetto.' }, 503);
+  if (!hasStorageConfig()) return json({ ok:false, code:'SUPABASE_NOT_CONFIGURED', error:'Archivio centrale non configurato su Vercel. Configura Supabase su Vercel.' }, 503);
 
   const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
   if (!apiKey) return json({ ok:false, code:'MISSING_GEMINI_API_KEY', error:'Manca GEMINI_API_KEY nelle Environment Variables di Vercel.', model:GEMINI_MODEL }, 500);
@@ -712,3 +710,5 @@ export async function POST(request) {
     }, Math.min(Math.max(status, 400), 504));
   }
 }
+
+export async function POST(...args){return withStoreRequest(()=>handlePOST(...args));}
