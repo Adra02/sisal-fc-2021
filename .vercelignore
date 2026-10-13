@@ -1,0 +1,6 @@
+migration/
+setup/
+docs/
+scripts/
+.env*
+backup*/

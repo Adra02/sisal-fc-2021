@@ -1,27 +1,20 @@
-import { get, put } from '@vercel/blob';
+import {rpc,supabase,uploadImage,downloadImage} from '../lib/supabase.js';
 import { createHash } from 'node:crypto';
 import { normalizePlayerName, photoIdentity } from '../lib/player-identity.js';
 
 export const maxDuration=30;
-const BASE_PATH='sisal-fc/fc27/shared/own/_meta/player-photos';
 const MAX_DATA_URL_CHARS=420000;
-const CACHE_MS=30000,records=new Map(),pending=new Map(),revisions=new Map();
 // Verified against the stored owner metadata on 2026-10-11. These are lookup
 // hints, never ownership overrides. Every legacy record is checked by name.
 const VERIFIED_LEGACY={
   '328794':{'pinuzzuupazzu':['player-9'],'adrathetrue02':['player-4']}
 };
 function json(body,status=200){return new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});}
-function authOptions(){const token=String(process.env.BLOB_READ_WRITE_TOKEN||'').trim();if(token)return{token};const storeId=String(process.env.BLOB_STORE_ID||'').trim();if(!storeId)throw new Error('Vercel Blob non configurato.');const oidcToken=String(process.env.VERCEL_OIDC_TOKEN||'').trim();return oidcToken?{oidcToken,storeId}:{storeId};}
-function pathFor(key){return `${BASE_PATH}/${createHash('sha256').update(key).digest('hex').slice(0,32)}.json`;}
 function validImage(value){return typeof value==='string'&&value.length<=MAX_DATA_URL_CHARS&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(value);}
 async function readRecord(key){
- const cached=records.get(key);if(cached&&Date.now()-cached.at<CACHE_MS)return cached.record;
- if(pending.has(key))return pending.get(key);
- const revision=revisions.get(key)||0;
- const job=(async()=>{let record=null;try{const r=await get(pathFor(key),{access:'private',useCache:true,...authOptions()});if(r?.statusCode===200&&r.stream){const parsed=JSON.parse(await new Response(r.stream).text());if(parsed&&typeof parsed==='object')record=parsed;}}catch(e){if(!/not found|404|does not exist|blob not found/i.test(String(e?.message||e)))throw e;}
-  if((revisions.get(key)||0)===revision){if(records.size>256)records.delete(records.keys().next().value);records.set(key,{record,at:Date.now()});}return record;})();
- pending.set(key,job);try{return await job}finally{if(pending.get(key)===job)pending.delete(key)}
+ const rows=await supabase('/rest/v1/player_photos?player_key=eq.'+encodeURIComponent(key)+'&select=record,image_path,revision');
+ const row=rows?.[0];if(!row)return null;
+ return {...row.record,dataUrl:row.image_path?await downloadImage(row.image_path):'',_revision:row.revision};
 }
 function identity(input){
  const clubId=String(input.clubId||'').trim(),playerName=String(input.playerName||'').trim(),playerKey=photoIdentity(clubId,playerName);
@@ -34,25 +27,28 @@ export async function GET(request){
   const query=new URL(request.url).searchParams,id=identity(Object.fromEntries(query));
   const current=await readRecord(id.playerKey);
   // Tombstones are authoritative: a removed photo must never reappear from legacy storage.
-  if(current){if(!belongs(current,id.playerKey,id))return json({ok:false,error:'Proprietario della foto non coerente.'},409);return json({ok:true,found:!current.deleted&&validImage(current.dataUrl),dataUrl:!current.deleted&&validImage(current.dataUrl)?current.dataUrl:'',playerKey:id.playerKey,playerName:id.playerName,clubId:id.clubId,updatedAt:current.updatedAt||null});}
+  if(current){if(!belongs(current,id.playerKey,id))return json({ok:false,error:'Proprietario della foto non coerente.'},409);return json({ok:true,found:!current.deleted&&validImage(current.dataUrl),dataUrl:!current.deleted&&validImage(current.dataUrl)?current.dataUrl:'',playerKey:id.playerKey,playerName:id.playerName,clubId:id.clubId,revision:current._revision,updatedAt:current.updatedAt||null});}
   let requested=[];try{requested=JSON.parse(query.get('legacyKeys')||'[]')}catch{}
   const hints=VERIFIED_LEGACY[id.clubId]?.[normalizePlayerName(id.playerName)]||[];
   const keys=[...new Set([...hints,...(Array.isArray(requested)?requested:[])])].filter(k=>typeof k==='string'&&k.length>0&&k.length<=180&&k!==id.playerKey).slice(0,8);
   // Old storage was not club-scoped. Only the club whose ownership was checked
   // during this repair may use the legacy namespace; other clubs start clean.
-  if(id.clubId==='328794')for(const key of keys){const record=await readRecord(key);if(belongs(record,key,id,true)&&validImage(record.dataUrl))return json({ok:true,found:true,dataUrl:record.dataUrl,playerKey:id.playerKey,playerName:record.playerName,clubId:id.clubId,updatedAt:record.updatedAt||null,source:'verified-legacy'});}
-  return json({ok:true,found:false,dataUrl:'',playerKey:id.playerKey,playerName:id.playerName,clubId:id.clubId});
- }catch(e){return json({ok:false,error:e?.message||'Impossibile leggere la foto.'},400);}
+  if(id.clubId==='328794')for(const key of keys){const record=await readRecord(key);if(belongs(record,key,id,true)&&validImage(record.dataUrl))return json({ok:true,found:true,dataUrl:record.dataUrl,playerKey:id.playerKey,playerName:record.playerName,clubId:id.clubId,updatedAt:record.updatedAt||null,source:'verified-legacy',revision:0});}
+  return json({ok:true,found:false,dataUrl:'',playerKey:id.playerKey,playerName:id.playerName,clubId:id.clubId,revision:0});
+ }catch(e){return json({ok:false,error:e?.message||'Impossibile leggere la foto.'},e?.status||400);}
 }
 export async function POST(request){
- return json({ok:false,error:'Migrazione in corso: salvataggi temporaneamente sospesi.'},503);
  try{
   const body=await request.json(),id=identity(body),action=String(body.action||'');
   if(!['save','remove'].includes(action))return json({ok:false,error:'Azione foto non valida.'},400);
   if(action==='save'&&!validImage(body.dataUrl))return json({ok:false,error:'Formato o dimensione della foto non validi.'},400);
   const record={schemaVersion:2,...id,dataUrl:action==='save'?body.dataUrl:'',deleted:action==='remove',updatedAt:new Date().toISOString()};
-  await put(pathFor(id.playerKey),JSON.stringify(record),{access:'private',allowOverwrite:true,addRandomSuffix:false,contentType:'application/json',...authOptions()});
-  revisions.set(id.playerKey,(revisions.get(id.playerKey)||0)+1);records.set(id.playerKey,{record,at:Date.now()});pending.delete(id.playerKey);
-  return json({ok:true,action,playerKey:id.playerKey,playerName:id.playerName,clubId:id.clubId,updatedAt:record.updatedAt});
- }catch(e){return json({ok:false,error:e?.message||'Impossibile aggiornare la foto.'},400);}
+  if(!Number.isInteger(body.revision)||body.revision<0)return json({ok:false,error:'Aggiorna la pagina e riapri la foto prima di salvarla.'},428);
+  const expected=body.revision;
+  const imagePath=action==='save'?`players/${createHash('sha256').update(id.playerKey).digest('hex')}/${createHash('sha256').update(body.dataUrl).digest('hex')}.jpg`:null;
+  if(imagePath)await uploadImage(imagePath,body.dataUrl);
+  const metadata={...record};delete metadata.dataUrl;
+  const saved=await rpc('sisal_photo_write',{p_key:id.playerKey,p_record:metadata,p_path:imagePath,p_revision:expected});
+  return json({ok:true,action,playerKey:id.playerKey,playerName:id.playerName,clubId:id.clubId,revision:saved.revision,updatedAt:record.updatedAt});
+ }catch(e){return json({ok:false,error:e?.message||'Impossibile aggiornare la foto.'},e?.status||400);}
 }

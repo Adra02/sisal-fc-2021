@@ -1,3 +1,7 @@
+# Migrazione Supabase — preparazione, non ancora pubblicata
+
+Base: main `66c5c097b96e50eda7846791d7bbfebdf265d6db`. Prima di usare questi file leggi **docs/GUIDA_SUPABASE.md** e **docs/TEST.md**. Non cancellare il vecchio archivio.
+
 # Sisal FC 2021 — FC27 Command Center v32.1.5
 
 ## V32.1.5 — Tecnica e difesa U5
@@ -15,7 +19,7 @@ Il file Dati totali è la fonte ufficiale per Partite, Vittorie, Pareggi, Sconfi
 U5 = esclusivamente le 5 partite più recenti dell archivio Campionato + Playoff + Amichevoli disponibili.
 
 ## Archivio condiviso
-I JSON vengono salvati su Vercel Blob privato. Una volta caricati, tutti i visitatori del sito leggono lo stesso dataset. Non è presente alcun PIN, login o controllo amministrativo.
+I JSON vengono salvati in PostgreSQL Supabase. Una volta caricati, tutti i visitatori del sito leggono lo stesso dataset. Non è presente alcun PIN, login o controllo amministrativo.
 
 ## IA
 `api/assistente.js` legge la mappa delle 10 sorgenti, i dati normalizzati e la memoria storica degli snapshot. Gemini deve rispettare gli scope: totale storico, cumulativo giocatori, archivio partite e ultime 5 non vanno mischiati.
@@ -24,7 +28,7 @@ I JSON vengono salvati su Vercel Blob privato. Una volta caricati, tutti i visit
 Non è più presente alcuna casella o importazione separata tramite link ProClubTracker nell’interfaccia. Le tabelle usano direttamente gli export JSON riconosciuti automaticamente.
 
 ## Deployment
-1. Collega un Vercel Blob al progetto.
+1. Segui `docs/GUIDA_SUPABASE.md`: crea Supabase, migra e verifica PRIMA di aggiornare la produzione.
 2. Imposta `GEMINI_API_KEY`.
 3. Esegui una nuova Production deployment.
 

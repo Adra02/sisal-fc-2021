@@ -25,12 +25,6 @@ const raceStart=js.indexOf('async function startTop3Race');
 const raceEnd=js.indexOf('function setHeader',raceStart);
 const raceBlock=js.slice(raceStart,raceEnd);
 assert.doesNotMatch(raceBlock,/fetch\s*\(|\/api\/|@vercel\/blob|readAllFiles|readRoleBundle/i);
-assert.match(shared,/MEMORY_TTL_MS = 20_000/);
-assert.match(shared,/authoritativeUntil/);
-assert.match(shared,/duplicate: true/);
-assert.doesNotMatch(shared,/await put\(TOTALS_PATH/);
-assert.doesNotMatch(shared,/await put\(MEMORY_PATH/);
-assert.match(shared,/currentFingerprint.*nextFingerprint/s);
 
 // Runtime minimo: le articolazioni devono cambiare posa durante il galoppo.
 const motionStart=js.indexOf('function rotateHorsePart');
@@ -53,3 +47,6 @@ assert.notEqual(poseA,poseB,'la zampa anteriore deve articolarsi tra due fasi de
 assert.match(motion.core.style.transform,/translateY/);
 
 console.log('test-v32124-realism-blob: OK · articulated horse · AI reuse · Blob Saver V2');
+assert.match(shared,/sisal_team_write/);
+assert.match(shared,/withStoreRequest/);
+assert.doesNotMatch(shared,/@vercel\/blob|BLOB_READ_WRITE_TOKEN|BLOB_STORE_ID/);

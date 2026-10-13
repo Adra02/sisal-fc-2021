@@ -1326,17 +1326,19 @@ async function fetchSharedPlayerPhoto(p,{force=false}={}){
   if(d.playerKey!==key||String(d.clubId)!==id.clubId||identityName(d.playerName)!==identityName(id.playerName))throw Error('Foto non mostrata: il proprietario non corrisponde al profilo.');
   const data=typeof d.dataUrl==='string'&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d.dataUrl)?d.dataUrl:'';
   if((photoRevisions.get(key)||0)!==revision)return sharedPlayerPhotoCache.get(key)?.data||'';
-  sharedPlayerPhotoCache.set(key,{data,at:Date.now()});return data;
+  sharedPlayerPhotoCache.set(key,{data,revision:d.revision,at:Date.now()});return data;
  })();
  sharedPhotoPending.set(key,job);try{return await job}finally{if(sharedPhotoPending.get(key)===job)sharedPhotoPending.delete(key)}
 }
 async function changeSharedPhoto(p,action,dataUrl=''){
  const id=photoRequestIdentity(p),key=id.playerKey;
+ if(!Number.isInteger(sharedPlayerPhotoCache.get(key)?.revision))await fetchSharedPlayerPhoto(p,{force:true});
+ const expectedRevision=sharedPlayerPhotoCache.get(key)?.revision;
  // Invalidate in-flight reads before the write, and again after confirmation.
  photoRevisions.set(key,(photoRevisions.get(key)||0)+1);sharedPhotoPending.delete(key);sharedPlayerPhotoCache.delete(key);
- const r=await fetch('/api/player-photo',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...id,action,dataUrl})}),d=await r.json().catch(()=>({}));
+ const r=await fetch('/api/player-photo',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...id,action,dataUrl,revision:expectedRevision})}),d=await r.json().catch(()=>({}));
  if(!r.ok||!d.ok||d.playerKey!==key)throw Error(d.error||'Aggiornamento foto non confermato.');
- photoRevisions.set(key,(photoRevisions.get(key)||0)+1);sharedPhotoPending.delete(key);sharedPlayerPhotoCache.set(key,{data:action==='save'?dataUrl:'',at:Date.now()});return true;
+ photoRevisions.set(key,(photoRevisions.get(key)||0)+1);sharedPhotoPending.delete(key);sharedPlayerPhotoCache.set(key,{data:action==='save'?dataUrl:'',revision:d.revision,at:Date.now()});return true;
 }
 async function saveSharedPlayerPhoto(p,dataUrl){return changeSharedPhoto(p,'save',dataUrl)}
 async function removeSharedPlayerPhoto(p){return changeSharedPhoto(p,'remove')}

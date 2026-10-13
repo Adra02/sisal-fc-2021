@@ -1,4 +1,4 @@
-// Riutilizza lo store Blob esistente, in un percorso dedicato.
+// Server-side PostgreSQL transactions and private Storage.
 import { newsStore } from '../lib/comunicati-store.js';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function validate(p) {
@@ -37,10 +37,10 @@ export default async function handler(req,res){
   if(!allowRequest(ip))return res.status(429).json({error:'Troppe richieste. Attendi un minuto.',code:'RATE_LIMIT'});
   return res.status(200).json(await newsStore.operate(p,device));
  }catch(e){
-  const messages={SETUP:'Il collegamento Blob del progetto non è disponibile.',CONFLICT:'Il comunicato è cambiato. Salva la bozza e aggiorna la bacheca prima di modificarlo.',NOT_FOUND:'Questo comunicato è stato eliminato.',RATE_LIMIT:'Troppe modifiche ravvicinate. Attendi un minuto.',DAILY_LIMIT:'Raggiunti 100 salvataggi nella giornata UTC. Riprova domani.',POST_LIMIT:'Limite di 100 comunicati raggiunto. Elimina quelli non necessari.',LIKE_LIMIT:'Limite dei like raggiunto.',ARCHIVED:'Ripristina il comunicato prima di fissarlo in alto.',STORE_LIMIT:'Archivio dei comunicati pieno. Elimina alcuni testi non necessari.',BUSY:'Altri compagni stanno salvando. Aggiorna e riprova.',PHOTO_MISSING:'Foto temporaneamente non disponibile. Riprova.',NO_ETAG:'Salvataggio non eseguito: manca la protezione contro modifiche contemporanee.',INVALID_STORE:'Archivio non leggibile. Nessun dato è stato sovrascritto.'};
+  const messages={SETUP:'Configura il collegamento Supabase del progetto.',CONFLICT:'Il comunicato è cambiato. Salva la bozza e aggiorna la bacheca prima di modificarlo.',NOT_FOUND:'Questo comunicato è stato eliminato.',RATE_LIMIT:'Troppe modifiche ravvicinate. Attendi un minuto.',DAILY_LIMIT:'Raggiunti 1000 salvataggi nella giornata UTC. Riprova domani.',POST_LIMIT:'Limite di 100 comunicati raggiunto. Elimina quelli non necessari.',LIKE_LIMIT:'Limite dei like raggiunto.',ARCHIVED:'Ripristina il comunicato prima di fissarlo in alto.',STORE_LIMIT:'Archivio dei comunicati pieno. Elimina alcuni testi non necessari.',BUSY:'Altri compagni stanno salvando. Aggiorna e riprova.',PHOTO_MISSING:'Foto temporaneamente non disponibile. Riprova.',NO_ETAG:'Salvataggio non eseguito: manca la protezione contro modifiche contemporanee.',INVALID_STORE:'Archivio non leggibile. Nessun dato è stato sovrascritto.'};
   return res.status(e.status||503).json({error:messages[e.code]||'Connessione ai comunicati non riuscita. I contenuti già scaricati restano disponibili.',code:e.code||'CONNECTION'});
  }
 }
-// Filtro per istanza prima di Blob. Non è un limite distribuito né una garanzia antiabuso assoluta.
+// Filtro per istanza prima del database. Non è un limite distribuito né una garanzia antiabuso assoluta.
 const traffic=new Map();
 function allowRequest(ip){const now=Date.now();for(const[k,v]of traffic)if(v.until<now)traffic.delete(k);if(traffic.size>=2000&&!traffic.has(ip))return false;let bucket=traffic.get(ip);if(!bucket){bucket={n:0,until:now+60000};traffic.set(ip,bucket);}return ++bucket.n<=60;}
