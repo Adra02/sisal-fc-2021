@@ -43,7 +43,7 @@ export async function POST(request){
  try{
   const user=await requireAccount(request,{mutation:true});
   const body=await request.json(),id=identity(body),action=String(body.action||'');
-  if(!user.is_admin&&(id.clubId!=='328794'||normalizePlayerName(id.playerName)!==user.player_key))throw fail('FORBIDDEN',403);
+  if(id.clubId!=='328794'||normalizePlayerName(id.playerName)!==user.player_key)throw fail('FORBIDDEN',403);
   if(!['save','remove'].includes(action))return json({ok:false,error:'Azione foto non valida.'},400);
   if(action==='save'&&!validImage(body.dataUrl))return json({ok:false,error:'Formato o dimensione della foto non validi.'},400);
   const record={schemaVersion:2,...id,dataUrl:action==='save'?body.dataUrl:'',deleted:action==='remove',updatedAt:new Date().toISOString()};
