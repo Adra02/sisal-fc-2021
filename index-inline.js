@@ -1,4 +1,5 @@
-(function(){'use strict';
+(async function(){'use strict';
+await window.sisalAccountReady;
 const APP_VERSION='v32.1.41';
 const FORMATIONS=[
 '4-2-1-3','4-4-1-1','4-2-3-1 Wide','4-3-3 Attack','4-1-2-1-2 Narrow','4-4-2','4-3-1-2','4-3-3 Holding','4-4-2 Holding','4-1-2-1-2 Wide','4-2-3-1','4-1-4-1','4-3-3 Defend','4-3-2-1','4-5-1 Flat','4-2-2-2','4-3-3','4-2-4','4-1-3-2','4-5-1 Attack','3-4-2-1','3-5-2','5-2-1-2','3-4-1-2','5-3-2','5-2-3','5-4-1','3-4-3','3-1-4-2'];
@@ -973,9 +974,10 @@ async function startTop3Race(button,id){
   const host=card.querySelector('.sr-host');
   const audio=window.SisalRaceAudio?.create(); // Unlock synchronously inside the user's click.
   try{
-    const module=await import('./race-3d.js?v=32.1.40');
+    await window.SisalAccount?.refreshStyles();
+    const module=await import('./race-3d.js?v=accounts-1');
     const colors=['#37bc91','#e4b861','#659bdd'];
-    const entries=shuffleCopy(top3Placements(cfg)).map((e,i)=>({name:String(e.player.name||'Giocatore'),place:e.place,tied:e.tied,score:e.score,color:colors[i%colors.length]}));
+    const entries=shuffleCopy(top3Placements(cfg)).map((e,i)=>({name:String(e.player.name||'Giocatore'),place:e.place,tied:e.tied,score:e.score,color:colors[i%colors.length],appearance:window.SisalAccount?.styleFor(e.player.name)}));
     if(!card.isConnected){audio?.dispose();return}
     host.querySelector('.sr-loading')?.remove();
     const completed=await module.runRace(host,entries,{profile:currentRaceVisualProfile(),audio,title:cfg.title});
@@ -1540,6 +1542,6 @@ render=function(){baseRender();const content=el('content');content.setAttribute(
 window.SisalEdition={frontPageModel,lineup,BOT};
 })();
 boot();
-if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=32.1.41').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=accounts-1').catch(()=>{});
 })();
 

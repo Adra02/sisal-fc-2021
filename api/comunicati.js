@@ -1,3 +1,4 @@
+import {requireAccount,errorResponse} from '../lib/accounts.js';
 // Server-side PostgreSQL transactions and private Storage.
 import { newsStore } from '../lib/comunicati-store.js';
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -30,9 +31,11 @@ export default async function handler(req,res){
  const host=req.headers['x-forwarded-host']||req.headers.host;
  if(req.headers.origin){try{if(new URL(req.headers.origin).host!==host)return res.status(403).json({error:'Origine non consentita.'});}catch{return res.status(403).json({error:'Origine non valida.'});}}
  if(!String(req.headers['content-type']||'').startsWith('application/json'))return res.status(415).json({error:'Formato non valido.'});
- const device=req.headers['x-sisal-device'];if(!uuid.test(device||''))return res.status(400).json({error:'Identificativo del dispositivo non valido.'});
+ let user;try{user=await requireAccount(req,{mutation:true});}catch(e){const r=errorResponse(e);return res.status(r.status).json(await r.json());}
+ const device=user.id;
  let p;try {if(Number(req.headers['content-length']||0)>400000)throw Error('Richiesta troppo grande.');const raw=typeof req.body==='string'?req.body:JSON.stringify(req.body||{});if(Buffer.byteLength(raw)>400000)throw Error('Richiesta troppo grande.');p=validate(JSON.parse(raw));}catch(e){return res.status(400).json({error:e.message});}
  try{
+  if(!['list','get','like'].includes(p.action)&&!user.is_admin)return res.status(403).json({error:'Solo gli amministratori possono gestire i comunicati.'});
   const ip=String(req.headers['x-real-ip']||req.headers['x-forwarded-for']||'unknown').split(',')[0];
   if(!allowRequest(ip))return res.status(429).json({error:'Troppe richieste. Attendi un minuto.',code:'RATE_LIMIT'});
   return res.status(200).json(await newsStore.operate(p,device));

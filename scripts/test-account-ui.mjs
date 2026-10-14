@@ -1,0 +1,24 @@
+import fs from 'node:fs/promises';import assert from 'node:assert/strict';import {JSDOM} from 'jsdom';import {OPTIONS,DEFAULT,styleColors,validateStyle,nameKey} from '../horse-style.js';
+const source=(await fs.readFile(new URL('../account.js',import.meta.url),'utf8')).replace(/^import .*\n/,'');
+const setup=async({logged=false,admin=false}={})=>{
+ const dom=new JSDOM('<!doctype html><body class="account-locked"><div class="app"><header class="topbar"></header></div></body>',{url:'https://sisal.test',runScripts:'outside-only'});const w=dom.window;
+ Object.assign(w,{OPTIONS,DEFAULT,styleColors,validateStyle,nameKey,AbortSignal,Response});w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};w.HTMLElement.prototype.scrollIntoView=()=>{};w.confirm=()=>true;
+ let me={id:'a',player_key:'compagno',display_name:'Compagno <img src=x onerror=alert(1)>',is_admin:admin,appearance:DEFAULT,appearance_revision:1};let authenticated=logged;const calls=[];
+ w.fetch=async(url,o={})=>{calls.push({url,p:o.body?JSON.parse(o.body):null});const p=o.body?JSON.parse(o.body):null;
+ if(url.endsWith('directory'))return Response.json({hasOwner:true,login:[{key:'compagno',name:'Compagno'}],register:[{key:'nuovo',name:'Nuovo'}],rosterAvailable:true});
+ if(p?.action==='login'){authenticated=true;return Response.json({user:me});}
+ if(p?.action==='register')return Response.json({ok:true,status:'pending'});
+ if(p?.action==='appearance'){me={...me,appearance:p.appearance,appearance_revision:me.appearance_revision+1};return Response.json({user:me});}
+ if(url.endsWith('appearances'))return Response.json({styles:{compagno:me.appearance}});
+ if(url.endsWith('admin'))return Response.json({accounts:[me],audit:[],roster:{available:true,players:[{key:'compagno'}],updatedAt:new Date().toISOString()}});
+ return authenticated?Response.json({user:me}):Response.json({code:'UNAUTHORIZED',error:'Accedi'},{status:401});};
+ w.eval(await fs.readFile(new URL('../account-boot.js',import.meta.url),'utf8'));w.eval('(async()=>{'+source+'})()');await new Promise(r=>setTimeout(r,40));return {w,dom,calls};
+};
+const submit=(w,form)=>form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));const tick=()=>new Promise(r=>setTimeout(r,40));
+let {w,dom,calls}=await setup();assert(w.document.querySelector('#ac-gate'));assert(w.document.body.classList.contains('account-locked'));assert.equal(w.document.querySelectorAll('#ac-player option').length,2);
+w.document.querySelector('[data-mode=register]').click();assert.equal(w.document.querySelector('#ac-player option:last-child').textContent,'Nuovo');w.document.querySelector('#ac-password').value='Una password lunga';w.document.querySelector('#ac-confirm').value='diversa';submit(w,w.document.querySelector('form'));await tick();assert(w.document.querySelector('[data-status]').textContent.includes('non coincidono'));assert(!calls.some(c=>c.p?.action==='register'));
+w.document.querySelector('[data-mode=login]').click();w.document.querySelector('#ac-player').value='compagno';w.document.querySelector('#ac-password').value='Una password lunga';submit(w,w.document.querySelector('form'));await tick();assert(!w.document.querySelector('#ac-gate'));assert(w.SisalAccount);assert(!w.document.body.classList.contains('account-locked'));assert(!w.localStorage.length);
+await w.SisalAccount.open();assert(w.document.querySelector('#ac-panel').open);assert(!w.document.querySelector('[data-tab=admin]'));assert(!w.document.querySelector('h2 img'));assert(w.document.querySelector('h2').textContent.includes('<img'));
+w.document.querySelector('#ac-coat').value='black';w.document.querySelector('#ac-coat').dispatchEvent(new w.Event('change',{bubbles:true}));assert(w.document.querySelector('[data-preview] svg'));submit(w,w.document.querySelector('#ac-style'));await tick();assert.equal(w.SisalAccount.styleFor('COMPAGNO').coat,'black');assert(w.document.querySelector('[data-status]').textContent.includes('salvata'));w.document.querySelector('[data-tab=security]').click();assert(w.document.querySelector('[data-logout=logout_all]'));dom.window.close();
+({w,dom,calls}=await setup({logged:true,admin:true}));assert(!w.document.querySelector('#ac-gate'));await w.SisalAccount.open();w.document.querySelector('[data-tab=admin]').click();await tick();assert(w.document.querySelector('[data-import=import_token]'));assert(w.document.querySelector('#ac-admin-password'));dom.window.close();
+console.log('PASS: DOM login/registration, password mismatch, remembered session, escaped identity, editor/save, member/admin views. JSDOM, not visual browser QA.');

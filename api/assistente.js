@@ -1,3 +1,4 @@
+import {requireAccount,errorResponse} from '../lib/accounts.js';
 import { withStoreRequest } from '../lib/shared-store.js';
 import { buildTeam } from '../lib/data-pipeline.js';
 import { hasStorageConfig, readAllFiles, readRoleMemory, readRoleTotals } from '../lib/shared-store.js';
@@ -711,4 +712,4 @@ async function handlePOST(request) {
   }
 }
 
-export async function POST(...args){return withStoreRequest(()=>handlePOST(...args));}
+export async function POST(...args){try{await requireAccount(args[0],{mutation:true});return await withStoreRequest(()=>handlePOST(...args));}catch(e){return errorResponse(e);}}

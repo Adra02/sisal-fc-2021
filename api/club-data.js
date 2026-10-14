@@ -1,3 +1,4 @@
+import {requireAccount,errorResponse} from '../lib/accounts.js';
 import { withStoreRequest } from '../lib/shared-store.js';
 import { buildTeam, parseJsonText, normalizePlayersFile, normalizeMatchesFile, detectDataFile, extractHistoricalTotals } from '../lib/data-pipeline.js';
 import { CATEGORIES, ROLES, assertCategory, assertRole, hasStorageConfig, readAllFiles, writeFile, deleteRole, readRoleTotals, writeRoleTotals, readRoleMemory, writeRoleMemory } from '../lib/shared-store.js';
@@ -874,6 +875,6 @@ export {
   CATEGORIES
 };
 
-export async function GET(...args){return withStoreRequest(()=>handleGET(...args));}
-export async function POST(...args){return withStoreRequest(()=>handlePOST(...args));}
-export async function DELETE(...args){return withStoreRequest(()=>handleDELETE(...args));}
+export async function GET(...args){try{await requireAccount(args[0],{importer:true});return await withStoreRequest(()=>handleGET(...args));}catch(e){return errorResponse(e);}}
+export async function POST(...args){try{await requireAccount(args[0],{admin:true,mutation:true,importer:true});return await withStoreRequest(()=>handlePOST(...args));}catch(e){return errorResponse(e);}}
+export async function DELETE(...args){try{await requireAccount(args[0],{admin:true,mutation:true,importer:true});return await withStoreRequest(()=>handleDELETE(...args));}catch(e){return errorResponse(e);}}

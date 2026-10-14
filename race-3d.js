@@ -1,3 +1,4 @@
+import {styleColors,paintSilks} from './horse-style.js';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
 import * as T from './vendor/three.module.min.js';
 import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=32.1.40';
@@ -117,9 +118,12 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const body=new T.Group();root.add(body);
     const motion=motionProfile(random,index);
     const coats=['#744c36','#39332f','#b2aaa0','#573b29','#946546'];
-    const fur=texture((c,w,h)=>{c.fillStyle=coats[index%coats.length];c.fillRect(0,0,w,h);for(let k=0;k<6500;k++){c.strokeStyle=k%2?'rgba(255,240,214,.06)':'rgba(18,12,9,.08)';const x=random()*w,y=random()*h;c.beginPath();c.moveTo(x,y);c.lineTo(x+2+random()*4,y+1);c.stroke()}},256,256);
-    const coat=mat('#ffffff',{map:fur,bumpMap:fur,bumpScale:.008,roughness:.47}),mane=mat(index===2?'#686057':'#1c1716',{roughness:.83});
-    const silkMap=texture((c,w,h)=>{c.fillStyle=entry.color;c.fillRect(0,0,w,h);c.fillStyle='#e8eee2';c.beginPath();c.moveTo(0,h*.13);c.lineTo(w,h*.62);c.lineTo(w,h*.78);c.lineTo(0,h*.29);c.fill();c.fillRect(w*.1,0,w*.045,h);},128,128);
+    const custom=entry.appearance?styleColors(entry.appearance):null;
+    const leather=custom?mat(custom.saddleColor,{roughness:.7}):mats.leather;
+    const helmet=custom?mat(custom.helmetColor,{roughness:.5}):null;
+    const fur=texture((c,w,h)=>{c.fillStyle=custom?.coatColor||coats[index%coats.length];c.fillRect(0,0,w,h);for(let k=0;k<6500;k++){c.strokeStyle=k%2?'rgba(255,240,214,.06)':'rgba(18,12,9,.08)';const x=random()*w,y=random()*h;c.beginPath();c.moveTo(x,y);c.lineTo(x+2+random()*4,y+1);c.stroke()}},256,256);
+    const coat=mat('#ffffff',{map:fur,bumpMap:fur,bumpScale:.008,roughness:.47}),mane=mat(custom?.maneColor||(index===2?'#686057':'#1c1716'),{roughness:.83});
+    const silkMap=texture((c,w,h)=>{if(custom){paintSilks(c,w,h,custom);return;}c.fillStyle=entry.color;c.fillRect(0,0,w,h);c.fillStyle='#e8eee2';c.beginPath();c.moveTo(0,h*.13);c.lineTo(w,h*.62);c.lineTo(w,h*.78);c.lineTo(0,h*.29);c.fill();c.fillRect(w*.1,0,w*.045,h);},128,128);
     const silk=mat('#ffffff',{map:silkMap,roughness:.65});
     // Sculpted ribcage, withers and hindquarters replace overlapping ellipsoids.
     sculpt(body,coat,[[-1.17,1.74,0,.06,.07],[-.92,1.76,0,.36,.32],[-.63,1.72,0,.46,.39],[-.22,1.68,0,.40,.37],[.25,1.74,0,.40,.34],[.68,1.76,0,.49,.35],[.97,1.81,0,.25,.23],[1.02,1.84,0,.05,.07]],44,24);
@@ -129,8 +133,8 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const muzzleSkin=mat(index===2?'#6e675e':'#392b25',{roughness:.72});
     for(const z of [-.135,.135])ball(body,muzzleSkin,[1.985,2.365,z],[.095,.105,.04]);
     const noseTip=new T.Object3D();noseTip.name=`horse-nose-${index}`;noseTip.position.set(2.13,2.37,0);body.add(noseTip);
-    for(const z of [-.165,.165]){ball(body,mats.black,[1.97,2.42,z],[.053,.026,.014]);link(body,mats.leather,[1.69,2.38,z],[1.96,2.31,z],.008);}
-    if(index%3!==1){const blaze=ball(body,mats.white,[1.48,2.76,.003],[.28,.016,.054]);blaze.rotation.z=-.35;}
+    for(const z of [-.165,.165]){ball(body,mats.black,[1.97,2.42,z],[.053,.026,.014]);link(body,leather,[1.69,2.38,z],[1.96,2.31,z],.008);}
+    if(custom?custom.marking!=='none':index%3!==1){const blaze=ball(body,mats.white,[1.48,2.76,.003],custom?.marking==='star'?[.075,.017,.06]:[.28,.016,.054]);blaze.rotation.z=-.35;}
     for(const z of [-.19,.19]){
       sculpt(body,coat,[[1.2,2.83,z*.65,.07,.055],[1.2,3.03,z*.75,.065,.04],[1.29,3.19,z*.85,.002,.003]],12,12);
       ball(body,mats.black,[1.49,2.72,z*1.16],[.037,.026,.018]);ball(body,mats.white,[1.50,2.73,z*1.2],[.008,.008,.005]);
@@ -139,8 +143,8 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const tail=new T.Group();tail.position.set(-1.03,1.94,0);body.add(tail);
     sculpt(tail,mane,[[0,0,0,.08,.075],[-.25,-.08,0,.11,.10],[-.55,-.2,0,.12,.09],[-.85,-.4,0,.09,.07],[-1.16,-.48,0,.005,.006]],22,12);
     // Saddle cloth, saddle, girth and bridle.
-    ball(body,silk,[-.1,1.99,0],[.57,.28,.46]);ball(body,mats.leather,[-.1,2.19,0],[.47,.13,.32]);
-    for(const z of [-.43,.43]){link(body,mats.leather,[-.05,2.12,z],[-.05,1.36,z],.035);link(body,mats.leather,[1.9,2.55,z*.44],[1.24,2.8,z*.48],.025);link(body,mats.leather,[1.84,2.47,z*.43],[.71,2.39,z*.5],.014)}
+    ball(body,silk,[-.1,1.99,0],[.57,.28,.46]);ball(body,leather,[-.1,2.19,0],[.47,.13,.32]);
+    for(const z of [-.43,.43]){link(body,leather,[-.05,2.12,z],[-.05,1.36,z],.035);link(body,leather,[1.9,2.55,z*.44],[1.24,2.8,z*.48],.025);link(body,leather,[1.84,2.47,z*.43],[.71,2.39,z*.5],.014)}
     for(const z of [-.33,.33]){const stirrup=mesh(body,geo(new T.TorusGeometry(.11,.012,6,20)),mats.metal,[-.14,1.65,z]);stirrup.scale.set(.7,1,1);}
     const legs=[];
     for(const x of [-.78,.72])for(const z of [-.29,.29]){
@@ -159,7 +163,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const standardFace=new T.Group();head.add(standardFace);
     ball(standardFace,mats.skin,[0,0,0],[.2,.235,.19]);ball(standardFace,mats.skin,[.17,-.025,0],[.095,.09,.09]);
     for(const z of [-.17,.17]){ball(standardFace,mats.dark,[.09,.03,z],[.1,.05,.025]);ball(standardFace,mats.black,[.11,.025,z*1.04],[.025,.022,.012])}
-    ball(head,silk,[0,.19,0],[.26,.15,.23]);ball(head,mats.dark,[0,.13,.13],[.26,.03,.17]);
+    ball(head,helmet||silk,[0,.19,0],[.26,.15,.23]);ball(head,mats.dark,[0,.13,.13],[.26,.03,.17]);
     for(const z of [-.47,.47]){const n=sign(String(index+1),128,128,body,[.36,.36],entry.color,'#ffffff');n.position.set(-.22,1.92,z);if(z<0)n.rotation.y=Math.PI;}
     // Soft contact shadow anchors the horse to the track, independent of shadow resolution.
     const shadow=mesh(root,geo(new T.PlaneGeometry(3.6,1.8)),contactMaterial,[0,.053,0]);shadow.rotation.x=-Math.PI/2;shadow.castShadow=false;shadow.receiveShadow=false;

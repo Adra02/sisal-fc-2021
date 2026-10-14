@@ -1,0 +1,27 @@
+// Minimal DOM model for logic checks. No layout, browser or WebGL emulation.
+export class Element {
+ constructor(tag='div',doc=null){this.tagName=tag.toUpperCase();this.doc=doc;this.children=[];this.parentNode=null;this.attributes={};this.dataset={};this.style={setProperty(k,v){this[k]=v}};this.handlers={};this.hidden=false;this.inert=false;this.clientWidth=800;this.clientHeight=510;this.offsetWidth=100;this.offsetHeight=26;this.classList={contains:x=>this.className.split(/\s+/).includes(x),add:(...xs)=>this.className=[...new Set([...this.className.split(/\s+/).filter(Boolean),...xs])].join(' '),remove:(...xs)=>this.className=this.className.split(/\s+/).filter(x=>!xs.includes(x)).join(' '),toggle:(x,force)=>{const on=force??!this.classList.contains(x);on?this.classList.add(x):this.classList.remove(x);return on;}};}
+ get className(){return this.attributes.class||''} set className(v){this.attributes.class=v}
+ setAttribute(k,v){this.attributes[k]=String(v);if(k==='class')this.className=v;if(k.startsWith('data-'))this.dataset[k.slice(5).replace(/-([a-z])/g,(_,c)=>c.toUpperCase())]=String(v)}
+ getAttribute(k){return this.attributes[k]??null}
+ get isConnected(){return this===this.doc?.body||Boolean(this.parentNode?.isConnected)}
+ appendChild(c){c.remove?.();this.children.push(c);c.parentNode=this;return c}
+ append(...cs){cs.forEach(c=>this.appendChild(typeof c==='string'?new TextNode(c,this.doc):c))}
+ prepend(c){c.remove?.();this.children.unshift(c);c.parentNode=this}
+ replaceChildren(...cs){this.children.forEach(c=>c.parentNode=null);this.children=[];this.append(...cs)}
+ remove(){if(this.parentNode){this.parentNode.children=this.parentNode.children.filter(c=>c!==this);this.parentNode=null}}
+ set textContent(v){this.replaceChildren(new TextNode(String(v),this.doc))}get textContent(){return this.children.map(x=>x.textContent).join('')}
+ set innerHTML(html){this.replaceChildren();const stack=[this];for(const token of html.match(/<[^>]+>|[^<]+/g)||[]){if(token.startsWith('</')){stack.pop();continue}if(token.startsWith('<')){const tag=token.match(/^<([\w-]+)/)?.[1];if(!tag)continue;const node=new Element(tag,this.doc);for(const attr of token.matchAll(/([\w-]+)="([^"]*)"/g))node.setAttribute(attr[1],attr[2]);for(const attr of token.matchAll(/\b(data-[\w-]+)(?=[\s>])/g))node.setAttribute(attr[1],'');stack.at(-1).appendChild(node);if(!token.endsWith('/>')&&!['img','input','br','hr','meta','link'].includes(tag))stack.push(node);}else stack.at(-1).appendChild(new TextNode(token,this.doc));}}
+ matches(selector){if(selector.includes(' ')){const parts=selector.split(' ');if(!this.matches(parts.pop()))return false;let p=this.parentNode;while(p){if(p.matches(parts.join(' ')))return true;p=p.parentNode;}return false;}if(selector.includes(','))return selector.split(',').some(s=>this.matches(s));if(selector.startsWith('.'))return this.classList.contains(selector.slice(1));if(selector.startsWith('#'))return this.getAttribute('id')===selector.slice(1);if(selector.startsWith('['))return this.getAttribute(selector.slice(1,-1))!==null;return this.tagName.toLowerCase()===selector;}
+ querySelectorAll(s){const result=[];for(const c of this.children){if(c.matches?.(s))result.push(c);if(c.querySelectorAll)result.push(...c.querySelectorAll(s));}return result}
+ querySelector(s){return this.querySelectorAll(s)[0]||null}
+ addEventListener(k,f){(this.handlers[k]??=[]).push(f)}removeEventListener(k,f){this.handlers[k]=(this.handlers[k]||[]).filter(x=>x!==f)}
+ dispatchEvent(e){for(const f of this.handlers[e.type]||[])f(e);return true}
+ focus(){this.doc.activeElement=this}scrollTo(){} click(){this.onclick?.({target:this});this.dispatchEvent({type:'click',target:this,preventDefault(){}})}
+}
+class TextNode{constructor(text,doc){this.textContent=text;this.doc=doc;this.parentNode=null}remove(){if(this.parentNode){this.parentNode.children=this.parentNode.children.filter(c=>c!==this);this.parentNode=null}}}
+export function environment(){
+ const events={},document={readyState:'complete',hidden:false,activeElement:null,handlers:events,addEventListener(k,f){(events[k]??=[]).push(f)},removeEventListener(k,f){events[k]=(events[k]||[]).filter(x=>x!==f)},createElement(tag){return new Element(tag,this)},createElementNS(ns,tag){return this.createElement(tag)},createTextNode(text){return new TextNode(text,this)},querySelector(s){return this.body.querySelector(s)},querySelectorAll(s){return this.body.querySelectorAll(s)}};document.body=new Element('body',document);
+ let id=0;const frames=new Map(),timers=new Map(),media={matches:false,addEventListener(){}};
+ return {document,frames,timers,media,Element,window:{},matchMedia:()=>media,MutationObserver:class{constructor(fn){this.fn=fn}observe(){}disconnect(){}},ResizeObserver:class{constructor(fn){this.fn=fn}observe(){this.fn()}disconnect(){}},requestAnimationFrame:fn=>{frames.set(++id,fn);return id},cancelAnimationFrame:id=>frames.delete(id),setTimeout:(fn,ms)=>{timers.set(++id,{fn,ms});return id},clearTimeout:id=>timers.delete(id),queueMicrotask,localStorage:{data:new Map(),getItem(k){return this.data.get(k)??null},setItem(k,v){this.data.set(k,v)}},CustomEvent:class{constructor(type,opts){this.type=type;this.detail=opts.detail}},flushFrames(now){const copy=[...frames.values()];frames.clear();copy.forEach(fn=>fn(now));},flushTimers(ms){for(const [id,t] of [...timers])if(t.ms<=ms){timers.delete(id);t.fn();}}};
+}
