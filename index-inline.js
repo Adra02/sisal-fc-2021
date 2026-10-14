@@ -975,7 +975,7 @@ async function startTop3Race(button,id){
   const audio=window.SisalRaceAudio?.create(); // Unlock synchronously inside the user's click.
   try{
     await window.SisalAccount?.refreshStyles();
-    const module=await import('./race-3d.js?v=accounts-1');
+    const module=await import('./race-3d.js?v=scuderia-2');
     const colors=['#37bc91','#e4b861','#659bdd'];
     const entries=shuffleCopy(top3Placements(cfg)).map((e,i)=>({name:String(e.player.name||'Giocatore'),place:e.place,tied:e.tied,score:e.score,color:colors[i%colors.length],appearance:window.SisalAccount?.styleFor(e.player.name)}));
     if(!card.isConnected){audio?.dispose();return}
@@ -1332,7 +1332,9 @@ async function fetchSharedPlayerPhoto(p,{force=false}={}){
  })();
  sharedPhotoPending.set(key,job);try{return await job}finally{if(sharedPhotoPending.get(key)===job)sharedPhotoPending.delete(key)}
 }
+function canEditPlayerPhoto(p){const u=window.SisalAccount?.user;return !!u&&String(p?.clubId||state.own?.club?.id||'')==='328794'&&identityName(p?.name)===u.player_key;}
 async function changeSharedPhoto(p,action,dataUrl=''){
+ if(!canEditPlayerPhoto(p))throw Error('Puoi modificare soltanto la foto del tuo account.');
  const id=photoRequestIdentity(p),key=id.playerKey;
  if(!Number.isInteger(sharedPlayerPhotoCache.get(key)?.revision))await fetchSharedPlayerPhoto(p,{force:true});
  const expectedRevision=sharedPlayerPhotoCache.get(key)?.revision;
@@ -1361,13 +1363,14 @@ async function loadPlayerPhotoIntoModal(p){
   try{
     if(status)status.textContent='Caricamento foto condivisa…';
     const data=await playerPhotoGet(p);if(card.dataset.photoRequest!==requestVersion||!card.isConnected||!wrap.contains(img)||card.dataset.profileIdentity!==playerPhotoKey(p))return;
-    if(data){img.src=data;img.hidden=false;art.hidden=true;if(remove)remove.hidden=false;if(status)status.textContent='Foto condivisa · visibile a tutti'}else{img.removeAttribute('src');img.hidden=true;art.hidden=false;if(remove)remove.hidden=true;if(status)status.textContent='Nessuna foto condivisa'}
+    if(data){img.src=data;img.hidden=false;art.hidden=true;if(remove)remove.hidden=!canEditPlayerPhoto(p);if(status)status.textContent='Foto condivisa · visibile a tutti'}else{img.removeAttribute('src');img.hidden=true;art.hidden=false;if(remove)remove.hidden=true;if(status)status.textContent='Nessuna foto condivisa'}
   }catch(e){
     if(card.dataset.photoRequest!==requestVersion||!card.isConnected||!wrap.contains(img))return;
     img.removeAttribute('src');img.hidden=true;art.hidden=false;if(remove)remove.hidden=true;if(status)status.textContent='Foto condivisa non disponibile';
   }
 }
 async function choosePlayerPhoto(p){
+  if(!canEditPlayerPhoto(p))return;
   const input=document.createElement('input');input.type='file';input.accept='image/*';
   input.onchange=async()=>{const file=input.files?.[0];if(!file)return;try{showToast('Preparazione e caricamento foto condivisa…');const data=await preparePlayerPhoto(file);await playerPhotoSet(p,data);await loadPlayerPhotoIntoModal(p);showToast('✓ Foto condivisa: ora è visibile su tutti i dispositivi')}catch(e){showToast(e.message||'Impossibile salvare la foto condivisa.',true)}};
   input.click();
@@ -1394,7 +1397,7 @@ function playerModal(id,name='',platform=''){
   const seasonStats=`<div class="player-stat-grid">${stat(p.games==null?'—':num(p.games),'PG stagione')}${stat(p.goals==null?'—':num(p.goals),'Gol')}${stat(p.assists==null?'—':num(p.assists),'Assist')}${stat(rating,'Rating')}${stat(p.winRate==null?'—':num(p.winRate)+'%','Win rate')}${stat(p.shots==null?'—':num(p.shots),p.shotsEstimated?'Tiri stimati':'Tiri')}${stat(num(p.shots)>0?(100*num(p.goals)/num(p.shots)).toFixed(1)+'%':'—','Realizzazione')}${stat(p.passAccuracy==null?'—':num(p.passAccuracy)+'%','Pass %')}${stat(p.tackleSuccess==null?'—':num(p.tackleSuccess)+'%','Tackle %')}${stat(p.cleanSheets==null?'—':num(p.cleanSheets),'Clean sheet')}${stat(p.mom==null?'—':num(p.mom),'MOTM')}${stat(p.redcards==null?'—':num(p.redcards),'Rossi')}</div>`;
   const recentStats=r?`<div class="player-profile-section"><div class="player-section-title"><span>🔥</span><div><b>Ultime 5</b><small>Forma recente</small></div></div><div class="player-stat-grid">${stat(r.appearances,'PG U5')}${stat(r.goals,'Gol U5')}${stat(r.assists,'Assist U5')}${stat(r.rating==null?'—':num(r.rating).toFixed(2),'Rating U5')}${stat(r.shots,'Tiri U5')}${stat(r.passAttempts?`${r.passesMade}/${r.passAttempts}`:'—','Pass U5')}${stat(r.tackleAttempts?`${r.tacklesMade}/${r.tackleAttempts}`:'—','Tackle U5')}${stat(r.saves,'Parate U5')}${stat(r.cleanSheets,'CS U5')}${stat(r.mom,'MOTM U5')}${stat(r.redcards,'Rossi U5')}${stat(r.secondsPlayed==null?'—':(num(r.secondsPlayed)/60).toFixed(1),'Minuti U5')}</div></div>`:'';
   const careerStats=c?`<div class="player-profile-section"><div class="player-section-title"><span>📈</span><div><b>Carriera</b><small>Statistiche cumulative</small></div></div><div class="player-stat-grid">${stat(c.games==null?'—':num(c.games),'PG carriera')}${stat(c.goals,'Gol carriera')}${stat(c.assists,'Assist carriera')}${stat(c.mom,'MOTM carriera')}${stat(c.rating==null?'—':num(c.rating).toFixed(2),'Rating carriera')}</div></div>`:'';
-  el('modalRoot').innerHTML=`<div class="modal player-profile-modal"><div class="modal-inner player-profile-card" data-profile-identity="${esc(playerPhotoKey(p))}" data-shareable-target="1" data-share-title="Scheda giocatore · ${esc(p.name)}"><button class="close player-profile-close share-exclude" id="closeModal" aria-label="Chiudi">✕</button><div class="player-profile-hero"><div class="player-avatar"><img class="player-photo" data-player-photo-img alt="Foto di ${esc(p.name)}" hidden><div class="player-avatar-art" data-player-avatar-art>${playerHeroSvg()}</div><span>${esc(initials)}</span></div><div class="player-identity"><div class="kicker">SISAL FC 2021 · PLAYER CARD</div><h2>${esc(p.name)}</h2><div class="player-chips"><span>${esc(role)}</span><span>OVR ${esc(ovr)}</span>${p.platform?`<span>${esc(p.platform)}</span>`:''}</div>${p.proName?`<div class="player-pro-name">${esc(p.proName)}</div>`:''}</div><div class="player-ovr-badge"><strong>${esc(ovr)}</strong><small>OVR</small></div><div class="player-photo-actions share-exclude"><button type="button" class="btn player-photo-btn" data-player-photo-add>📷 Aggiungi / cambia foto condivisa</button><button type="button" class="btn ghost player-photo-remove" data-player-photo-remove hidden>🗑️ Rimuovi foto</button><small class="player-photo-status" data-player-photo-status>Caricamento foto condivisa…</small></div></div><div class="player-profile-section"><div class="player-section-title"><span>⚽</span><div><b>Stagione</b><small>Statistiche principali</small></div></div>${seasonStats}</div>${recentStats}${careerStats}<div class="player-profile-section player-profile-extra"><div class="player-section-title"><span>🧾</span><div><b>Profilo Pro</b><small>Dati esportati</small></div></div>${profileRows([['Posizione preferita',p.favoritePosition||p.position||null],['Pro name',p.proName||null],['Altezza',p.proHeight==null?null:num(p.proHeight)+' cm'],['Nazionalità codice',p.proNationality],['Piattaforma',p.platform],['Goal precedenti',prev||null]])}</div><div class="share-actions share-exclude"><button type="button" class="share-btn" data-share-player="1">📤 <span>Condividi scheda giocatore</span></button></div></div></div>`;
+  el('modalRoot').innerHTML=`<div class="modal player-profile-modal"><div class="modal-inner player-profile-card" data-profile-identity="${esc(playerPhotoKey(p))}" data-shareable-target="1" data-share-title="Scheda giocatore · ${esc(p.name)}"><button class="close player-profile-close share-exclude" id="closeModal" aria-label="Chiudi">✕</button><div class="player-profile-hero"><div class="player-avatar"><img class="player-photo" data-player-photo-img alt="Foto di ${esc(p.name)}" hidden><div class="player-avatar-art" data-player-avatar-art>${playerHeroSvg()}</div><span>${esc(initials)}</span></div><div class="player-identity"><div class="kicker">SISAL FC 2021 · PLAYER CARD</div><h2>${esc(p.name)}</h2><div class="player-chips"><span>${esc(role)}</span><span>OVR ${esc(ovr)}</span>${p.platform?`<span>${esc(p.platform)}</span>`:''}</div>${p.proName?`<div class="player-pro-name">${esc(p.proName)}</div>`:''}</div><div class="player-ovr-badge"><strong>${esc(ovr)}</strong><small>OVR</small></div><div class="player-photo-actions share-exclude">${canEditPlayerPhoto(p)?`<button type="button" class="btn player-photo-btn" data-player-photo-add>📷 Cambia la mia foto</button><button type="button" class="btn ghost player-photo-remove" data-player-photo-remove hidden>🗑️ Rimuovi foto</button>`:''}<small class="player-photo-status" data-player-photo-status>Caricamento foto condivisa…</small></div></div><div class="player-profile-section"><div class="player-section-title"><span>⚽</span><div><b>Stagione</b><small>Statistiche principali</small></div></div>${seasonStats}</div>${recentStats}${careerStats}<div class="player-profile-section player-profile-extra"><div class="player-section-title"><span>🧾</span><div><b>Profilo Pro</b><small>Dati esportati</small></div></div>${profileRows([['Posizione preferita',p.favoritePosition||p.position||null],['Pro name',p.proName||null],['Altezza',p.proHeight==null?null:num(p.proHeight)+' cm'],['Nazionalità codice',p.proNationality],['Piattaforma',p.platform],['Goal precedenti',prev||null]])}</div><div class="share-actions share-exclude"><button type="button" class="share-btn" data-share-player="1">📤 <span>Condividi scheda giocatore</span></button></div></div></div>`;
   const close=()=>{el('modalRoot').innerHTML=''};
   if(el('closeModal'))el('closeModal').onclick=close;
   el('modalRoot').onclick=e=>{if(e.target?.classList?.contains('modal'))close()};
@@ -1542,6 +1545,6 @@ render=function(){baseRender();const content=el('content');content.setAttribute(
 window.SisalEdition={frontPageModel,lineup,BOT};
 })();
 boot();
-if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=accounts-1').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=scuderia-2').catch(()=>{});
 })();
 

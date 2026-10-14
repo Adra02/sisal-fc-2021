@@ -1,4 +1,4 @@
-import {styleColors,paintSilks} from './horse-style.js';
+import {styleColors,paintSilks} from './horse-style.js?v=scuderia-2';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
 import * as T from './vendor/three.module.min.js';
 import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=32.1.40';
@@ -120,6 +120,10 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const coats=['#744c36','#39332f','#b2aaa0','#573b29','#946546'];
     const custom=entry.appearance?styleColors(entry.appearance):null;
     const leather=custom?mat(custom.saddleColor,{roughness:.7}):mats.leather;
+    const trim=custom?mat(custom.trimColor,{metalness:.72,roughness:.3}):mats.metal;
+    const gloves=custom?mat(custom.glovesColor,{roughness:.8}):mats.skin;
+    const breeches=custom?mat(custom.breechesColor,{roughness:.85}):mats.white;
+    const cloth=custom?mat(custom.clothColor,{roughness:.8}):null;
     const helmet=custom?mat(custom.helmetColor,{roughness:.5}):null;
     const fur=texture((c,w,h)=>{c.fillStyle=custom?.coatColor||coats[index%coats.length];c.fillRect(0,0,w,h);for(let k=0;k<6500;k++){c.strokeStyle=k%2?'rgba(255,240,214,.06)':'rgba(18,12,9,.08)';const x=random()*w,y=random()*h;c.beginPath();c.moveTo(x,y);c.lineTo(x+2+random()*4,y+1);c.stroke()}},256,256);
     const coat=mat('#ffffff',{map:fur,bumpMap:fur,bumpScale:.008,roughness:.47}),mane=mat(custom?.maneColor||(index===2?'#686057':'#1c1716'),{roughness:.83});
@@ -143,28 +147,34 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const tail=new T.Group();tail.position.set(-1.03,1.94,0);body.add(tail);
     sculpt(tail,mane,[[0,0,0,.08,.075],[-.25,-.08,0,.11,.10],[-.55,-.2,0,.12,.09],[-.85,-.4,0,.09,.07],[-1.16,-.48,0,.005,.006]],22,12);
     // Saddle cloth, saddle, girth and bridle.
-    ball(body,silk,[-.1,1.99,0],[.57,.28,.46]);ball(body,leather,[-.1,2.19,0],[.47,.13,.32]);
+    ball(body,cloth||silk,[-.1,1.99,0],[.57,.28,.46]);ball(body,leather,[-.1,2.19,0],[.47,.13,.32]);
     for(const z of [-.43,.43]){link(body,leather,[-.05,2.12,z],[-.05,1.36,z],.035);link(body,leather,[1.9,2.55,z*.44],[1.24,2.8,z*.48],.025);link(body,leather,[1.84,2.47,z*.43],[.71,2.39,z*.5],.014)}
-    for(const z of [-.33,.33]){const stirrup=mesh(body,geo(new T.TorusGeometry(.11,.012,6,20)),mats.metal,[-.14,1.65,z]);stirrup.scale.set(.7,1,1);}
+    for(const z of [-.33,.33]){const stirrup=mesh(body,geo(new T.TorusGeometry(.11,.012,6,20)),trim,[-.14,1.65,z]);stirrup.scale.set(.7,1,1);}
+    if(custom)for(const z of [-.455,.455]){
+      link(body,trim,[-.55,1.87,z],[.35,1.87,z],.012);
+      link(body,trim,[-.55,1.87,z],[-.55,2.03,z],.012);
+      ball(body,trim,[1.84,2.47,z*.43],[.033,.033,.014]);
+    }
     const legs=[];
     for(const x of [-.78,.72])for(const z of [-.29,.29]){
-      const hip=new T.Group();hip.position.set(x,1.56,z);body.add(hip);link(hip,coat,[0,0,0],[.07,-.62,0],.13,.075);ball(hip,coat,[.07,-.62,0],[.085,.09,.085]);const shin=new T.Group();shin.position.set(.07,-.62,0);hip.add(shin);link(shin,coat,[0,0,0],[0,-.62,0],.063,.042);ball(shin,mats.black,[.065,-.66,0],[.14,.095,.09]);legs.push({hip,shin,phase:(x<0?0:Math.PI)+(z<0?.6:0),hind:x<0});
+      const hip=new T.Group();hip.position.set(x,1.56,z);body.add(hip);link(hip,coat,[0,0,0],[.07,-.62,0],.13,.075);ball(hip,coat,[.07,-.62,0],[.085,.09,.085]);const shin=new T.Group();shin.position.set(.07,-.62,0);hip.add(shin);link(shin,coat,[0,0,0],[0,-.62,0],.063,.042);if(custom&&(custom.socks==='all'||custom.socks==='rear'&&x<0))link(shin,mats.white,[0,-.39,0],[0,-.59,0],.055,.047);ball(shin,mats.black,[.065,-.66,0],[.14,.095,.09]);legs.push({hip,shin,phase:(x<0?0:Math.PI)+(z<0?.6:0),hind:x<0});
     }
     const rider=new T.Group();rider.position.set(-.15,2.17,0);body.add(rider);
     const torso=ball(rider,silk,[.23,.48,0],[.23,.43,.22]);torso.rotation.z=-.8;
-    ball(rider,mats.white,[-.1,.15,0],[.25,.17,.23]);
+    ball(rider,breeches,[-.1,.15,0],[.25,.17,.23]);
     const arms=[];
     for(const z of [-.28,.28]){
-      link(rider,mats.white,[-.1,.15,z],[.24,-.12,z*1.2],.095);link(rider,mats.black,[.24,-.12,z*1.2],[-.12,-.49,z*1.15],.07);ball(rider,mats.black,[-.04,-.5,z*1.15],[.16,.065,.08]);
+      link(rider,breeches,[-.1,.15,z],[.24,-.12,z*1.2],.095);link(rider,mats.black,[.24,-.12,z*1.2],[-.12,-.49,z*1.15],.07);ball(rider,mats.black,[-.04,-.5,z*1.15],[.16,.065,.08]);
       const arm=new T.Group();arm.name=`jockey-arm-${index}-${z>0?'salute':'reins'}`;arm.position.set(.4,.66,z*.62);rider.add(arm);
-      link(arm,silk,[0,0,0],[.14,-.33,z*.38],.085);link(arm,silk,[.14,-.33,z*.38],[.42,-.39,z*.04],.055);ball(arm,mats.skin,[.44,-.39,z*.04],[.065,.06,.07]);arms.push(arm);
+      link(arm,silk,[0,0,0],[.14,-.33,z*.38],.085);link(arm,silk,[.14,-.33,z*.38],[.42,-.39,z*.04],.055);ball(arm,gloves,[.44,-.39,z*.04],[.065,.06,.07]);arms.push(arm);
     }
     const head=new T.Group();head.position.set(.6,.89,0);rider.add(head);
     const standardFace=new T.Group();head.add(standardFace);
     ball(standardFace,mats.skin,[0,0,0],[.2,.235,.19]);ball(standardFace,mats.skin,[.17,-.025,0],[.095,.09,.09]);
     for(const z of [-.17,.17]){ball(standardFace,mats.dark,[.09,.03,z],[.1,.05,.025]);ball(standardFace,mats.black,[.11,.025,z*1.04],[.025,.022,.012])}
     ball(head,helmet||silk,[0,.19,0],[.26,.15,.23]);ball(head,mats.dark,[0,.13,.13],[.26,.03,.17]);
-    for(const z of [-.47,.47]){const n=sign(String(index+1),128,128,body,[.36,.36],entry.color,'#ffffff');n.position.set(-.22,1.92,z);if(z<0)n.rotation.y=Math.PI;}
+    if(custom){const stripe=ball(head,mat(custom.accentColor,{roughness:.5}),[0,.325,0],[.19,.016,.045]);stripe.name='jockey-helmet-stripe';}
+    for(const z of [-.47,.47]){const n=sign(custom?.number||String(index+1),128,128,body,[.42,.38],'#10251c','#fff7e4');n.position.set(-.22,1.92,z);if(z<0)n.rotation.y=Math.PI;}
     // Soft contact shadow anchors the horse to the track, independent of shadow resolution.
     const shadow=mesh(root,geo(new T.PlaneGeometry(3.6,1.8)),contactMaterial,[0,.053,0]);shadow.rotation.x=-Math.PI/2;shadow.castShadow=false;shadow.receiveShadow=false;
     return {root,body,legs,tail,rider,head,arms,entry,index,motion,crossed:false,lastHoof:-1};
