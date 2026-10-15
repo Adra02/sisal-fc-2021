@@ -1,4 +1,4 @@
-import {styleColors,paintSilks} from './horse-style.js?v=scuderia-2';
+import {styleColors,paintSilks} from './horse-style.js?v=scuderia-3';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
 import * as T from './vendor/three.module.min.js';
 import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=32.1.40';
@@ -138,7 +138,6 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     for(const z of [-.135,.135])ball(body,muzzleSkin,[1.985,2.365,z],[.095,.105,.04]);
     const noseTip=new T.Object3D();noseTip.name=`horse-nose-${index}`;noseTip.position.set(2.13,2.37,0);body.add(noseTip);
     for(const z of [-.165,.165]){ball(body,mats.black,[1.97,2.42,z],[.053,.026,.014]);link(body,leather,[1.69,2.38,z],[1.96,2.31,z],.008);}
-    if(custom?custom.marking!=='none':index%3!==1){const blaze=ball(body,mats.white,[1.48,2.76,.003],custom?.marking==='star'?[.075,.017,.06]:[.28,.016,.054]);blaze.rotation.z=-.35;}
     for(const z of [-.19,.19]){
       sculpt(body,coat,[[1.2,2.83,z*.65,.07,.055],[1.2,3.03,z*.75,.065,.04],[1.29,3.19,z*.85,.002,.003]],12,12);
       ball(body,mats.black,[1.49,2.72,z*1.16],[.037,.026,.018]);ball(body,mats.white,[1.50,2.73,z*1.2],[.008,.008,.005]);
