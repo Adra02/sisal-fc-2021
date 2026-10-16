@@ -201,10 +201,11 @@ function buildPrompt({ question, mode, notes, formation, formationCatalog, own, 
           ? 'analisi disciplinare dei falli totali della squadra senza ricostruire numeri mancanti'
           : mode === 'formation'
             ? 'scelta da parte dell’IA della formazione e degli 11 ruoli titolari usando i dati della squadra'
-            : 'analisi approfondita della nostra squadra';
+            : 'analisi essenziale della nostra squadra';
 
   return [
     'Sei l’assistente tattico di EA SPORTS FC 27 Clubs per una squadra privata.',
+    'STILE: rispondi subito, senza introduzioni. Per impostazione predefinita usa poche righe o 3–5 punti essenziali. Niente ripetizioni, riepiloghi ridondanti o muri di testo. Approfondisci solo su richiesta esplicita. Conserva le incertezze necessarie, non inventare per essere sintetico. Per la formazione conserva tutti gli slot richiesti ma motivazioni brevi.',
     `Obiettivo: ${modeText}.`,
     '',
     'FONTE DATI OBBLIGATORIA:',
@@ -249,9 +250,9 @@ function buildPrompt({ question, mode, notes, formation, formationCatalog, own, 
     'La knowledge FC27 è solo contesto generale sul gameplay; non sostituisce i dati della squadra.',
     'PER LE FORMAZIONI: quando l’utente chiede formazione/titolari/ruoli, NON serve che esista un pulsante dedicato. Rispondi direttamente nella modalità normale. Scegli modulo e ruoli usando prima posizione/favoritePosition, poi rendimento cumulativo e U5. Un giocatore può occupare un solo slot; non duplicarlo. Se mancano giocatori, costruisci comunque la formazione con quelli disponibili e indica gli slot scoperti. Non trasformare automaticamente un forward in CB o un defender in GK solo per riempire un modulo: gli adattamenti vanno motivati da statistiche e compatibilità di reparto.' ,
     '',
-    mode === 'fun' ? 'PER LA MODALITÀ FUN: crea una panoramica ricca e divertente ma verificabile. Usa record cumulativi, forma U5, impact score U5, hot/cold, red flags, streak e statistiche insolite. Non inventare premi o battute basate su dati assenti.' : mode === 'audit' ? 'PER LA MODALITÀ AUDIT: separa problemi reali da differenze normali tra cumulativo e U5. Classifica ogni rilievo come ERRORE, AVVISO o DIFFERENZA DI SCOPE e indica file/scope coinvolto. Non cambiare nessun numero.' : mode === 'fouls' ? 'PER LA MODALITÀ FALLI: analizza esclusivamente i falli totali di squadra realmente disponibili, indica copertura del dato, falli/partita solo sul campione con dato disponibile, andamento e possibili implicazioni disciplinari. Non inventare falli nelle gare senza dato.' : mode === 'formation' ? 'PER LA MODALITÀ FORMAZIONE: devi restituire SOLO JSON valido con `formation`, `placements`, `rationale`, `strengths`, `cautions`. Scegli una sola formazione presente nel catalogo fornito. `placements` deve contenere le preferenze IA per i titolari: usa slot 0-10, `playerId` esistenti e `role` come ruolo desiderato dall’IA. Le preferenze possono avere conflitti o ruoli sovraffollati: NON bloccare la risposta per questo. Il backend confronterà ruolo naturale, rendimento e statistiche e risolverà automaticamente i conflitti assegnando un solo posto a ogni giocatore. Usa posizione/favoritePosition e statistiche reali per scegliere i titolari; puoi usare dati cumulativi e U5 come contesto, ma non fare divisioni tra scope differenti.' : '',
+    mode === 'fun' ? 'PER LA MODALITÀ FUN: scegli pochi spunti divertenti ma verificabili. Usa record cumulativi, forma U5, impact score U5, hot/cold, red flags, streak e statistiche insolite. Non inventare premi o battute basate su dati assenti.' : mode === 'audit' ? 'PER LA MODALITÀ AUDIT: separa problemi reali da differenze normali tra cumulativo e U5. Classifica ogni rilievo come ERRORE, AVVISO o DIFFERENZA DI SCOPE e indica file/scope coinvolto. Non cambiare nessun numero.' : mode === 'fouls' ? 'PER LA MODALITÀ FALLI: analizza esclusivamente i falli totali di squadra realmente disponibili, indica copertura del dato, falli/partita solo sul campione con dato disponibile, andamento e possibili implicazioni disciplinari. Non inventare falli nelle gare senza dato.' : mode === 'formation' ? 'PER LA MODALITÀ FORMAZIONE: devi restituire SOLO JSON valido con `formation`, `placements`, `rationale`, `strengths`, `cautions`. Scegli una sola formazione presente nel catalogo fornito. `placements` deve contenere le preferenze IA per i titolari: usa slot 0-10, `playerId` esistenti e `role` come ruolo desiderato dall’IA. Le preferenze possono avere conflitti o ruoli sovraffollati: NON bloccare la risposta per questo. Il backend confronterà ruolo naturale, rendimento e statistiche e risolverà automaticamente i conflitti assegnando un solo posto a ogni giocatore. Usa posizione/favoritePosition e statistiche reali per scegliere i titolari; puoi usare dati cumulativi e U5 come contesto, ma non fare divisioni tra scope differenti.' : '',
     'FORMATO RISPOSTA:',
-    'Rispondi in italiano. Usa sezioni brevi, numeri concreti e consigli pratici. Evita frasi generiche.',
+    'Rispondi in italiano: poche righe o 3–5 punti essenziali, senza introduzioni o riepiloghi. Numeri concreti; dettagli soltanto se richiesti.',
     'Per un’analisi tattica proponi problema osservabile, possibile causa, evidenza numerica e intervento pratico.',
     'Per lo scouting avversario evidenzia stile desunto dai dati, giocatori chiave, minacce e cosa limitare.',
     'Quando citi una statistica, specifica se è TOTALE STORICO, STAGIONE/CUMULATIVA, ULTIME 5 oppure PARTITA SINGOLA.',
@@ -281,6 +282,7 @@ async function askGemini(apiKey, prompt, { jsonMode = false, maxOutputTokens = 2
   };
   const response = await fetch(GEMINI_ENDPOINT, {
     method: 'POST',
+    signal: AbortSignal.timeout(45000),
     headers: {
       'content-type': 'application/json',
       'x-goog-api-key': apiKey

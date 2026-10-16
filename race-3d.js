@@ -1,11 +1,12 @@
-import {styleColors,paintSilks} from './horse-style.js?v=scuderia-3';
+import {signaturePose} from './race-signature.js?v=club-8';
+import {styleColors,paintSilks} from './horse-style.js?v=club-8';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
 import * as T from './vendor/three.module.min.js';
 import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=32.1.40';
 import {randomSource,raceSeed,motionProfile,racePlan,plannedProgress,spectatorProfile,spectatorPose} from './race-motion.js?v=32.1.39';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const smooth=x=>x*x*(3-2*x);
-export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â· ULTIME 5',onFinish=()=>{}}={}){
+export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â· ULTIME 5',onFinish=()=>{},introduction=true}={}){
   if(!entries.length){audio?.dispose();return false}
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const trackHalf=Math.max(6.5,entries.length*1.65+.5);
@@ -222,10 +223,14 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
   const sparks=document.createElement('div');sparks.className='sr-award-sparks';sparks.setAttribute('aria-hidden','true');ceremony.appendChild(sparks);
   let awardIndex=-1;
   const count=ui.querySelector('.sr-count'),caption=ui.querySelector('.sr-caption'),positions=ui.querySelector('.sr-positions'),meter=ui.querySelector('.sr-meter i');
+  positions.hidden=true;
   const labels=entries.map((e,i)=>{const row=document.createElement('span');const dot=document.createElement('i');dot.style.background=e.color;row.append(dot,document.createTextNode(e.name));positions.appendChild(row);return row});
   const namesLayer=document.createElement('div');namesLayer.className='sr-name-layer';ui.appendChild(namesLayer);
-  const nameTags=entries.map(e=>{const n=document.createElement('div');n.className='sr-name-tag';n.textContent=e.name;n.style.borderColor=e.color;namesLayer.appendChild(n);const line=document.createElement('i');line.className='sr-name-line';line.style.background=e.color;namesLayer.appendChild(line);return {n,line}});
+  const nameTags=entries.map(e=>{const n=document.createElement('div');n.className='sr-name-tag';n.textContent=e.appearance?.nickname||e.name;n.style.borderColor=e.color;namesLayer.appendChild(n);const line=document.createElement('i');line.className='sr-name-line';line.style.background=e.color;namesLayer.appendChild(line);return {n,line}});
   const world=new T.Vector3();
+  const intro=document.createElement('div');intro.className='sr-intro';intro.innerHTML='<small>IL CLUB ENTRA IN PISTA</small><strong></strong><small data-stat></small><button type="button">Salta introduzione</button>';ui.appendChild(intro);
+  let introLeft=introduction&&!reduced?Math.min(7,entries.length*1.7):0,introElapsed=0,introIndex=-1;intro.hidden=!introLeft;
+  intro.querySelector('button').onclick=()=>{introLeft=0;intro.hidden=true;};
   const audioButton=ui.querySelector('[data-audio]');
   function audioState(){audioButton.textContent=audio?.enabled?'Audio: ON':'Attiva audio';audioButton.setAttribute('aria-pressed',String(Boolean(audio?.enabled)))}
   audioButton.onclick=()=>{if(!audio)audio=window.SisalRaceAudio?.create();else if(!audio.enabled){audio.unlock();if(audioMuted)audio.toggle();audioMuted=false}else{audio.toggle();audioMuted=true}setTimeout(audioState,80)};
@@ -253,11 +258,16 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     if(disposed)return;if(!host.isConnected){dispose(false);return}
     // Brief finish-line slow motion makes the decisive pass readable even on
     // slower devices. Every horse and arrival uses this same simulation clock.
-    const dt=lastTime?Math.min((now-lastTime)/1000,.25):0;
+    let dt=lastTime?Math.min((now-lastTime)/1000,.25):0;
     // Adjust only render resolution after sustained overload, not on a single
     // late frame. Animation, geometry, ranks and effects stay unchanged.
     if(qualityCooldown>0)qualityCooldown--;
     else{slowFrames=dt>.032?slowFrames+1:Math.max(0,slowFrames-2);if(slowFrames>45&&renderScale>.85){renderScale=Math.max(.85,renderScale*.85);renderer.setPixelRatio(renderScale);qualityCooldown=180;slowFrames=0;}}
+    const presenting=introLeft>0;
+    if(presenting){introElapsed+=dt;introLeft=Math.max(0,introLeft-dt);const next=Math.min(entries.length-1,Math.floor(introElapsed/(Math.min(7,entries.length*1.7)/entries.length)));
+      if(next!==introIndex){introIndex=next;const entry=entries[next];intro.querySelector('strong').textContent=entry.appearance?.nickname||entry.name;intro.querySelector('[data-stat]').textContent=entry.score?title+' Â· '+entry.score:'';}
+      dt=0;if(!introLeft){intro.hidden=true;}
+    }
     const photoFinish=clock-start>duration*.91&&clock-start<lastArrival+.08;
     soundClock+=dt;
     if(replayActive){
@@ -270,11 +280,12 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     lastTime=now;
     if(!replayActive&&!replayDone&&clock-start>=lastArrival+.55){replayActive=true;replayTime=duration-.65;replayBadge.hidden=false;ui.classList.add('sr-replaying');host.dataset.replayCount='1';}
     const elapsed=replayActive?replayTime:Math.max(0,clock-start),p=clamp(elapsed/duration,0,1),racing=clock>=start&&p<1;
-    host.dataset.raceStage=replayActive?'replay':elapsed>=ceremonyStart?'awards':elapsed>=lastArrival?'celebration':'race';
+    host.dataset.raceStage=presenting?'intro':replayActive?'replay':elapsed>=ceremonyStart?'awards':elapsed>=lastArrival?'celebration':'race';
     if(replayActive)replayBadge.textContent=elapsed<duration?'REPLAY Â· FOTOFINISH Â· 0,3Ã—':winningTie?'FOTOFINISH Â· EX AEQUO':'FOTOFINISH Â· ARRIVO';
     if(clock<start){count.textContent=String(Math.max(1,3-Math.floor(clock/ .84)))}else if(elapsed<.6){count.textContent='VIA'}else{count.textContent='';}
+    if(presenting)count.textContent='';
     const c=clock<start?Math.max(1,3-Math.floor(clock/.84)):0;
-    if(c!==lastCount){lastCount=c;audio?.countdown(c)}
+    if(!presenting&&c!==lastCount){lastCount=c;audio?.countdown(c)}
     if(clock>=start&&!started){started=true;audio?.start()}
     if(Math.floor(soundClock*2)!==lastAmbience){lastAmbience=Math.floor(soundClock*2);audioState()}
     const ordered=[];
@@ -310,9 +321,8 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
       // pumping rhythm and head turn for every winner. Other hand keeps the reins.
       const victoryAge=elapsed-finishAt-.25-(h.motion.riderPhase/(Math.PI*2))*.24;
       const salute=h.entry.place===1?smooth(clamp(victoryAge/.65,0,1)):0;
-      h.arms[1].rotation.z=salute*(2.35+(reduced?.05:.18)*Math.sin(victoryAge*(2.6+h.index*.19)+h.motion.riderPhase));
-      h.arms[1].rotation.x=salute*.18*Math.sin(victoryAge*1.7+h.motion.riderPhase);
-      h.rider.rotation.z+=salute*.16;h.head.rotation.y=salute*(.14+.1*Math.sin(victoryAge+h.motion.riderPhase));
+      signaturePose(h,h.entry.appearance?.celebration||'salute',Math.max(0,victoryAge),reduced,salute);
+      if(presenting&&i===introIndex)signaturePose(h,h.entry.appearance?.entrance||'salute',introElapsed,reduced,1);
       nameTags[i].n.classList.toggle('sr-name-winner',h.entry.place===1&&f>=1);
       ordered.push({i,progress});
       for(let j=0;j<42;j++){const age=((elapsed*1.25+j/42)%1),idx=(i*42+j)*3;dustPos[idx]=x-1.2-age*4;dustPos[idx+1]=.1+age*.8;dustPos[idx+2]=h.root.position.z+Math.sin(j*34)*age*.7}
@@ -337,7 +347,8 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const camModes=[[center+4.5,5.8,dist],[center+7,3.5,dist*.93],[center+7,10,dist*.86]];
     const cp=camModes[reduced?0:mode];
     scenery.update(crowdClock,center,reduced);
-    if(replayActive){camera.position.set(48,7.2,dist);camera.lookAt(48,1.8,0)}
+    if(presenting&&introIndex>=0){const h=horses[introIndex];camera.position.set(h.root.position.x+7,4.2,h.root.position.z+(camera.aspect<1?13:10));camera.lookAt(h.root.position.x,1.6,h.root.position.z)}
+    else if(replayActive){camera.position.set(48,7.2,dist);camera.lookAt(48,1.8,0)}
     else{if(clock<.1||reduced)camera.position.set(...cp);else camera.position.lerp(new T.Vector3(...cp),1-Math.exp(-dt*9));camera.lookAt(center+.5,1.45,0);}
     sun.position.set(center-10,24,18);sun.target.position.set(center,0,0);
     // Project labels from each head, then separate overlapping names with leader lines.
@@ -346,7 +357,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     horses.forEach((h,i)=>{
       h.head.getWorldPosition(world);world.y+=.45;world.project(camera);
       const w=viewWidth,hh=viewHeight,ax=(world.x*.5+.5)*w,ay=(-world.y*.5+.5)*hh;
-      const {n,line}=nameTags[i],nw=labelSizes[i]?.w||150,nh=labelSizes[i]?.h||26;
+      const {n,line}=nameTags[i];n.hidden=presenting&&i!==introIndex;line.hidden=n.hidden;const nw=labelSizes[i]?.w||150,nh=labelSizes[i]?.h||26;
       let x=clamp(ax-nw/2,8,Math.max(8,w-nw-8)),y=Math.max(42,ay-nh-14);
       for(let attempt=0;attempt<entries.length+1;attempt++){
         if(!boxes.some(b=>x<b.x+b.w+6&&x+nw+6>b.x&&y<b.y+b.h+5&&y+nh+5>b.y))break;
@@ -370,6 +381,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     if(!replayActive&&elapsed>=lastArrival+.65&&!finished){finished=true;onFinish();}
     if(finished){count.textContent='';caption.textContent=`1Â° ${winners.map(e=>e.name).join(' + ')}${winningTie?' Â· EX AEQUO':''}`;}
     if(replayActive){count.textContent='';caption.textContent=replayHold>0?'ISTANTE ESATTO DEL PRIMO ARRIVO':'REPLAY DELLO STESSO ARRIVO';}
+    positions.hidden=!started;
     renderer.render(scene,camera);
     if(Math.floor(clock)!==Number(host.dataset.visualSecond)){host.dataset.visualSecond=String(Math.floor(clock));host.dataset.drawCalls=String(renderer.info.render.calls);host.dataset.triangles=String(renderer.info.render.triangles);}
     if(elapsed>ceremonyEnd){dispose(true);return}raf=requestAnimationFrame(frame);

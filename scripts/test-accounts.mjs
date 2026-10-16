@@ -13,6 +13,7 @@ import {DEFAULT,validateStyle} from '../horse-style.js';
 const db=new PGlite();await db.exec('create role anon;create role authenticated;create role service_role;');
 await db.exec(await fs.readFile(new URL('../setup/01-database.sql',import.meta.url),'utf8'));
 const sql=await fs.readFile(new URL('../setup/accounts/01-accounts.sql',import.meta.url),'utf8');await db.exec(sql);await db.exec(sql);
+await db.exec(await fs.readFile(new URL('../setup/08-club-editorial.sql',import.meta.url),'utf8'));
 process.env.SUPABASE_URL='https://local.supabase.co';process.env.SUPABASE_SECRET_KEY='test-key';process.env.SISAL_BOOTSTRAP_SECRET='a'.repeat(40);
 globalThis.fetch=async(input,options)=>{const url=new URL(input);assert.equal(url.hostname,'local.supabase.co');const name=url.pathname.split('/').at(-1);assert(url.pathname.startsWith('/rest/v1/rpc/'));const p=JSON.parse(options.body);try{
  const keys=Object.keys(p);const r=await db.query(`select ${name}(${keys.map((k,i)=>k+' => $'+(i+1)).join(',')}) as value`,Object.values(p));return Response.json(r.rows[0].value);
@@ -79,6 +80,7 @@ const {requireAccount}=await import('../lib/accounts.js');
 check((await requireAccount(new Request(origin+'/api/club-data',{headers:{Authorization:'Bearer '+it.data.token}}),{importer:true})).importer,'Termux bearer');
 await req({action:'revoke_import',currentPassword:password},{cookie:owner});
 await assert.rejects(requireAccount(new Request(origin+'/api/club-data',{headers:{Authorization:'Bearer '+it.data.token}}),{importer:true}));checks++;
+for(const action of ['save','remove'])check((await photoPOST(new Request(origin+'/api/player-photo',{method:'POST',headers:{Origin:origin,Cookie:owner,'Content-Type':'application/json'},body:JSON.stringify({clubId:'328794',playerName:'Compagno_A',playerKey:JSON.stringify(['photo-v2','328794','compagno_a']),action,revision:0})}))).status===403,'owner admin cannot '+action+' another photo');
 // Delegated administrators and owner protection; no extra credential services.
 await db.exec('delete from club_auth_limits');
 const ownerId=login.data.user.id;
