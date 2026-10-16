@@ -1,5 +1,5 @@
-import {signaturePose} from './race-signature.js?v=club-8';
-import {styleColors,paintSilks} from './horse-style.js?v=club-8';
+import {signaturePose} from './race-signature.js?v=club-8-racefix1';
+import {styleColors,paintSilks} from './horse-style.js?v=club-8-racefix1';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
 import * as T from './vendor/three.module.min.js';
 import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=32.1.40';
@@ -9,6 +9,7 @@ const smooth=x=>x*x*(3-2*x);
 export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â· ULTIME 5',onFinish=()=>{},introduction=true}={}){
   if(!entries.length){audio?.dispose();return false}
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const poseLabels={salute:'Saluto',arms:'Braccia al cielo',bow:'Inchino',crowd:'Verso il pubblico'};
   const trackHalf=Math.max(6.5,entries.length*1.65+.5);
   const seed=raceSeed(),random=randomSource(seed);host.dataset.raceSeed=String(seed);
   const renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'default'});
@@ -229,7 +230,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
   const nameTags=entries.map(e=>{const n=document.createElement('div');n.className='sr-name-tag';n.textContent=e.appearance?.nickname||e.name;n.style.borderColor=e.color;namesLayer.appendChild(n);const line=document.createElement('i');line.className='sr-name-line';line.style.background=e.color;namesLayer.appendChild(line);return {n,line}});
   const world=new T.Vector3();
   const intro=document.createElement('div');intro.className='sr-intro';intro.innerHTML='<small>IL CLUB ENTRA IN PISTA</small><strong></strong><small data-stat></small><button type="button">Salta introduzione</button>';ui.appendChild(intro);
-  let introLeft=introduction&&!reduced?Math.min(7,entries.length*1.7):0,introElapsed=0,introIndex=-1;intro.hidden=!introLeft;
+  let introLeft=introduction?Math.min(7,entries.length*1.7):0,introElapsed=0,introIndex=-1;intro.hidden=!introLeft;
   intro.querySelector('button').onclick=()=>{introLeft=0;intro.hidden=true;};
   const audioButton=ui.querySelector('[data-audio]');
   function audioState(){audioButton.textContent=audio?.enabled?'Audio: ON':'Attiva audio';audioButton.setAttribute('aria-pressed',String(Boolean(audio?.enabled)))}
@@ -252,7 +253,9 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
   let replayActive=false,replayDone=false,replayTime=0,replayHold=0,soundClock=0;
   let slowFrames=0,qualityCooldown=120;
   const start=2.5;
-  const ceremonyStart=lastArrival+4.2;
+  const signatureStart=lastArrival+.65;
+  const signatureDuration=Math.max(3.6,winners.length*1.8);
+  const ceremonyStart=signatureStart+signatureDuration;
   const awardStep=2.15,ceremonyEnd=ceremonyStart+placeGroups.length*awardStep+2.2;
   function frame(now){
     if(disposed)return;if(!host.isConnected){dispose(false);return}
@@ -265,7 +268,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     else{slowFrames=dt>.032?slowFrames+1:Math.max(0,slowFrames-2);if(slowFrames>45&&renderScale>.85){renderScale=Math.max(.85,renderScale*.85);renderer.setPixelRatio(renderScale);qualityCooldown=180;slowFrames=0;}}
     const presenting=introLeft>0;
     if(presenting){introElapsed+=dt;introLeft=Math.max(0,introLeft-dt);const next=Math.min(entries.length-1,Math.floor(introElapsed/(Math.min(7,entries.length*1.7)/entries.length)));
-      if(next!==introIndex){introIndex=next;const entry=entries[next];intro.querySelector('strong').textContent=entry.appearance?.nickname||entry.name;intro.querySelector('[data-stat]').textContent=entry.score?title+' Â· '+entry.score:'';}
+      if(next!==introIndex){introIndex=next;const entry=entries[next];intro.querySelector('strong').textContent=entry.appearance?.nickname||entry.name;intro.querySelector('small').textContent=`IN PISTA Â· ${next+1}/${entries.length} Â· ${poseLabels[entry.appearance?.entrance]||'Saluto'}`;intro.querySelector('[data-stat]').textContent=entry.score?title+' Â· '+entry.score:'';}
       dt=0;if(!introLeft){intro.hidden=true;}
     }
     const photoFinish=clock-start>duration*.91&&clock-start<lastArrival+.08;
@@ -280,7 +283,12 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     lastTime=now;
     if(!replayActive&&!replayDone&&clock-start>=lastArrival+.55){replayActive=true;replayTime=duration-.65;replayBadge.hidden=false;ui.classList.add('sr-replaying');host.dataset.replayCount='1';}
     const elapsed=replayActive?replayTime:Math.max(0,clock-start),p=clamp(elapsed/duration,0,1),racing=clock>=start&&p<1;
-    host.dataset.raceStage=presenting?'intro':replayActive?'replay':elapsed>=ceremonyStart?'awards':elapsed>=lastArrival?'celebration':'race';
+    const celebrating=replayDone&&elapsed>=signatureStart&&elapsed<ceremonyStart;
+    const winnerIndex=celebrating?Math.min(winners.length-1,Math.floor((elapsed-signatureStart)/(signatureDuration/winners.length))):-1;
+    const focusedIndex=presenting?introIndex:celebrating?entries.indexOf(winners[winnerIndex]):-1;
+    ui.classList.toggle('sr-signature-active',presenting||celebrating);
+    if(celebrating){const entry=winners[winnerIndex];intro.hidden=false;intro.querySelector('small').textContent='ESULTANZA'+(winningTie?' Â· VINCITORI EX AEQUO':' Â· VINCITORE');intro.querySelector('strong').textContent=entry.appearance?.nickname||entry.name;intro.querySelector('[data-stat]').textContent=poseLabels[entry.appearance?.celebration]||'Saluto';intro.querySelector('button').hidden=true;winnerBanner.hidden=true;tiePanel.hidden=true;}else if(!presenting){intro.hidden=true;}
+    host.dataset.raceStage=presenting?'intro':celebrating?'signature':replayActive?'replay':elapsed>=ceremonyStart?'awards':elapsed>=lastArrival?'celebration':'race';
     if(replayActive)replayBadge.textContent=elapsed<duration?'REPLAY Â· FOTOFINISH Â· 0,3Ã—':winningTie?'FOTOFINISH Â· EX AEQUO':'FOTOFINISH Â· ARRIVO';
     if(clock<start){count.textContent=String(Math.max(1,3-Math.floor(clock/ .84)))}else if(elapsed<.6){count.textContent='VIA'}else{count.textContent='';}
     if(presenting)count.textContent='';
@@ -290,6 +298,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     if(Math.floor(soundClock*2)!==lastAmbience){lastAmbience=Math.floor(soundClock*2);audioState()}
     const ordered=[];
     horses.forEach((h,i)=>{
+      h.root.visible=focusedIndex<0||focusedIndex===i;
       const rank=h.entry.place,finishAt=choreography[i].finishAt;
       const f=clamp(elapsed/finishAt,0,1),progress=plannedProgress(elapsed,choreography[i]),coast=clamp((elapsed-finishAt)/2,0,1);
       const phase=elapsed*h.motion.speed+h.motion.phase,amp=clock<start?0:1-smooth(coast);
@@ -347,7 +356,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const camModes=[[center+4.5,5.8,dist],[center+7,3.5,dist*.93],[center+7,10,dist*.86]];
     const cp=camModes[reduced?0:mode];
     scenery.update(crowdClock,center,reduced);
-    if(presenting&&introIndex>=0){const h=horses[introIndex];camera.position.set(h.root.position.x+7,4.2,h.root.position.z+(camera.aspect<1?13:10));camera.lookAt(h.root.position.x,1.6,h.root.position.z)}
+    if(focusedIndex>=0){const h=horses[focusedIndex];camera.position.set(h.root.position.x+2,3.5,h.root.position.z+(camera.aspect<1?10:7));camera.lookAt(h.root.position.x+.2,1.9,h.root.position.z)}
     else if(replayActive){camera.position.set(48,7.2,dist);camera.lookAt(48,1.8,0)}
     else{if(clock<.1||reduced)camera.position.set(...cp);else camera.position.lerp(new T.Vector3(...cp),1-Math.exp(-dt*9));camera.lookAt(center+.5,1.45,0);}
     sun.position.set(center-10,24,18);sun.target.position.set(center,0,0);
@@ -357,7 +366,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     horses.forEach((h,i)=>{
       h.head.getWorldPosition(world);world.y+=.45;world.project(camera);
       const w=viewWidth,hh=viewHeight,ax=(world.x*.5+.5)*w,ay=(-world.y*.5+.5)*hh;
-      const {n,line}=nameTags[i];n.hidden=presenting&&i!==introIndex;line.hidden=n.hidden;const nw=labelSizes[i]?.w||150,nh=labelSizes[i]?.h||26;
+      const {n,line}=nameTags[i];n.hidden=focusedIndex>=0&&i!==focusedIndex;line.hidden=n.hidden;const nw=labelSizes[i]?.w||150,nh=labelSizes[i]?.h||26;
       let x=clamp(ax-nw/2,8,Math.max(8,w-nw-8)),y=Math.max(42,ay-nh-14);
       for(let attempt=0;attempt<entries.length+1;attempt++){
         if(!boxes.some(b=>x<b.x+b.w+6&&x+nw+6>b.x&&y<b.y+b.h+5&&y+nh+5>b.y))break;

@@ -7,3 +7,6 @@
 
 #sisal-news .news-card:not(.lead):has(.news-thumbnail) .news-title-button{width:calc(71% - 24px)}
 @media(max-width:600px){#sisal-news .news-card:not(.lead):has(.news-thumbnail) .news-title-button{width:calc(68% - 14px)}}
+
+/* Keep the actual rider visible during presentations and victory signatures. */
+.sr-signature-active .sr-bottom,.sr-signature-active .sr-name-layer{visibility:hidden}.sr-signature-active [data-camera]{visibility:hidden}.sr-intro button[hidden]{display:none}
