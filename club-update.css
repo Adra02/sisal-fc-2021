@@ -10,3 +10,15 @@
 
 /* Keep the actual rider visible during presentations and victory signatures. */
 .sr-signature-active .sr-bottom,.sr-signature-active .sr-name-layer{visibility:hidden}.sr-signature-active [data-camera]{visibility:hidden}.sr-intro button[hidden]{display:none}
+
+/* Names and poses sit below the 3D viewport, never across the horse or rider. */
+.sr-signature-active .sr-intro{top:auto;bottom:68px;height:128px;box-sizing:border-box;padding:8px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#081d18}
+.sr-signature-active .sr-intro strong{font-size:clamp(14px,3vw,20px);line-height:1.15;overflow-wrap:anywhere;max-width:100%}
+.sr-signature-active .sr-intro small{font-size:11px;line-height:1.2}
+.sr-signature-active .sr-intro [data-stat]:empty{display:none}
+.sr-signature-active .sr-intro button{margin-top:3px;min-height:40px;padding:6px 12px}
+.sr-signature-active .sr-controls{bottom:12px;flex-wrap:nowrap;min-height:44px;justify-content:space-between}
+.sr-signature-active [data-camera]{display:none}
+.sr-signature-active .sr-intro[hidden]{display:none}
+
+.sr-signature-active .sr-broadcast{visibility:hidden}

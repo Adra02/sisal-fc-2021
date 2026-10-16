@@ -975,7 +975,7 @@ async function startTop3Race(button,id){
   const audio=window.SisalRaceAudio?.create(); // Unlock synchronously inside the user's click.
   try{
     await window.SisalAccount?.refreshStyles();
-    const module=await import('./race-3d.js?v=club-8-racefix1');
+    const module=await import('./race-3d.js?v=club-8-racefix2');
     const colors=['#37bc91','#e4b861','#659bdd'];
     const entries=shuffleCopy(top3Placements(cfg)).map((e,i)=>({name:String(e.player.name||'Giocatore'),place:e.place,tied:e.tied,score:e.score,color:colors[i%colors.length],appearance:window.SisalAccount?.styleFor(e.player.name)}));
     if(!card.isConnected){audio?.dispose();return}
@@ -1547,6 +1547,6 @@ window.SisalPlayerProfile={async renderOwn(target){
 }};
 })();
 boot();
-if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=club-8-racefix1').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=club-8-racefix2').catch(()=>{});
 })();
 

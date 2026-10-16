@@ -1,5 +1,5 @@
-import {signaturePose} from './race-signature.js?v=club-8-racefix1';
-import {styleColors,paintSilks} from './horse-style.js?v=club-8-racefix1';
+import {signaturePose} from './race-signature.js?v=club-8-racefix2';
+import {styleColors,paintSilks} from './horse-style.js?v=club-8-racefix2';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
 import * as T from './vendor/three.module.min.js';
 import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=32.1.40';
@@ -243,8 +243,8 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 �
   function lost(e){e.preventDefault();dispose(false)}canvas.addEventListener('webglcontextlost',lost);
   function visibility(){lastTime=0;if(document.hidden){audio?.pause();cancelAnimationFrame(raf)}else if(!disposed){audio?.resume();raf=requestAnimationFrame(frame)}}document.addEventListener('visibilitychange',visibility);
   const observer=new MutationObserver(()=>{if(!host.isConnected)dispose(false)});observer.observe(document.body,{childList:true,subtree:true});
-  let viewWidth=host.clientWidth,viewHeight=host.clientHeight,labelSizes=[];
-  const resize=new ResizeObserver(()=>{viewWidth=host.clientWidth;viewHeight=host.clientHeight;if(viewWidth&&viewHeight){renderer.setSize(viewWidth,viewHeight,false);camera.aspect=viewWidth/viewHeight;camera.updateProjectionMatrix();labelSizes=nameTags.map(({n})=>({w:n.offsetWidth,h:n.offsetHeight}))}});resize.observe(host);
+  let viewWidth=host.clientWidth,viewHeight=host.clientHeight,labelSizes=[],renderWidth=0,renderHeight=0;
+  const resize=new ResizeObserver(()=>{viewWidth=host.clientWidth;viewHeight=host.clientHeight;if(viewWidth&&viewHeight){labelSizes=nameTags.map(({n})=>({w:n.offsetWidth,h:n.offsetHeight}))}});resize.observe(host);
   ui.querySelector('[data-camera]').onclick=()=>{mode=(mode+1)%3};ui.querySelector('[data-skip]').onclick=()=>dispose(true);
   ui.querySelector('[data-skip]').textContent='Vai alla classifica';
   const duration=profile.pace==='aggressive'?10:12;
@@ -268,7 +268,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 �
     else{slowFrames=dt>.032?slowFrames+1:Math.max(0,slowFrames-2);if(slowFrames>45&&renderScale>.85){renderScale=Math.max(.85,renderScale*.85);renderer.setPixelRatio(renderScale);qualityCooldown=180;slowFrames=0;}}
     const presenting=introLeft>0;
     if(presenting){introElapsed+=dt;introLeft=Math.max(0,introLeft-dt);const next=Math.min(entries.length-1,Math.floor(introElapsed/(Math.min(7,entries.length*1.7)/entries.length)));
-      if(next!==introIndex){introIndex=next;const entry=entries[next];intro.querySelector('strong').textContent=entry.appearance?.nickname||entry.name;intro.querySelector('small').textContent=`IN PISTA · ${next+1}/${entries.length} · ${poseLabels[entry.appearance?.entrance]||'Saluto'}`;intro.querySelector('[data-stat]').textContent=entry.score?title+' · '+entry.score:'';}
+      if(next!==introIndex){introIndex=next;const entry=entries[next];intro.querySelector('strong').textContent=entry.appearance?.nickname||entry.name;intro.querySelector('small').textContent=`IN PISTA · ${poseLabels[entry.appearance?.entrance]||'Saluto'}`;intro.querySelector('[data-stat]').textContent='';}
       dt=0;if(!introLeft){intro.hidden=true;}
     }
     const photoFinish=clock-start>duration*.91&&clock-start<lastArrival+.08;
@@ -287,6 +287,9 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 �
     const winnerIndex=celebrating?Math.min(winners.length-1,Math.floor((elapsed-signatureStart)/(signatureDuration/winners.length))):-1;
     const focusedIndex=presenting?introIndex:celebrating?entries.indexOf(winners[winnerIndex]):-1;
     ui.classList.toggle('sr-signature-active',presenting||celebrating);
+    // Reserve a separate 200px lower area for identity and controls, outside the canvas.
+    const stageHeight=focusedIndex>=0?Math.max(1,viewHeight-200):viewHeight;
+    if(viewWidth>0&&stageHeight>0&&(renderWidth!==viewWidth||renderHeight!==stageHeight)){renderWidth=viewWidth;renderHeight=stageHeight;renderer.setSize(renderWidth,renderHeight,false);canvas.style.height=renderHeight+'px';camera.aspect=renderWidth/renderHeight;camera.updateProjectionMatrix();}
     if(celebrating){const entry=winners[winnerIndex];intro.hidden=false;intro.querySelector('small').textContent='ESULTANZA'+(winningTie?' · VINCITORI EX AEQUO':' · VINCITORE');intro.querySelector('strong').textContent=entry.appearance?.nickname||entry.name;intro.querySelector('[data-stat]').textContent=poseLabels[entry.appearance?.celebration]||'Saluto';intro.querySelector('button').hidden=true;winnerBanner.hidden=true;tiePanel.hidden=true;}else if(!presenting){intro.hidden=true;}
     host.dataset.raceStage=presenting?'intro':celebrating?'signature':replayActive?'replay':elapsed>=ceremonyStart?'awards':elapsed>=lastArrival?'celebration':'race';
     if(replayActive)replayBadge.textContent=elapsed<duration?'REPLAY · FOTOFINISH · 0,3×':winningTie?'FOTOFINISH · EX AEQUO':'FOTOFINISH · ARRIVO';
