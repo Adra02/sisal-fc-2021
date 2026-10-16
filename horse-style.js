@@ -1,5 +1,6 @@
+import {FACE_OPTIONS,FACE_DEFAULT} from './jockey-options.js';
 // Shared cosmetic contract. No scores, timing, randomness or gameplay settings.
-export const OPTIONS={
+export const OPTIONS={...FACE_OPTIONS,
  entrance:{salute:['Saluto'],arms:['Braccia al cielo'],bow:['Inchino'],crowd:['Verso il pubblico']},
  celebration:{salute:['Saluto'],arms:['Braccia al cielo'],bow:['Inchino'],crowd:['Verso il pubblico']},
  introduction:{on:['Mostra introduzione'],off:['Vai direttamente alla corsa']},
@@ -17,14 +18,14 @@ export const OPTIONS={
  breeches:{ivory:['Avorio','#e6ddca'],white:['Bianco','#f2f0e9'],grey:['Grigio perla','#aeb6b2']}
 
 };
-export const DEFAULT={entrance:'salute',celebration:'salute',introduction:'on',nickname:'',coat:'bay',mane:'dark',silk:'green',accent:'ivory',pattern:'sash',saddle:'brown',helmet:'matching',cloth:'matching',trim:'gold',socks:'none',gloves:'black',breeches:'ivory',number:''};
+export const DEFAULT={...FACE_DEFAULT,entrance:'salute',celebration:'salute',introduction:'on',nickname:'',coat:'bay',mane:'dark',silk:'green',accent:'ivory',pattern:'sash',saddle:'brown',helmet:'matching',cloth:'matching',trim:'gold',socks:'none',gloves:'black',breeches:'ivory',number:''};
 export const nameKey=v=>String(v??'').normalize('NFKC').replace(/\s+/g,' ').trim().toLowerCase();
 // Legacy marking values are accepted but discarded: no face marking is rendered or saved.
 export function validateStyle(input){
  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>k!=='nickname'&&k!=='number'&&k!=='marking'&&!Object.hasOwn(OPTIONS,k)))throw Error('INVALID_STYLE');
  const result={};for(const k of Object.keys(OPTIONS)){const v=input[k]??DEFAULT[k];if(!Object.hasOwn(OPTIONS[k],v))throw Error('INVALID_STYLE');result[k]=v;}const n=input.number??'';if(n!==''&&!/^[1-9][0-9]?$/.test(String(n)))throw Error('INVALID_STYLE');result.number=n===''?'':String(n);const nickname=String(input.nickname??'').normalize('NFKC').trim();if(nickname.length>30||/[<>\x00-\x1f\x7f]/.test(nickname))throw Error('INVALID_STYLE');result.nickname=nickname;return result;
 }
-export function styleColors(input){let s;try{s=validateStyle(input||{})}catch{s={...DEFAULT}}return {...s,clothColor:s.cloth==='matching'?OPTIONS.silk[s.silk][1]:OPTIONS.cloth[s.cloth][1],trimColor:OPTIONS.trim[s.trim][1],glovesColor:OPTIONS.gloves[s.gloves][1],breechesColor:OPTIONS.breeches[s.breeches][1],coatColor:OPTIONS.coat[s.coat][1],maneColor:OPTIONS.mane[s.mane][1],silkColor:OPTIONS.silk[s.silk][1],accentColor:OPTIONS.accent[s.accent][1],saddleColor:OPTIONS.saddle[s.saddle][1],helmetColor:s.helmet==='matching'?OPTIONS.silk[s.silk][1]:s.helmet==='black'?'#202622':'#eee8d9'};}
+export function styleColors(input){let s;try{s=validateStyle(input||{})}catch{s={...DEFAULT}}return {...s,skinColor:OPTIONS.skin[s.skin][1],hairHex:OPTIONS.hairColor[s.hairColor][1],eyeColor:OPTIONS.eyes[s.eyes][1],lipColor:OPTIONS.lips[s.lips][1],beardHex:s.beardColor==='matching'?OPTIONS.hairColor[s.hairColor][1]:OPTIONS.beardColor[s.beardColor][1],clothColor:s.cloth==='matching'?OPTIONS.silk[s.silk][1]:OPTIONS.cloth[s.cloth][1],trimColor:OPTIONS.trim[s.trim][1],glovesColor:OPTIONS.gloves[s.gloves][1],breechesColor:OPTIONS.breeches[s.breeches][1],coatColor:OPTIONS.coat[s.coat][1],maneColor:OPTIONS.mane[s.mane][1],silkColor:OPTIONS.silk[s.silk][1],accentColor:OPTIONS.accent[s.accent][1],saddleColor:OPTIONS.saddle[s.saddle][1],helmetColor:s.helmet==='matching'?OPTIONS.silk[s.silk][1]:s.helmet==='black'?'#202622':'#eee8d9'};}
 export function paintSilks(c,w,h,s){c.fillStyle=s.silkColor;c.fillRect(0,0,w,h);c.fillStyle=s.accentColor;
  if(s.pattern==='hoops')for(let y=h*.15;y<h;y+=h*.3)c.fillRect(0,y,w,h*.12);
  if(s.pattern==='diamonds')for(let y=-h*.25;y<h;y+=h*.5)for(let x=0;x<w;x+=w*.5){c.beginPath();c.moveTo(x+w*.25,y);c.lineTo(x+w*.5,y+h*.25);c.lineTo(x+w*.25,y+h*.5);c.lineTo(x,y+h*.25);c.closePath();c.fill();}

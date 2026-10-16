@@ -1,3 +1,4 @@
+import {publishPaper} from '../lib/paper-job.js';
 import {requireAccount,errorResponse} from '../lib/accounts.js';
 import { withStoreRequest } from '../lib/shared-store.js';
 import { buildTeam, parseJsonText, normalizePlayersFile, normalizeMatchesFile, detectDataFile, extractHistoricalTotals } from '../lib/data-pipeline.js';
@@ -379,7 +380,7 @@ async function updateMemory(role, team, existingMemory = null) {
   });
 }
 
-async function handlePOST(request) {
+async function handlePOST(request, actor) {
   if (!hasStorageConfig()) {
     return json({
       ok: false,
@@ -397,6 +398,7 @@ async function handlePOST(request) {
       const body = await request.json();
       const role = assertRole(String(body?.role || ''));
       const action = String(body?.action || '');
+      if(action==='completeUpdate'){if(role!=='own')return json({ok:true,gazzetta:{ok:true,skipped:true}});return json({ok:true,gazzetta:await publishPaper(actor)});}
 
       if (action === 'saveTotals') {
         const payload = totalsPayloadFrom(
@@ -876,5 +878,5 @@ export {
 };
 
 export async function GET(...args){try{await requireAccount(args[0],{importer:true});return await withStoreRequest(()=>handleGET(...args));}catch(e){return errorResponse(e);}}
-export async function POST(...args){try{await requireAccount(args[0],{admin:true,mutation:true,importer:true});return await withStoreRequest(()=>handlePOST(...args));}catch(e){return errorResponse(e);}}
+export async function POST(...args){try{const actor=await requireAccount(args[0],{admin:true,mutation:true,importer:true});return await withStoreRequest(()=>handlePOST(args[0],actor));}catch(e){return errorResponse(e);}}
 export async function DELETE(...args){try{await requireAccount(args[0],{admin:true,mutation:true,importer:true});return await withStoreRequest(()=>handleDELETE(...args));}catch(e){return errorResponse(e);}}

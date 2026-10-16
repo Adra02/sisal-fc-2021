@@ -1,3 +1,4 @@
+import {createJockey} from './jockey-model.js?v=paper-pages';
 import {signaturePose} from './race-signature.js?v=club-8-racefix2';
 import {styleColors,paintSilks} from './horse-style.js?v=club-8-racefix2';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
@@ -160,21 +161,8 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     for(const x of [-.78,.72])for(const z of [-.29,.29]){
       const hip=new T.Group();hip.position.set(x,1.56,z);body.add(hip);link(hip,coat,[0,0,0],[.07,-.62,0],.13,.075);ball(hip,coat,[.07,-.62,0],[.085,.09,.085]);const shin=new T.Group();shin.position.set(.07,-.62,0);hip.add(shin);link(shin,coat,[0,0,0],[0,-.62,0],.063,.042);if(custom&&(custom.socks==='all'||custom.socks==='rear'&&x<0))link(shin,mats.white,[0,-.39,0],[0,-.59,0],.055,.047);ball(shin,mats.black,[.065,-.66,0],[.14,.095,.09]);legs.push({hip,shin,phase:(x<0?0:Math.PI)+(z<0?.6:0),hind:x<0});
     }
-    const rider=new T.Group();rider.position.set(-.15,2.17,0);body.add(rider);
-    const torso=ball(rider,silk,[.23,.48,0],[.23,.43,.22]);torso.rotation.z=-.8;
-    ball(rider,breeches,[-.1,.15,0],[.25,.17,.23]);
-    const arms=[];
-    for(const z of [-.28,.28]){
-      link(rider,breeches,[-.1,.15,z],[.24,-.12,z*1.2],.095);link(rider,mats.black,[.24,-.12,z*1.2],[-.12,-.49,z*1.15],.07);ball(rider,mats.black,[-.04,-.5,z*1.15],[.16,.065,.08]);
-      const arm=new T.Group();arm.name=`jockey-arm-${index}-${z>0?'salute':'reins'}`;arm.position.set(.4,.66,z*.62);rider.add(arm);
-      link(arm,silk,[0,0,0],[.14,-.33,z*.38],.085);link(arm,silk,[.14,-.33,z*.38],[.42,-.39,z*.04],.055);ball(arm,gloves,[.44,-.39,z*.04],[.065,.06,.07]);arms.push(arm);
-    }
-    const head=new T.Group();head.position.set(.6,.89,0);rider.add(head);
-    const standardFace=new T.Group();head.add(standardFace);
-    ball(standardFace,mats.skin,[0,0,0],[.2,.235,.19]);ball(standardFace,mats.skin,[.17,-.025,0],[.095,.09,.09]);
-    for(const z of [-.17,.17]){ball(standardFace,mats.dark,[.09,.03,z],[.1,.05,.025]);ball(standardFace,mats.black,[.11,.025,z*1.04],[.025,.022,.012])}
-    ball(head,helmet||silk,[0,.19,0],[.26,.15,.23]);ball(head,mats.dark,[0,.13,.13],[.26,.03,.17]);
-    if(custom){const stripe=ball(head,mat(custom.accentColor,{roughness:.5}),[0,.325,0],[.19,.016,.045]);stripe.name='jockey-helmet-stripe';}
+    const {rider,head,arms}=createJockey({ball,link,mat,mats,silk,breeches,gloves,helmet,custom,index});
+    rider.position.set(-.15,2.17,0);body.add(rider);
     for(const z of [-.47,.47]){const n=sign(custom?.number||String(index+1),128,128,body,[.42,.38],'#10251c','#fff7e4');n.position.set(-.22,1.92,z);if(z<0)n.rotation.y=Math.PI;}
     // Soft contact shadow anchors the horse to the track, independent of shadow resolution.
     const shadow=mesh(root,geo(new T.PlaneGeometry(3.6,1.8)),contactMaterial,[0,.053,0]);shadow.rotation.x=-Math.PI/2;shadow.castShadow=false;shadow.receiveShadow=false;
