@@ -3,7 +3,7 @@ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const key=s=>String(s??'').normalize('NFKC').trim().toLowerCase();
 let viewerModule=null,origin=null,oldRows=new Map(),oldNumbers=new Map(),lastTab='',queued=false;
-const loadViewer=()=>viewerModule||(viewerModule=import('./studio-viewer.js?v=studio-1'));
+const loadViewer=()=>viewerModule||(viewerModule=import('./studio-viewer.js?v=studio-2'));
 function animate(node,frames,options={}){if(!reduced&&node?.animate)return node.animate(frames,{duration:360,easing:'cubic-bezier(.22,.65,.3,1)',...options});}
 function prefs(){try{return JSON.parse(localStorage.getItem('sisal-studio-'+key(window.SisalAccount?.user?.display_name))||'{}')}catch{return {}}}
 function savePrefs(next){try{localStorage.setItem('sisal-studio-'+key(window.SisalAccount?.user?.display_name),JSON.stringify({...prefs(),...next}));}catch{}}

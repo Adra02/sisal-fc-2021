@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.min.js';
-import {createJockey} from './jockey-model.js?v=studio-1';
-import {styleColors,paintSilks,nameKey} from './horse-style.js?v=studio-1';
-import {disposeTree} from './studio-geometry.js';
+import {createJockey} from './jockey-model.js?v=studio-2';
+import {styleColors,paintSilks,nameKey} from './horse-style.js?v=studio-2';
+import {disposeTree} from './studio-geometry.js?v=studio-2';
 const cache=new Map();
 export function portraitImage(subject,options={}){
  if(!subject||nameKey(subject.name)!==subject.key)return null;

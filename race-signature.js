@@ -1,5 +1,6 @@
 // Pure cosmetic pose: never reads or changes rank, speed, seed or race plan.
 export function signaturePose(h,kind,age,reduced=false,weight=1){
+ if(h.rider.userData.pose){h.rider.userData.pose(kind,age,reduced,weight);return;}
  const wave=reduced?0:Math.sin(age*4)*.15;
  h.head.rotation.y=0;for(const arm of h.arms){if(arm.userData.restRotation)arm.rotation.copy(arm.userData.restRotation);else arm.rotation.set(0,0,0);}
  if(kind==='arms'){h.arms[0].rotation.z+=2.4*weight;h.arms[1].rotation.z+=(2.4+wave)*weight;}

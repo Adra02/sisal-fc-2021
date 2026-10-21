@@ -1,8 +1,8 @@
 /* Anatomical head topology and shape deltas: MakeHuman CC0, assets/studio/LICENSES.md. */
 import * as T from './vendor/three.module.min.js';
 import {microTexture} from './studio-materials.js';
-import data from './assets/studio/human-head.js';
-import {geometry,mesh,tube,material,smooth,surface} from './studio-geometry.js';
+import data from './assets/studio/human-head.js?v=studio-2';
+import {geometry,mesh,tube,material,smooth,surface} from './studio-geometry.js?v=studio-2';
 const faceTargets={oval:{'head-oval':.35},round:{'head-round':.7,'head-fat-incr':.15},square:{'head-square':.65},heart:{'head-triangular':.35,'chin-triangle':.35},angular:{'head-diamond':.4,'head-fat-decr':.3},narrow:{'head-scale-horiz-decr':.3}};
 const jawTargets={soft:{},defined:{'chin-bones-incr':.4},square:{'chin-width-incr':.5},tapered:{'chin-triangle':.5}};
 const noseTargets={straight:{},button:{'nose-scale-depth-decr':.4,'nose-point-up':.25},aquiline:{'nose-curve-convex':.5},broad:{'nose-scale-horiz-incr':.4,'nose-width1-incr':.2},rounded:{'nose-scale-horiz-incr':.18,'nose-width1-incr':.22},upturned:{'nose-point-up':.4}};
@@ -60,7 +60,7 @@ export function buildFace(head,{s,showHelmet=true}){
   const huv=[];for(let i=0;i<hp.length;i+=3)huv.push(.5+Math.atan2(hp[i+2],hp[i])/(Math.PI*2),(hp[i+1]+.02)/.29);hair.bumpMap=microTexture('hair');hair.bumpScale=.0018;const hairGeom=geometry({position:hp,index:hi,uv:huv});const buckets=new Map();for(let i=0;i<hp.length;i+=3){const k=hp.slice(i,i+3).map(v=>Math.round(v*1e5)).join(',');const bucket=buckets.get(k)||[];bucket.push(i/3);buckets.set(k,bucket);}for(const ids of buckets.values()){const n=new T.Vector3();for(const i of ids)n.add(new T.Vector3().fromBufferAttribute(hairGeom.attributes.normal,i));n.normalize();for(const i of ids)hairGeom.attributes.normal.setXYZ(i,n.x,n.y,n.z);}const hairMesh=mesh(head,hairGeom,hair,'scalp-hair');head.userData.hair=hairMesh;
   // Fine directional strands catch the rim light; deterministic and identical across devices.
   for(let k=0;k<30;k++){const a=(k/30)*Math.PI*2,z=Math.sin(a)*.105,x=Math.cos(a)*.11;const pts=[];for(let j=0;j<8;j++){const t=j/7,yy=.14+Math.sin(t*Math.PI*.8)*.086;pts.push([x*(1-t*.7)-.015,yy+len,z*(1-t*.7)+(s.hairPart==='left'?-.01:s.hairPart==='right'?.01:0)]);}tube(head,hair,pts,.0008,12);}
-  addGroom(head,hairGeom,hair,s.hair==='curly'||s.hairTexture==='coiled',520,s.hair==='buzz'?.002:.009);
+  addGroom(head,hairGeom,hair,s.hair==='curly'||s.hairTexture==='coiled',s.hair==='curly'?1100:680,s.hair==='buzz'?.002:s.hair==='curly'?.019:.011);
   if(['long','bob','ponytail','braids'].includes(s.hair)){
    const length=s.hair==='bob'?.28:.45;
    if(s.hair==='long'||s.hair==='bob'){
@@ -72,11 +72,31 @@ export function buildFace(head,{s,showHelmet=true}){
 
  }
  if(s.beard!=='none'){
-  const bp=[],bi=[],map=new Map();
-  const test=(x,y,z)=>{if(x<.01||y>-.027||y<-.15)return false;const az=Math.abs(z);return s.beard==='moustache'?y>-.056&&y<-.028&&az<.064:s.beard==='goatee'?az<.065:s.beard==='chin'?y<-.1:s.beard==='sideburns'?az>.095:s.beard==='anchor'?az<.065||y<-.12:true;};
-  for(let i=0;i<p.length/3;i++){const[x,y,z]=p.slice(i*3,i*3+3);if(test(x,y,z)){map.set(i,bp.length/3);bp.push(x+.0018,y-(s.beard==='full'?.008:0),z*1.009);}}
-  for(let j=0;j<data.index.length;j+=3){const f=data.index.slice(j,j+3);if(f.every(i=>map.has(i)))bi.push(...f.map(i=>map.get(i)));}
-  const beardMesh=mesh(head,geometry({position:bp,index:bi}),material(beardColor||'#503523',{roughness:.93,transparent:s.beard==='stubble',opacity:s.beard==='stubble'?.45:1}),'beard');addGroom(head,beardMesh.geometry,beardMesh.material,false,300,s.beard==='full'?.009:.003);
+  // Feather the hairline over the real face surface. Do not cover the lips or
+  // discard whole triangles at the edge (the old beard looked like a mask).
+  const density=s.beard==='stubble'?.48:s.beard==='full'?.94:.84;
+  const coverage=(x,y,z)=>{
+   const az=Math.abs(z),upper=-.061+.037*smooth(.025,.10,az);
+   const jaw=smooth(.005,.033,x)*smooth(-.165,-.145,y)*(1-smooth(upper-.008,upper+.008,y));
+   const moustache=smooth(.12,.16,x)*smooth(-.057,-.045,y)*(1-smooth(-.032,-.020,y))*(1-smooth(.047,.067,az));
+   const lipHole=Math.exp(-(((y+.068)/.023)**2+((z/.057)**4)))*smooth(.13,.165,x);
+   let mask=Math.max(jaw,moustache)*(1-lipHole);
+   if(s.beard==='moustache')mask=moustache*(1-lipHole);
+   if(s.beard==='goatee')mask*=1-smooth(.050,.073,az);
+   if(s.beard==='chin')mask*=1-smooth(-.110,-.090,y);
+   if(s.beard==='sideburns')mask*=smooth(.083,.108,az)*smooth(-.10,-.065,y);
+   if(s.beard==='anchor')mask*=Math.max(1-smooth(.035,.060,az),1-smooth(-.12,-.10,y));
+   return mask;
+  };
+  const bp=[],bi=[],bc=[],bn=[],beardTint=new T.Color(beardColor||'#503523'),normal=g.attributes.normal;
+  for(let j=0;j<data.index.length;j+=3){const poly=data.index.slice(j,j+3).map(i=>({p:Array.from(p.slice(i*3,i*3+3)),n:new T.Vector3().fromBufferAttribute(normal,i)})),clipped=[];
+   for(let i=0;i<3;i++){const a=poly[i],b=poly[(i+1)%3],ma=coverage(...a.p)-.025,mb=coverage(...b.p)-.025;if(ma>=0)clipped.push(a);if((ma>=0)!==(mb>=0)){const t=ma/(ma-mb);clipped.push({p:a.p.map((v,k)=>v+(b.p[k]-v)*t),n:a.n.clone().lerp(b.n,t).normalize()});}}
+   if(clipped.length<3)continue;const first=bp.length/3;
+   for(const a of clipped){const mask=coverage(...a.p),extra=.0005+mask*(s.beard==='full'?.010:s.beard==='short'?.0024:.0011),v=new T.Vector3(...a.p).addScaledVector(a.n,extra),c=skin.clone().lerp(beardTint,mask*density);bp.push(...v.toArray());bn.push(...a.n.toArray());bc.push(c.r,c.g,c.b);}
+   for(let k=1;k<clipped.length-1;k++)bi.push(first,first+k,first+k+1);
+  }
+  const bg=geometry({position:bp,index:bi,color:bc});bg.setAttribute('normal',new T.Float32BufferAttribute(bn,3));const beardMesh=mesh(head,bg,material('#fff',{vertexColors:true,roughness:.91}),'beard');beardMesh.castShadow=false;
+  const fibreMat=material(beardColor||'#503523',{roughness:.88});addGroom(head,bg,fibreMat,false,420,s.beard==='full'?.010:s.beard==='stubble'?.0013:.0035);fibreMat.dispose();
  }
  if(s.scar!=='none'){const z=s.scar==='browLeft'?-.055:.055,y=s.scar==='cheek'?-.01:.11;tube(head,material(s.skinColor).clone(),[[.17,y-.014,z-.005],[.173,y,z],[.17,y+.014,z+.005]],.0015,10);}
  if(s.wrinkles!=='none')for(let k=0;k<3;k++)tube(head,material(s.skinColor,{roughness:.8}),[[.168,.125+k*.013,-.045],[.174,.128+k*.013,0],[.168,.125+k*.013,.045]],s.wrinkles==='defined'?.0009:.00045,18);
@@ -85,9 +105,15 @@ export function buildFace(head,{s,showHelmet=true}){
 }
 
 function addGroom(parent,g,m,curly,count,length){
- const p=g.attributes.position,n=g.attributes.normal,pos=[],idx=[];if(!p?.count)return;
+ const p=g.attributes.position,n=g.attributes.normal,pos=[],idx=[],colors=[];if(!p?.count)return;
  const seen=new Set();for(let k=0;k<count;k++){const i=Math.floor((k*.61803398875%1)*p.count),root=new T.Vector3().fromBufferAttribute(p,i),id=root.toArray().map(v=>Math.round(v*1000)).join(',');if(seen.has(id))continue;seen.add(id);const normal=new T.Vector3().fromBufferAttribute(n,i).normalize(),flow=new T.Vector3(-.7,-.1,Math.sin(k*3)*.15).addScaledVector(normal,.8).normalize(),side=new T.Vector3().crossVectors(normal,flow).normalize();if(side.length()<.1)side.set(0,0,1);const start=pos.length/3;
-  for(let j=0;j<=5;j++){const t=j/5,point=root.clone().addScaledVector(normal,.001+Math.sin(t*Math.PI)*length*.45).addScaledVector(flow,t*length);if(curly)point.addScaledVector(side,Math.sin(t*6.28+k)*length*.55);const width=.0006*(1-t*.85);pos.push(...point.clone().addScaledVector(side,width).toArray(),...point.clone().addScaledVector(side,-width).toArray());if(j<5){const a=start+j*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}}
+  const steps=curly?14:6,around=new T.Vector3().crossVectors(normal,side).normalize(),tint=m.color.clone().multiplyScalar(.82+.27*(.5+.5*Math.sin(k*2.57)));
+  for(let j=0;j<=steps;j++){
+   const t=j/steps,point=root.clone();
+   if(curly){const phase=k*1.73+t*Math.PI*3.4,r=length*.21;point.addScaledVector(normal,.001+t*length*.50).addScaledVector(side,(Math.sin(phase)-Math.sin(k*1.73))*r).addScaledVector(around,(Math.cos(phase)-Math.cos(k*1.73))*r);}
+   else point.addScaledVector(normal,.001+Math.sin(t*Math.PI)*length*.45).addScaledVector(flow,t*length);
+   const width=(curly?.0009:.00055)*(1-t*.80);pos.push(...point.clone().addScaledVector(side,width).toArray(),...point.clone().addScaledVector(side,-width).toArray());colors.push(tint.r,tint.g,tint.b,tint.r,tint.g,tint.b);if(j<steps){const a=start+j*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}
+  }
  }
- const strands=mesh(parent,geometry({position:pos,index:idx}),m.clone(),'hair-fibres');strands.material.side=T.DoubleSide;strands.material.bumpMap=null;strands.material.roughness=.82;strands.castShadow=false;
+ const strands=mesh(parent,geometry({position:pos,index:idx,color:colors}),m.clone(),'hair-fibres');strands.material.color.set('#fff');strands.material.vertexColors=true;strands.material.side=T.DoubleSide;strands.material.bumpMap=null;strands.material.roughness=.82;strands.castShadow=false;
 }

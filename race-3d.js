@@ -1,10 +1,10 @@
-import {createHorse} from './horse-model.js?v=studio-1';
-import {createJockey} from './jockey-model.js?v=studio-1';
-import {signaturePose} from './race-signature.js?v=studio-1';
-import {styleColors,paintSilks} from './horse-style.js?v=studio-1';
+import {createHorse} from './horse-model.js?v=studio-2';
+import {createJockey} from './jockey-model.js?v=studio-2';
+import {signaturePose} from './race-signature.js?v=studio-2';
+import {styleColors,paintSilks} from './horse-style.js?v=studio-2';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
 import * as T from './vendor/three.module.min.js';
-import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=studio-1';
+import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=studio-2';
 import {randomSource,raceSeed,motionProfile,racePlan,plannedProgress,spectatorProfile,spectatorPose} from './race-motion.js?v=32.1.39';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const smooth=x=>x*x*(3-2*x);
@@ -12,6 +12,11 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
   if(!entries.length){audio?.dispose();return false}
   const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const poseLabels={salute:'Saluto',arms:'Braccia al cielo',bow:'Inchino',crowd:'Verso il pubblico'};
+  // Presentation order and automatic shirt numbers never disclose the ranking.
+  // Keep this separate from the seeded generator used by the actual race.
+  const introOrder=entries.map((_,i)=>i).sort((a,b)=>entries[a].name.localeCompare(entries[b].name,'it'));
+  const introStep=reduced?1.65:2.3;
+  const introDuration=introOrder.length*introStep;
   const trackHalf=Math.max(6.5,entries.length*1.65+.5);
   const seed=raceSeed(),random=randomSource(seed);host.dataset.raceSeed=String(seed);
   const renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'default'});
@@ -125,11 +130,11 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     for(let visualSample=0;visualSample<19500;visualSample++)random();
     root.name=`horse-subject-${index}`;
     const custom=styleColors(entry.appearance||{});
-    const mount=createHorse(entry.appearance||{},String(index+1));body.add(mount.group);
+    const mount=createHorse(entry.appearance||{},String(introOrder.indexOf(index)+1));body.add(mount.group);
     const canvas=document.createElement('canvas');canvas.width=canvas.height=512;paintSilks(canvas.getContext('2d'),512,512,custom);const tex=new T.CanvasTexture(canvas);tex.colorSpace=T.SRGBColorSpace;textures.add(tex);
     const silk=mat('#ffffff',{map:tex,roughness:.72});
     const {rider,head,arms}=createJockey({mat,mats,silk,breeches:mat(custom.breechesColor),gloves:mat(custom.glovesColor),helmet:mat(custom.helmetColor),custom,index});
-    rider.position.set(-.15,2.17,0);body.add(rider);
+    rider.position.copy(mount.seat);body.add(rider);
     const noseTip=mount.group.getObjectByName('horse-nose');if(noseTip)noseTip.name=`horse-nose-${index}`;
     const shadow=mesh(root,geo(new T.PlaneGeometry(3.6,1.8)),contactMaterial,[0,.053,0]);shadow.rotation.x=-Math.PI/2;shadow.castShadow=false;shadow.receiveShadow=false;
     const medalGroup=new T.Group();medalGroup.visible=false;medalGroup.position.set(.38,.36,0);rider.add(medalGroup);const medal=mesh(medalGroup,geo(new T.CylinderGeometry(.065,.065,.009,32)),mat(entry.place===1?'#d4b26d':entry.place===2?'#bbc7c9':'#a97852',{metalness:.8,roughness:.25}),[0,0,0]);medal.rotation.z=Math.PI/2;for(const z of [-.06,.06])link(medalGroup,mat('#28684c'),[-.05,.25,z],[0,.055,0],.006);
@@ -186,7 +191,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
   const nameTags=entries.map(e=>{const n=document.createElement('div');n.className='sr-name-tag';n.textContent=e.appearance?.nickname||e.name;n.style.borderColor=e.color;namesLayer.appendChild(n);const line=document.createElement('i');line.className='sr-name-line';line.style.background=e.color;namesLayer.appendChild(line);return {n,line}});
   const world=new T.Vector3();
   const intro=document.createElement('div');intro.className='sr-intro';intro.innerHTML='<small>IL CLUB ENTRA IN PISTA</small><strong></strong><small data-stat></small><button type="button">Salta introduzione</button>';ui.appendChild(intro);
-  let introLeft=introduction?Math.min(7,entries.length*1.7):0,introElapsed=0,introIndex=-1;intro.hidden=!introLeft;
+  let introLeft=introduction?introDuration:0,introElapsed=0,introIndex=-1;intro.hidden=!introLeft;
   intro.querySelector('button').onclick=()=>{introLeft=0;intro.hidden=true;};
   const audioButton=ui.querySelector('[data-audio]');
   function audioState(){audioButton.textContent=audio?.enabled?'Audio: ON':'Attiva audio';audioButton.setAttribute('aria-pressed',String(Boolean(audio?.enabled)))}
@@ -223,8 +228,8 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     if(qualityCooldown>0)qualityCooldown--;
     else{slowFrames=dt>.032?slowFrames+1:Math.max(0,slowFrames-2);if(slowFrames>45&&renderScale>.85){renderScale=Math.max(.85,renderScale*.85);renderer.setPixelRatio(renderScale);qualityCooldown=180;slowFrames=0;}}
     const presenting=introLeft>0;
-    if(presenting){introElapsed+=dt;introLeft=Math.max(0,introLeft-dt);const next=Math.min(entries.length-1,Math.floor(introElapsed/(Math.min(7,entries.length*1.7)/entries.length)));
-      if(next!==introIndex){introIndex=next;const entry=entries[next];intro.querySelector('strong').textContent=entry.appearance?.nickname||entry.name;intro.querySelector('small').textContent=`IN PISTA Â· ${poseLabels[entry.appearance?.entrance]||'Saluto'}`;intro.querySelector('[data-stat]').textContent='';}
+    if(presenting){introElapsed+=dt;introLeft=Math.max(0,introLeft-dt);const step=Math.min(entries.length-1,Math.floor(introElapsed/introStep)),next=introOrder[step];
+      if(next!==introIndex){introIndex=next;const entry=entries[next];intro.querySelector('strong').textContent=entry.appearance?.nickname||entry.name;intro.querySelector('small').textContent=`IN PISTA Â· ${step+1}/${entries.length}`;intro.querySelector('[data-stat]').textContent=poseLabels[entry.appearance?.entrance]||'Saluto';}
       dt=0;if(!introLeft){intro.hidden=true;}
     }
     const photoFinish=clock-start>duration*.91&&clock-start<lastArrival+.08;
@@ -243,8 +248,11 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const winnerIndex=celebrating?Math.min(winners.length-1,Math.floor((elapsed-signatureStart)/(signatureDuration/winners.length))):-1;
     const focusedIndex=presenting?introIndex:celebrating?entries.indexOf(winners[winnerIndex]):-1;
     ui.classList.toggle('sr-signature-active',presenting||celebrating);
-    // Reserve a separate 200px lower area for identity and controls, outside the canvas.
-    const stageHeight=focusedIndex>=0?Math.max(1,viewHeight-200):viewHeight;
+    // One constant canvas size throughout the sequence. Identity and controls
+    // have a real lower panel; they never sit over the horse or shrink the shot.
+    const panelHeight=clamp(Math.round(viewHeight*.27),120,152);
+    ui.style.setProperty('--race-panel',panelHeight+'px');
+    const stageHeight=Math.max(1,viewHeight-panelHeight);
     if(viewWidth>0&&stageHeight>0&&(renderWidth!==viewWidth||renderHeight!==stageHeight)){renderWidth=viewWidth;renderHeight=stageHeight;renderer.setSize(renderWidth,renderHeight,false);canvas.style.height=renderHeight+'px';camera.aspect=renderWidth/renderHeight;camera.updateProjectionMatrix();}
     if(celebrating){const entry=winners[winnerIndex];intro.hidden=false;intro.querySelector('small').textContent='ESULTANZA'+(winningTie?' Â· VINCITORI EX AEQUO':' Â· VINCITORE');intro.querySelector('strong').textContent=entry.appearance?.nickname||entry.name;intro.querySelector('[data-stat]').textContent=poseLabels[entry.appearance?.celebration]||'Saluto';intro.querySelector('button').hidden=true;winnerBanner.hidden=true;tiePanel.hidden=true;}else if(!presenting){intro.hidden=true;}
     host.dataset.raceStage=presenting?'intro':celebrating?'signature':replayActive?'replay':elapsed>=ceremonyStart?'awards':elapsed>=lastArrival?'celebration':'race';
@@ -260,7 +268,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
       h.root.visible=focusedIndex<0||focusedIndex===i;
       const rank=h.entry.place,finishAt=choreography[i].finishAt;
       const f=clamp(elapsed/finishAt,0,1),progress=plannedProgress(elapsed,choreography[i]),coast=clamp((elapsed-finishAt)/2,0,1);
-      const phase=(presenting?introElapsed*3:clock<start?clock*3.2:elapsed*h.motion.speed)+h.motion.phase,amp=presenting?.16:clock<start?(1-clock/start)*.25:1-smooth(coast);
+      const phase=(presenting?introElapsed*3:elapsed*h.motion.speed)+h.motion.phase,amp=reduced||presenting||clock<start?0:1-smooth(coast);
       h.body.position.y=(Math.sin(phase*2)*h.motion.bounce+.028)*amp;
       h.body.rotation.z=Math.sin(phase)*.022*amp;
       // Progress tracks the foremost point of the muzzle, not the saddle.
@@ -268,8 +276,9 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
       const noseOffset=2.13*Math.cos(h.body.rotation.z)-2.37*Math.sin(h.body.rotation.z);
       const noseX=2.13+progress*(48-2.13)+5*(1-(1-coast)**2),x=noseX-noseOffset;
       h.root.position.x=x;h.root.position.z=h.laneZ;
-      if(presenting){const step=Math.min(7,entries.length*1.7)/entries.length,local=introElapsed%step;h.root.position.x=-6+Math.min(1,local/.6)*1.2;h.root.position.z=-trackHalf-2.4;renderer.toneMappingExposure=reduced?.94:.25+.69*Math.min(1,local/.6);}
-      else{renderer.toneMappingExposure=.94;if(clock<start){const walk=smooth(clamp(clock/start,0,1));h.root.position.x-=4.8*(1-walk);h.root.position.z=(-trackHalf-2.4)*(1-walk)+h.laneZ*walk;}}
+      // Already in their own lanes: no walking through the running rail, no
+      // shared off-track point, no jump back to the start after the introduction.
+      if(presenting){h.root.position.x=0;h.root.position.z=h.laneZ;}
       if(!replayActive&&f>=1&&!h.crossed){
         h.crossed=true;
         if(!soundedFinishes.has(rank)){soundedFinishes.add(rank);audio?.finish(rank);}
@@ -286,13 +295,15 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
       audio?.gallop?.(i,!replayActive&&clock>=start&&coast<.85,(Math.PI/(2*h.motion.speed))/(photoFinish?.48:1));
       h.legs.forEach(l=>{l.hip.rotation.z=Math.sin(phase+l.phase)*h.motion.stride*amp;l.shin.rotation.z=(l.hind?-1:1)*Math.max(0,Math.cos(phase+l.phase))*.92*amp});
       h.mount.group.userData.react?.(reduced?0:clock);h.medalGroup.visible=h.crossed&&h.entry.place<=3;h.medalGroup.rotation.z=reduced?0:Math.sin(clock*2.4)*.08*Math.exp(-Math.max(0,elapsed-choreography[i].finishAt)*.2);h.tail.rotation.y=Math.sin(phase*.47+h.motion.tailPhase)*.2;h.tail.rotation.z=.16*amp;
-      h.rider.rotation.z=-Math.sin(phase*2+h.motion.riderPhase)*.035*amp;h.head.rotation.z=Math.sin(phase+h.motion.riderPhase)*.035*amp;
+      h.rider.rotation.z=-Math.sin(phase*2+h.motion.riderPhase)*.035*amp;
+      h.rider.userData.idle?.(presenting?introElapsed:clock,{x:0,y:0},reduced);
+      h.head.rotation.z=Math.sin(phase+h.motion.riderPhase)*.02*amp;
       // A gradual one-handed salute after crossing, with a distinct delay,
       // pumping rhythm and head turn for every winner. Other hand keeps the reins.
       const victoryAge=elapsed-finishAt-.25-(h.motion.riderPhase/(Math.PI*2))*.24;
       const salute=h.entry.place===1?smooth(clamp(victoryAge/.65,0,1)):0;
       signaturePose(h,h.entry.appearance?.celebration||'salute',Math.max(0,victoryAge),reduced,salute);
-      if(presenting&&i===introIndex)signaturePose(h,h.entry.appearance?.entrance||'salute',introElapsed,reduced,1);if(focusedIndex===i)motif.dataset.gesture=(presenting?h.entry.appearance?.entrance:h.entry.appearance?.celebration)||'salute';
+      if(presenting&&i===introIndex){const local=introElapsed%introStep;signaturePose(h,h.entry.appearance?.entrance||'salute',local,reduced,reduced?1:smooth(clamp(local/.4,0,1)));}if(focusedIndex===i)motif.dataset.gesture=(presenting?h.entry.appearance?.entrance:h.entry.appearance?.celebration)||'salute';
       nameTags[i].n.classList.toggle('sr-name-winner',h.entry.place===1&&f>=1);
       ordered.push({i,progress});
       for(let j=0;j<42;j++){const age=((elapsed*1.25+j/42)%1),idx=(i*42+j)*3;dustPos[idx]=x-1.2-age*4;dustPos[idx+1]=.1+age*.8;dustPos[idx+2]=h.root.position.z+Math.sin(j*34)*age*.7}
@@ -317,7 +328,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const camModes=[[center+4.5,5.8,dist],[center+7,3.5,dist*.93],[center+7,10,dist*.86]];
     const cp=camModes[reduced?0:mode];
     scenery.update(crowdClock,center,reduced);
-    if(focusedIndex>=0){const h=horses[focusedIndex];camera.position.set(h.root.position.x+2,3.5,h.root.position.z+(camera.aspect<1?10:7));camera.lookAt(h.root.position.x+.2,1.9,h.root.position.z);if(presenting){h.head.rotation.y=.28;for(const eye of h.head.userData.eyes||[])eye.rotation.y=.12;}}
+    if(focusedIndex>=0){const h=horses[focusedIndex];const fit=Math.max(4.4,5.0/camera.aspect)/(2*Math.tan(T.MathUtils.degToRad(camera.fov/2)))*1.20;camera.position.set(h.root.position.x+fit*.24,2.55,h.root.position.z+fit*.97);camera.lookAt(h.root.position.x+.15,1.92,h.root.position.z);if(presenting){h.head.rotation.y=.28;for(const eye of h.head.userData.eyes||[])eye.rotation.y=.12;}}
     else if(replayActive){camera.position.set(48,7.2,dist);camera.lookAt(48,1.8,0)}
     else{if(clock<.1||reduced)camera.position.set(...cp);else camera.position.lerp(new T.Vector3(...cp),1-Math.exp(-dt*9));camera.lookAt(center+.5,1.45,0);}
     sun.position.set(center-10,24,18);sun.target.position.set(center,0,0);
@@ -326,8 +337,8 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const boxes=[];
     horses.forEach((h,i)=>{
       h.head.getWorldPosition(world);world.y+=.45;world.project(camera);
-      const w=viewWidth,hh=viewHeight,ax=(world.x*.5+.5)*w,ay=(-world.y*.5+.5)*hh;
-      const {n,line}=nameTags[i];n.hidden=focusedIndex>=0&&i!==focusedIndex;line.hidden=n.hidden;const nw=labelSizes[i]?.w||150,nh=labelSizes[i]?.h||26;
+      const w=renderWidth,hh=renderHeight,ax=(world.x*.5+.5)*w,ay=(-world.y*.5+.5)*hh;
+      const {n,line}=nameTags[i];n.hidden=focusedIndex>=0||world.z>1;line.hidden=n.hidden;const nw=labelSizes[i]?.w||150,nh=labelSizes[i]?.h||26;
       let x=clamp(ax-nw/2,8,Math.max(8,w-nw-8)),y=Math.max(42,ay-nh-14);
       for(let attempt=0;attempt<entries.length+1;attempt++){
         if(!boxes.some(b=>x<b.x+b.w+6&&x+nw+6>b.x&&y<b.y+b.h+5&&y+nh+5>b.y))break;

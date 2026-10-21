@@ -11,7 +11,11 @@ https://creativecommons.org/publicdomain/zero/1.0/
 
 They were adapted (coordinate system, anatomical shape options, clothed body, reduced topology, skin weights) for this update. No MakeHuman program code is included. Its software license does not replace the CC0 license of these graphical assets.
 
-`horse-body.js` is an original procedural equine surface created for Sisal Studio. It does not derive from the Three.js Horse.glb example or any downloaded horse model. Materials, equipment surfaces and animation code in this update are original.
+`horse-body.js` derives from the **Rigged Horse** model by **Lyndon Daniels**, rig by **Chad M**, published in 2012 under **CC0**:
+- https://opengameart.org/content/rigged-horse
+- Original: https://opengameart.org/sites/default/files/riggedHorse.blend
+
+Adaptations: baked subdivision, coordinate system, lighter silhouette, head carriage, 19-joint runtime skeleton, exported weights, per-account coat materials and fitted saddle/bridle. The source .blend and Blender software are not required by the web app. Equipment and animation code are local to the app.
 
 The existing bundled Three.js distribution keeps its existing MIT notice. The existing Sisal logo is reused from the repository.
 
