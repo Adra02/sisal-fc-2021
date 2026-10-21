@@ -12,7 +12,7 @@ const must=[
 for(const f of must)await fs.access(path.join(root,f));
 
 const pkg=JSON.parse(await fs.readFile(path.join(root,'package.json'),'utf8'));
-assert.equal(pkg.version,'32.1.26');
+assert.match(pkg.version,/^\d+\.\d+\.\d+$/);
 assert.equal(pkg.engines.node,'24.x');
 assert.equal(pkg.dependencies?.['@vercel/blob'],undefined);
 assert.equal(Boolean(pkg.dependencies?.puppeteer),false);
@@ -26,10 +26,14 @@ const assistant=await fs.readFile(path.join(root,'api/assistente.js'),'utf8');
 const shared=await fs.readFile(path.join(root,'lib/shared-store.js'),'utf8');
 const photo=await fs.readFile(path.join(root,'api/player-photo.js'),'utf8');
 
-assert.match(html,/index-inline\.js\?v=32\.1\.26-ai-race-director-visible/);
-assert.match(js,/APP_VERSION='v32\.1\.26'/);
-assert.match(sw,/sisal-fc27-shell-v32\.1\.26-ai-race-director-visible/);
-assert.match(sw,/index-inline\.js\?v=32\.1\.26-ai-race-director-visible/);
+const appScript=html.match(/src="\.\/(index-inline\.js\?v=[^"]+)"/)?.[1];
+assert.ok(appScript,'application entry point declared');
+assert.ok(sw.includes('./'+appScript),'service worker caches the actual application entry point');
+assert.match(js,/APP_VERSION='v\d+\.\d+\.\d+'/);
+assert.match(sw,/const CACHE='sisal-fc27-studio-1'/);
+for(const file of ['studio-viewer.js','studio-ui.js','studio-geometry.js','studio-materials.js','studio.css','horse-model.js','assets/studio/human-head.js','assets/studio/human-body.js','assets/studio/horse-body.js','vendor/Reflector.js'])await fs.access(path.join(root,file));
+assert.match(html,/studio-ui\.js\?v=studio-1/);
+assert.match(html,/studio\.css\?v=studio-1/);
 
 for(const text of ['Dati totali','Stagione corrente','Overall Stats','Giocatori','Carriera giocatori','Campionato','Playoff','Amichevoli','Playoff Achievements','OVR','Profilo Pro','Informazioni club','/api/club-data','DATA_FILES']) {
   assert.match(js,new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
@@ -84,18 +88,21 @@ assert.match(js,/raceDirectorQuestion/);
 assert.match(js,/splitRaceDirectorAnswer/);
 assert.match(js,/source:'ai-race-director'/);
 assert.match(js,/rememberRaceVisualFromAI\(answer,parsed\.director\)/);
-assert.match(js,/function horseMotionParts\(/);
-assert.match(js,/function animateHorseMotion\(/);
-assert.match(js,/data-horse-leg="hind-near"/);
-assert.match(js,/data-horse-lower/);
-assert.match(js,/const paceBase=\{aggressive:9900,progressive:10450,controlled:11600,balanced:10800\}/);
-assert.match(js,/const closeChance=\{photo:\.62,slow:\.38,cinematic:\.30,clean:\.16\}/);
-assert.match(js,/viewBox="0 0 248 132"/);
+const race=await fs.readFile(path.join(root,'race-3d.js'),'utf8');
+const motion=await fs.readFile(path.join(root,'race-motion.js'),'utf8');
+assert.match(js,/runRace/);
+assert.match(race,/createHorse/);
+assert.match(race,/createJockey/);
+assert.match(race,/signaturePose/);
+assert.match(race,/plannedProgress/);
+assert.match(motion,/export function racePlan/);
+assert.match(motion,/export function plannedProgress/);
+assert.doesNotMatch(race,/fetch\s*\(|\/api\//);
 const raceStart=js.indexOf('async function startTop3Race');
 const raceEnd=js.indexOf('function setHeader',raceStart);
 assert.ok(raceStart>=0&&raceEnd>raceStart);
 assert.doesNotMatch(js.slice(raceStart,raceEnd),/fetch\s*\(|\/api\/|Blob|readAllFiles|readRoleBundle/i);
-console.log('verify-project: OK · V32.1.26 · AI Race Director visibile · 0 Blob extra');
+console.log('verify-project: OK · Sisal Studio · entry point e cache coerenti · Supabase');
 assert.match(shared,/sisal_team_write/);
 assert.match(shared,/withStoreRequest/);
 assert.doesNotMatch(shared,/@vercel\/blob|BLOB_READ_WRITE_TOKEN|BLOB_STORE_ID/);

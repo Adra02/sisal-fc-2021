@@ -7,7 +7,7 @@ import * as T from './vendor/three.module.min.js';
 export function mergeRigidParts(parent,register){
   const groups=new Map();
   for(const part of [...parent.children]){
-    if(!part.isMesh||part.isInstancedMesh||Array.isArray(part.material)||part.material.userData.sisalDeform)continue;
+    if(!part.isMesh||part.isSkinnedMesh||part.material?.vertexColors||part.userData.studioDynamic||part.isInstancedMesh||Array.isArray(part.material)||part.material.userData.sisalDeform)continue;
     const key=part.material.uuid+':'+part.castShadow+':'+part.receiveShadow;
     const group=groups.get(key)||[];group.push(part);groups.set(key,group);
   }

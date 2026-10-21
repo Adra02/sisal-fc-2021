@@ -15,7 +15,7 @@ document.querySelectorAll('[data-refresh-paper]').forEach(b=>b.onclick=refreshPa
 await window.sisalAccountReady;
 const bell=document.createElement('button');bell.className='club-bell';bell.type='button';bell.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg><span>Notifiche</span><b>0</b>' ;bell.setAttribute('aria-label','Notifiche');document.querySelector('.topbar').append(bell);
 const panel=document.createElement('dialog');panel.className='club-notifications';panel.setAttribute('aria-label','Notifiche del club');panel.addEventListener('click',e=>{if(e.target===panel){const r=panel.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)panel.close();}});document.body.append(panel);
-let notificationEpoch=0;
+let notificationEpoch=0,noticeSeen=null;
 let snapshot={items:[],unread:0,through:0};
 function renderNotifications(error=''){
  bell.querySelector('b').textContent=snapshot.unread>99?'99+':snapshot.unread;bell.querySelector('b').hidden=!snapshot.unread;bell.setAttribute('aria-label',`Notifiche: ${snapshot.unread} non lette`);
@@ -30,7 +30,8 @@ function renderNotifications(error=''){
  else{const r=await fetch('/api/editorial?action=edition&id='+encodeURIComponent(event.target),{cache:'no-store',credentials:'same-origin',signal:AbortSignal.timeout(20000)});const d=await r.json();if(!r.ok||!d.edition)throw Error('Edizione non disponibile.');edition=d.edition;window.SisalEdition.open();}
  }catch(e){if(!panel.open)panel.showModal();renderNotifications(e.message);}});
 }
-async function refreshNotifications(){const epoch=++notificationEpoch;try{const next=await api('notifications');if(epoch===notificationEpoch){snapshot=next;renderNotifications();}}catch(e){if(epoch===notificationEpoch)renderNotifications(e.message);}}
+async function refreshNotifications(){const epoch=++notificationEpoch;try{const next=await api('notifications');if(epoch===notificationEpoch){if(noticeSeen){const fresh=next.items.filter(x=>!x.read&&!noticeSeen.has(x.id)).sort((a,b)=>b.id-a.id)[0];if(fresh)window.dispatchEvent(new CustomEvent('sisal-internal-notice',{detail:fresh}));}if(noticeSeen)next.items.forEach(x=>noticeSeen.add(x.id));else noticeSeen=new Set(next.items.map(x=>x.id));snapshot=next;renderNotifications();}}catch(e){if(epoch===notificationEpoch)renderNotifications(e.message);}}
 function refresh(){if(inflight||Date.now()-last<60000)return;last=Date.now();inflight=Promise.allSettled([refreshPaper(),refreshNotifications()]).finally(()=>inflight=null);}
+window.SisalNotice={open:id=>{const button=panel.querySelector('[data-event="'+Number(id)+'"]');if(button)button.click();else bell.click();}};
 bell.onclick=()=>{renderNotifications();panel.showModal();refreshNotifications();};
 window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});refresh();

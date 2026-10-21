@@ -1,0 +1,8 @@
+import * as T from './vendor/three.module.min.js';
+export function geometry(data){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(data.position,3));if(data.index)g.setIndex(data.index);if(data.color)g.setAttribute('color',new T.Float32BufferAttribute(data.color,3));if(data.uv)g.setAttribute('uv',new T.Float32BufferAttribute(data.uv,2));g.computeVertexNormals();return g;}
+export function mesh(parent,g,m,name=''){const o=new T.Mesh(g,m);o.name=name;o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;}
+export function tube(parent,m,points,r=.004,segments=32){const c=new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p)));return mesh(parent,new T.TubeGeometry(c,segments,r,6,false),m);}
+export function surface(parent,m,fn,u=40,v=18){const pos=[],idx=[],uv=[];for(let j=0;j<=v;j++)for(let i=0;i<=u;i++){pos.push(...fn(i/u,j/v));uv.push(i/u,j/v);}for(let j=0;j<v;j++)for(let i=0;i<u;i++){const a=j*(u+1)+i,b=a+u+1;idx.push(a,b,a+1,b,b+1,a+1);}return mesh(parent,geometry({position:pos,index:idx,uv}),m);}
+export function material(color,extra={}){return new T.MeshPhysicalMaterial({color,roughness:.62,metalness:0,...extra});}
+export function disposeTree(root){const all=new Set();root?.traverse(o=>{if(o.geometry)all.add(o.geometry);if(o.isSkinnedMesh)o.skeleton?.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])if(m){all.add(m);for(const v of Object.values(m))if(v?.isTexture)all.add(v);}});all.forEach(o=>o.dispose?.());}
+export const smooth=(a,b,x)=>{x=T.MathUtils.clamp((x-a)/(b-a),0,1);return x*x*(3-2*x);};
