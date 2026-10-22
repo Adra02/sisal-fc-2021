@@ -92,6 +92,21 @@ export function enhanceTrack({scene,renderer,geo,mat,texture,mesh,cube,box,track
     for(let k=0;k<5;k++)cube(scene,lamp,[x-1.55+k*.78,13.6,z+.18],[.56,.5,.06]);
   }
   const led=mat('#72ac91',{emissive:'#388466',emissiveIntensity:night?.8:.2,roughness:.7});cube(scene,led,[35,3.95,-trackHalf-5.4],[106,.09,.1]);
+  // Trackside details use the independent scenery RNG, never the race stream.
+  const sandEdge=mat('#b3a184',{roughness:1}),concrete=mat('#93968b',{roughness:.96});
+  for(const side of [-1,1]){
+    cube(scene,sandEdge,[35,.043,side*(trackHalf-.11)],[160,.02,.19]);
+    const walk=mesh(scene,geo(new T.PlaneGeometry(160,1.2)),concrete,[35,-.01,side*(trackHalf+1.6)]);walk.rotation.x=-Math.PI/2;walk.castShadow=false;
+  }
+  const railJoint=mat('#b9c3b5',{metalness:.25,roughness:.55});
+  for(let x=-40;x<118;x+=8)for(const z of [-trackHalf-.5,trackHalf+.5])cube(scene,railJoint,[x,1.15,z],[.22,.155,.155]);
+  // Slim canopy ribs and aisle edges make the stand read as architecture.
+  for(let x=-12;x<90;x+=6)cube(scene,metal,[x,6.23,-trackHalf-9.5],[.075,.22,9]);
+  for(let row=0;row<5;row++)cube(scene,concrete,[36,.34+row*.65,-trackHalf-6.6-row*1.35],[105,.035,.09]);
+  // The dirt itself receives shallow grooming lines rather than glossy grooves.
+  const groomingMap=texture((c,w,h)=>{c.clearRect(0,0,w,h);for(let i=0;i<110;i++){const y=i*h/110;c.strokeStyle=i%3?'rgba(70,52,36,.065)':'rgba(244,226,195,.075)';c.lineWidth=.6+random()*.7;c.beginPath();c.moveTo(0,y);for(let x=0;x<=w;x+=32)c.lineTo(x,y+Math.sin(x*.018+i)*.8);c.stroke();}},512,512);
+  groomingMap.wrapS=groomingMap.wrapT=T.RepeatWrapping;groomingMap.repeat.set(8,1);
+  const grooming=mesh(scene,geo(new T.PlaneGeometry(158,trackHalf*2-.45)),mat('#fff',{map:groomingMap,transparent:true,depthWrite:false,roughness:1,polygonOffset:true,polygonOffsetFactor:-1}),[35,.041,0]);grooming.rotation.x=-Math.PI/2;grooming.castShadow=false;
   // Cloth flags: geometry deforms on the GPU. Static bounds include wind travel.
   const flagGeo=geo(new T.PlaneGeometry(2.3,1.3,10,4));
   const flagMat=mat('#d6e4d6',{side:T.DoubleSide,roughness:.9});

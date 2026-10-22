@@ -1,9 +1,9 @@
 import * as T from './vendor/three.module.min.js';
 import {microTexture} from './studio-materials.js';
-import bodyData from './assets/studio/human-body.js?v=studio-2';
-import {buildFace} from './jockey-face.js?v=studio-2';
-import {styleColors} from './horse-style.js?v=studio-2';
-import {geometry,mesh,tube,material} from './studio-geometry.js?v=studio-2';
+import bodyData from './assets/studio/human-body.js?v=studio-3';
+import {buildFace} from './jockey-face.js?v=studio-3';
+import {styleColors} from './horse-style.js?v=studio-3';
+import {geometry,mesh,tube,material} from './studio-geometry.js?v=studio-3';
 // The same body, joint rig and head scale for every account and every view.
 export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,custom,index=0,showHelmet=true,standing=false}){
  custom=custom||styleColors({});const rider=new T.Group();rider.name='sisal-jockey';
@@ -21,7 +21,7 @@ export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,c
    const b=bones[i],[name,parent,rest]=bodyData.bones[i],target=new T.Vector3(...t[name]);
    body.updateMatrixWorld(true);b.position.copy(parent<0?target:bones[parent].worldToLocal(target.clone()));
    let q=new T.Quaternion();const child=bodyData.bones.findIndex((x,j)=>x[1]===i&&j>i);
-   if(name==='chest')q.setFromAxisAngle(new T.Vector3(0,0,1),(standing?0:-.22)+(kind==='bow'?-.22:0));
+   if(name==='chest')q.setFromAxisAngle(new T.Vector3(0,0,1),(standing?0:kind==='racing'?-.50:-.22)+(kind==='bow'?-.22:0));
    else if(name!=='pelvis'&&child>=0){const from=new T.Vector3(...bodyData.bones[child][2]).sub(new T.Vector3(...rest)).normalize(),to=new T.Vector3(...t[bodyData.bones[child][0]]).sub(target).normalize();q.setFromUnitVectors(from,to);}
    else if(name.includes('Wrist')){const from=new T.Vector3(.08,-.025,name[0]==='l'?-.07:.07).normalize(),to=new T.Vector3(...(kind==='arms'?[0,1,0]:kind==='salute'&&name[0]==='r'?[.1,.8,-.4]:[1,-.1,0])).normalize();q.setFromUnitVectors(from,to);}
    if(parent>=0){const parentQ=new T.Quaternion();bones[parent].getWorldQuaternion(parentQ);q.premultiply(parentQ.invert());}b.quaternion.copy(q);
@@ -29,8 +29,9 @@ export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,c
   body.updateMatrixWorld(true);return bones.map(b=>({p:b.position.clone(),q:b.quaternion.clone()}));
  }
  const rest=solve(targets),poses={};
- for(const kind of ['salute','arms','bow','crowd']){
+ for(const kind of ['salute','arms','bow','crowd','racing']){
   const t=structuredClone(targets),sx=standing?0:.23;
+  if(kind==='racing'&&!standing){t.chest=[.30,.33,0];for(const side of ['l','r']){const z=side==='l'?-1:1;t[side+'Shoulder']=[.34,.32,z*.207];t[side+'Elbow']=[.53,.12,z*.26];}}
   if(kind==='salute'){t.rElbow=[sx+.04,.59,.47];t.rWrist=[sx+.16,.83,.12];}
   if(kind==='arms')for(const side of ['l','r']){const z=side==='l'?-1:1;t[side+'Elbow']=[sx-.02,.73,z*.40];t[side+'Wrist']=[sx-.04,1.01,z*.47];}
   if(kind==='crowd'){t.rElbow=[sx+.05,.62,.43];t.rWrist=[sx+.18,.76,.66];}
@@ -52,11 +53,14 @@ export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,c
  const collar=mesh(chest,new T.CylinderGeometry(.074,.081,.042,40,1,true),silk,'fitted-standing-collar');collar.position.copy(new T.Vector3(.042,.620,0).sub(chestBind));collar.scale.x=.94;
  tube(chest,mat(custom.accentColor,{roughness:.9}),[[.10,.10,0],[.14,-.12,0],[.13,-.34,0]],.0018,20).name='zipper-tape';
  const arms=[bones.find(b=>b.name==='rShoulder'),bones.find(b=>b.name==='lShoulder')];arms.forEach((b,i)=>{b.userData.restRotation=b.rotation.clone();b.name=`jockey-arm-${index}-${i?'salute':'reins'}`;});
- let idleTime=0;
+ let idleTime=0,gaitWeight=0,gaitPhase=0;
+ rider.userData.locomotion=(weight,phase)=>{gaitWeight=standing?0:T.MathUtils.clamp(weight,0,1);gaitPhase=phase;};
  rider.userData.pose=(kind,age,reduced=false,weight=1)=>{
   const frame=poses[kind]||poses.salute,w=T.MathUtils.clamp(weight,0,1);
-  bones.forEach((b,i)=>{b.position.copy(rest[i].p).lerp(frame[i].p,w);b.quaternion.copy(rest[i].q).slerp(frame[i].q,w);});
+  bones.forEach((b,i)=>{b.position.copy(rest[i].p).lerp(poses.racing[i].p,gaitWeight).lerp(frame[i].p,w);b.quaternion.copy(rest[i].q).slerp(poses.racing[i].q,gaitWeight).slerp(frame[i].q,w);});
   if(!reduced){chest.position.y+=Math.sin(idleTime*1.65)*.002;const wrist=bones.find(b=>b.name==='rWrist');wrist.rotation.x+=Math.sin(age*4)*.10*w;}
+  head.rotation.z=(standing?0:.17)+gaitWeight*.24*(1-w);
+  if(!reduced)chest.position.y+=Math.sin(gaitPhase+.4)*.006*gaitWeight*(1-w);
   if(w>0){head.rotation.z=(standing?0:.17)+(kind==='bow'?-.14*w:0);head.rotation.y=kind==='crowd'?.3*w:0;}
  };
  rider.userData.idle=(time,pointer={x:0,y:0},reduced=false)=>{idleTime=time;head.rotation.y=reduced?0:T.MathUtils.lerp(head.rotation.y,pointer.x*.18,.09);head.rotation.z=(standing?0:.17)-(reduced?0:pointer.y*.04);if(head.userData.eyes)for(const eye of head.userData.eyes)eye.rotation.y=reduced?0:pointer.x*.10;const phase=time%5.4,blink=!reduced&&phase<.16?Math.sin(phase/.16*Math.PI):0;if(blink>0||head.userData.wasBlink){head.userData.blink?.(blink);head.userData.wasBlink=blink>0;}};

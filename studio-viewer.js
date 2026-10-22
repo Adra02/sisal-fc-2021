@@ -1,10 +1,10 @@
 import * as T from './vendor/three.module.min.js';
 import {Reflector} from './vendor/Reflector.js';
-import {createJockey} from './jockey-model.js?v=studio-2';
-import {createHorse} from './horse-model.js?v=studio-2';
-import {styleColors,paintSilks,validateStyle} from './horse-style.js?v=studio-2';
-import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-2';
-import {signaturePose} from './race-signature.js?v=studio-2';
+import {createJockey} from './jockey-model.js?v=studio-3';
+import {createHorse} from './horse-model.js?v=studio-3';
+import {styleColors,paintSilks,validateStyle} from './horse-style.js?v=studio-3';
+import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-3';
+import {signaturePose} from './race-signature.js?v=studio-3';
 const cameras={horse:{at:[0,1.78,0],height:4.15,width:4.7},face:{at:[.04,.75,0],height:.48,width:.36},hair:{at:[.01,.81,0],height:.51,width:.40},outfit:{at:[0,.02,0],height:2.35,width:1.08},gloves:{at:[.06,-.08,.23],height:.49,width:.46},saddle:{at:[-.25,1.96,0],height:1.7,width:1.9},number:{at:[-.31,1.90,.37],height:1.15,width:1.25},helmet:{at:[.03,.84,0],height:.52,width:.42},signature:{at:[0,.08,0],height:2.52,width:1.5}};
 const isHorse=part=>['horse','saddle','number'].includes(part);
 export function cameraPart(key){if(['skin','face','jaw','cheeks','nose','ears','eyes','eyeShape','brow','browWeight','mouth','lips','expression','beard','beardColor','freckles','wrinkles','scar','beautyMark','goggles'].includes(key))return 'face';if(['hair','hairColor','hairTexture','hairPart'].includes(key))return 'hair';if(['silk','accent','pattern','breeches'].includes(key))return 'outfit';if(['saddle','trim','cloth'].includes(key))return 'saddle';if(['entrance','celebration','nickname'].includes(key))return 'signature';return key==='gloves'?'gloves':key==='number'?'number':key==='helmet'?'helmet':'horse';}
@@ -29,7 +29,8 @@ export function mountStudio(host,{appearance={},name='',part='horse',controls=tr
   if(isHorse(activePart)){h=createHorse(value,value.number);j.rider.position.copy(h.seat);group.add(h.group);}group.add(j.rider);group.userData={j,h,horse:isHorse(activePart)};scene.add(group);return group;
  }
  function clearModel(m){if(m){scene.remove(m);disposeTree(m);}}
- function rebuild(){const oldFace=model?.getObjectByName('anatomical-face'),from=!reduced&&oldFace?{p:oldFace.geometry.attributes.position.array.slice(),c:oldFace.geometry.attributes.color.array.slice()}:null;clearModel(model);clearModel(before);model=make(current);const face=model.getObjectByName('anatomical-face');if(from&&face&&from.p.length===face.geometry.attributes.position.array.length)model.userData.blend={at:time,face,from,to:face.geometry.attributes.position.array.slice(),colors:face.geometry.attributes.color.array.slice()};before=compare?make(baseline):null;if(before)before.visible=false;pending=false;applyFocus();}
+ // Rebuild the head and its rooted hair together; face-only morphs detached the hair.
+ function rebuild(){clearModel(model);clearModel(before);model=make(current);before=compare?make(baseline):null;if(before)before.visible=false;pending=false;applyFocus();}
  function applyFocus(){const horse=isHorse(activePart);desired.set(...cameras[activePart].at);floor.position.y=horse?.005:-1.055;ring.position.y=floor.position.y+.003;ring.scale.setScalar(horse?1.9:1);clubCase.visible=clubDisplay&&!horse;for(const m of [model,before])if(m){const gear=m.userData.j.rider.userData.headgear;gear.visible=helmetOverride??!['face','hair'].includes(activePart);gear.position.y=exploded?.20:0;if(m.userData.h)for(const o of m.userData.h.group.children)if(o.name==='embroidered-number-cloth')o.position.z=exploded?Math.sign(o.geometry.attributes.position.getZ(0))*.10:0;}
   namePlate.position.set(0,floor.position.y+.008,horse?1.10:.57);namePlate.scale.setScalar(horse?1:.48);namePlate.visible=['horse','outfit','signature'].includes(activePart);
   caption.textContent=compare?'SALVATO  |  MODIFICHE':mirror?'RETRO  |  FRONTE':exploded?'ISPEZIONE · CASCO E SELLERIA':name;
@@ -39,7 +40,7 @@ export function mountStudio(host,{appearance={},name='',part='horse',controls=tr
  function cameraFor(reverse=false,half=false){const cfg=cameras[activePart],aspect=width/(half?2:1)/height;camera.aspect=aspect;camera.updateProjectionMatrix();const distance=Math.max(cfg.height,cfg.width/aspect)/(2*Math.tan(T.MathUtils.degToRad(17)))*zoom;const a=angle+(reverse?Math.PI:0);camera.position.set(target.x+Math.cos(a)*distance,target.y+tilt*distance,target.z+Math.sin(a)*distance);camera.lookAt(target);}
  function render(now){raf=0;if(disposed||!visible||document.hidden||blocked())return;if(now-last<(mobile?40:30)&&!reduced){wake();return;}const dt=Math.min((now-last)/1000||0,.08);last=now;time+=dt;if(pending)rebuild();target.lerp(desired,reduced?1:.2);
   for(const m of [model,before])if(m){const {j,h}=m.userData;j.rider.userData.idle?.(time,pointer,reduced);j.rider.rotation.z=0;const age=time-(gesture?.at??0),weight=gesture&&age<2.2?(reduced?1:Math.min(1,age*4,Math.max(0,(2.2-age)*4))):0;signaturePose(j,gesture?.kind||'salute',age,reduced,weight);h?.group.userData.react?.(reduced?0:time,gesture?.kind==='ears'?'ears':null);}
-  const blend=model?.userData.blend;if(blend){const f=T.MathUtils.smoothstep(time-blend.at,0,.24),p=blend.face.geometry.attributes.position,c=blend.face.geometry.attributes.color;for(let i=0;i<p.array.length;i++){p.array[i]=blend.from.p[i]+(blend.to[i]-blend.from.p[i])*f;c.array[i]=blend.from.c[i]+(blend.colors[i]-blend.from.c[i])*f;}p.needsUpdate=c.needsUpdate=true;if(f===1){blend.face.geometry.computeVertexNormals();delete model.userData.blend;}}dust.rotation.y=reduced?0:time*.014;
+  dust.rotation.y=reduced?0:time*.014;
   renderer.setScissorTest(false);renderer.setViewport(0,0,width,height);
   if(compare||mirror){renderer.setScissorTest(true);for(let side=0;side<2;side++){renderer.setScissor(side*width/2,0,width/2,height);renderer.setViewport(side*width/2,0,width/2,height);if(compare){model.visible=side===1;before.visible=side===0;}cameraFor(mirror&&side===0,true);renderer.render(scene,camera);}model.visible=true;if(before)before.visible=false;renderer.setScissorTest(false);}else{cameraFor();renderer.render(scene,camera);}
   if(!reduced)wake();

@@ -1,8 +1,8 @@
 import * as T from './vendor/three.module.min.js';
 import {microTexture} from './studio-materials.js';
-import data from './assets/studio/horse-body.js?v=studio-2';
-import {styleColors} from './horse-style.js?v=studio-2';
-import {geometry,mesh,tube,material,surface} from './studio-geometry.js?v=studio-2';
+import data from './assets/studio/horse-body.js?v=studio-3';
+import {styleColors} from './horse-style.js?v=studio-3';
+import {geometry,mesh,tube,material,surface} from './studio-geometry.js?v=studio-3';
 // All accounts share the same body. Calculate tack intersections only once.
 const tackIntersections=new Map();
 
@@ -24,6 +24,15 @@ export function createHorse(input={},number=''){
  for(const key of ['eyeLeft','eyeRight'])skinPart(key,material('#22190f',{roughness:.15,clearcoat:1,clearcoatRoughness:.08}));
  const lookup=Object.fromEntries(bones.map(b=>[b.name,b]));
  const legs=[['Bone_L.004','Bone_L.005',true,0],['Bone_R.004','Bone_R.005',true,.6],['Bone_L.001','Bone_L.002',false,Math.PI],['Bone_R.001','Bone_R.002',false,Math.PI+.6]].map(([a,b,hind,phase])=>({hip:lookup[a],shin:lookup[b],hind,phase}));
+ // Rest-space two-link lengths and actual hoof sole for contact-aware gait.
+ // Calculated once per model; skin weights remain the artist's original rig.
+ for(const leg of legs){
+  const hip=new T.Vector3(),knee=new T.Vector3();leg.hip.getWorldPosition(hip);leg.shin.getWorldPosition(knee);
+  const shinIndex=bones.indexOf(leg.shin),d=data.parts.body,sole=[];
+  for(let i=0;i<d.position.length/3;i++)if(d.position[i*3+1]<.105&&d.skinIndex.slice(i*4,i*4+4).some((b,k)=>b===shinIndex&&d.skinWeight[i*4+k]>.65))sole.push(new T.Vector3(...d.position.slice(i*3,i*3+3)));
+  const foot=sole.reduce((v,p)=>v.add(p),new T.Vector3()).divideScalar(sole.length||1),lowest=Math.min(...sole.map(p=>p.y));
+  leg.gait={hipX:hip.x,hipY:hip.y,footX:foot.x,footY:foot.y,soleHeight:foot.y-lowest,upper:Math.hypot(knee.x-hip.x,knee.y-hip.y),lower:Math.hypot(foot.x-knee.x,foot.y-knee.y),upperAngle:Math.atan2(knee.y-hip.y,knee.x-hip.x),lowerAngle:Math.atan2(foot.y-knee.y,foot.x-knee.x),kneeX:knee.x,kneeY:knee.y,solePoints:sole.map(p=>[p.x,p.y])};
+ }
  const tail=lookup['Bone.004'];
  const leather=material(s.saddleColor,{roughness:.57,clearcoat:.12,bumpMap:microTexture('skin'),bumpScale:.0006});
  const metal=material(s.trimColor,{metalness:.83,roughness:.3});
