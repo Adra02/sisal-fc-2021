@@ -1,12 +1,12 @@
-import {spectatorPose} from './race-crowd.js?v=studio-3';
-import {animateGallop} from './horse-gait.js?v=studio-3';
-import {createHorse} from './horse-model.js?v=studio-3';
-import {createJockey} from './jockey-model.js?v=studio-3';
-import {signaturePose} from './race-signature.js?v=studio-3';
-import {styleColors,paintSilks} from './horse-style.js?v=studio-3';
+import {spectatorPose} from './race-crowd.js?v=studio-4';
+import {animateGallop,dustSample} from './horse-gait.js?v=studio-4';
+import {createHorse} from './horse-model.js?v=studio-4';
+import {createJockey} from './jockey-model.js?v=studio-4';
+import {signaturePose} from './race-signature.js?v=studio-4';
+import {styleColors,paintSilks} from './horse-style.js?v=studio-4';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
 import * as T from './vendor/three.module.min.js';
-import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=studio-3';
+import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=studio-4';
 import {randomSource,raceSeed,motionProfile,racePlan,plannedProgress,spectatorProfile} from './race-motion.js?v=32.1.39';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const smooth=x=>x*x*(3-2*x);
@@ -73,23 +73,28 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     const skin=new T.Color(skins[Math.floor(p.skin*skins.length)]);skin.offsetHSL(0,0,(random()-.5)*.05);
     people.push({...p,x:-15+col*1.5+(random()-.5)*.2,y:.72+row*.65,z:-12.95-row*1.35,shirtColor:fabric.getHex(),skinColor:skin.getHex(),hairColor:['#302721','#806544','#bfac83','#1c1a1a'][p.hair],trouserColor:new T.Color().setHSL(.55+p.trousers*.12,.12,.15+p.trousers*.17).getHex()});
   }
+  // Small instanced limbs keep the original polygon budget; faces have their own mesh.
   const humanGeo=geo(new T.SphereGeometry(1,mobile?6:8,mobile?4:6)),faceGeo=geo(new T.SphereGeometry(1,mobile?10:12,mobile?8:10)),humanMat=mat('#ffffff',{roughness:.86});
   const torsoGeo=geo(sculptGeometry([[0,-1,0,.75,.83],[0,-.65,0,.85,.90],[0,.3,0,1,.94],[0,.72,0,1,.83],[0,1,0,.43,.50]],12,10));
+  const facePositions=faceGeo.attributes.position;
+  for(let i=0;i<facePositions.count;i++){const x=facePositions.getX(i),y=facePositions.getY(i),z=facePositions.getZ(i);facePositions.setXYZ(i,x*(y<-.2?.82+.18*(y+1)/.8:1),y,z*(y<-.3?.9:1));}faceGeo.computeVertexNormals();
   const crowdParts={};
   const paired=new Set(['eyes','thighs','calves','shoes','upperArms','forearms','hands']);
-  for(const part of ['torso','head','hair','nose','eyes','mouth','thighs','calves','shoes','upperArms','forearms','hands','hat','scarf']){const count=people.length*(paired.has(part)?2:1),m=new T.InstancedMesh(part==='head'?faceGeo:part==='torso'?torsoGeo:humanGeo,humanMat,count);m.instanceMatrix.setUsage(T.DynamicDrawUsage);m.frustumCulled=false;m.receiveShadow=true;scene.add(m);crowdParts[part]=m;}
+  for(const part of ['torso','neck','head','hair','nose','eyes','mouth','thighs','calves','shoes','upperArms','forearms','hands','hat','scarf']){const count=people.length*(paired.has(part)?2:1),m=new T.InstancedMesh(part==='head'?faceGeo:part==='torso'?torsoGeo:humanGeo,humanMat,count);m.instanceMatrix.setUsage(T.DynamicDrawUsage);m.frustumCulled=false;m.receiveShadow=true;scene.add(m);crowdParts[part]=m;}
   const dummy=new T.Object3D(),crowdColor=new T.Color();
   const upVector=new T.Vector3(0,1,0),limbDirection=new T.Vector3();
   function personPart(kind,index,x,y,z,sx,sy,sz,angle,color,initial,yaw=0){dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(0,yaw,angle);dummy.updateMatrix();crowdParts[kind].setMatrixAt(index,dummy.matrix);if(initial)crowdParts[kind].setColorAt(index,crowdColor.set(color))}
   function crowdLimb(kind,index,a,b,r,color,initial){limbDirection.set(b[0]-a[0],b[1]-a[1],b[2]-a[2]);const length=limbDirection.length();dummy.position.set((a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2);dummy.scale.set(r,length/2+r*.3,r);dummy.quaternion.setFromUnitVectors(upVector,limbDirection.normalize());dummy.updateMatrix();crowdParts[kind].setMatrixAt(index,dummy.matrix);if(initial)crowdParts[kind].setColorAt(index,crowdColor.set(color))}
   function updateCrowd(time,cheer,initial=false,focusX=20){
     people.forEach((p,i)=>{
+      const far=Math.abs(p.x-focusX)>32,rate=far?6:mobile?20:40,tick=Math.floor(time*rate);if(!initial&&p.lastPoseTick===tick&&p.lastPoseRate===rate)return;p.lastPoseTick=tick;p.lastPoseRate=rate;
       const pose=spectatorPose(p,time,cheer,reduced);
       const {clock,beat,sway,action,rise,lean}=pose;
       const y=p.y+rise,x=p.x+sway,z=p.z;
       const faceY=y+.84*p.height,look=clamp(Math.atan2(focusX-x,20)*.38+pose.look,-.55,.55),headX=x+Math.sin(look)*.016,headZ=z+lean;
       const facePoint=(side,depth)=>[headX+Math.cos(look)*side+Math.sin(look)*depth,headZ-Math.sin(look)*side+Math.cos(look)*depth];
       personPart('torso',i,x,y+.36,z+lean*.4,.215*p.width,.35*p.height,.145,sway,p.shirtColor,initial);
+      personPart('neck',i,x,y+.69*p.height,z+lean*.5,.056,.075,.054,0,p.skinColor,initial);
       personPart('head',i,headX,faceY,headZ,.128*p.width,.165*p.height,.124,sway,p.skinColor,initial,look);
       personPart('hair',i,headX,faceY+.105,headZ-.022,.130*p.width,p.hair===2?.105:.075,.123,sway,p.hairColor,initial,look);
       const nose=facePoint(0,.122);personPart('nose',i,nose[0],faceY-.012,nose[1],.022,.035,.033,0,p.skinColor,initial,look);
@@ -278,10 +283,10 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
       const amp=presenting||clock<start?0:smooth(clamp(distance/.65,0,1))*(1-smooth(coast));
       const gait=animateGallop(h.mount,{distance,drive:amp,reduced,profile:h.motion}),phase=gait.phase;
       h.body.position.y=gait.bodyY;h.body.rotation.z=gait.pitch;
-      h.hoofShadows.forEach((shadow,j)=>{shadow.visible=amp<.1||gait.targets[j].contact;shadow.position.x=amp<.1?h.legs[j].gait.footX:gait.targets[j].x;shadow.position.z=j<2?(j%2?-.23:.23):(j%2?.28:-.28);});
+      h.hoofShadows.forEach((shadow,j)=>{shadow.visible=amp<.1||gait.targets[j].contact;shadow.position.x=amp<.1?h.legs[j].gait.footX:gait.targets[j].x;shadow.position.z=gait.targets[j].z;});
       // Progress tracks the foremost point of the muzzle, not the saddle.
       // Compensate independent body pitch: all tied noses reach the same finish plane.
-      const noseOffset=2.13*Math.cos(h.body.rotation.z)-2.37*Math.sin(h.body.rotation.z);
+      const noseOffset=gait.noseOffset;
       const noseX=2.13+progress*(48-2.13)+5*(1-(1-coast)**2),x=noseX-noseOffset;
       h.root.position.x=x;h.root.position.z=h.laneZ;
       // Already in their own lanes: no walking through the running rail, no
@@ -302,7 +307,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
       }
       audio?.gallop?.(i,!replayActive&&clock>=start&&coast<.85,(Math.PI/(2*h.motion.speed))/(photoFinish?.48:1));
 
-      h.mount.group.userData.react?.(reduced?0:clock);h.medalGroup.visible=h.crossed&&h.entry.place<=3;h.medalGroup.rotation.z=reduced?0:Math.sin(clock*2.4)*.08*Math.exp(-Math.max(0,elapsed-choreography[i].finishAt)*.2);h.tail.rotation.y=Math.sin(phase*.47+h.motion.tailPhase)*.2;h.tail.rotation.z=.16*amp;
+      h.mount.group.userData.react?.(reduced?0:clock);h.medalGroup.visible=h.crossed&&h.entry.place<=3;h.medalGroup.rotation.z=reduced?0:Math.sin(clock*2.4)*.08*Math.exp(-Math.max(0,elapsed-choreography[i].finishAt)*.2);
       h.rider.rotation.z=gait.riderLean;h.rider.userData.locomotion?.(amp,phase);
       h.rider.userData.idle?.(presenting?introElapsed:clock,{x:0,y:0},reduced);
       h.head.rotation.z+=reduced?0:Math.sin(phase+h.motion.riderPhase)*.012*amp;
@@ -312,9 +317,10 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
       const salute=h.entry.place===1?smooth(clamp(victoryAge/.65,0,1)):0;
       signaturePose(h,h.entry.appearance?.celebration||'salute',Math.max(0,victoryAge),reduced,salute);
       if(presenting&&i===introIndex){const local=introElapsed%introStep;signaturePose(h,h.entry.appearance?.entrance||'salute',local,reduced,reduced?1:smooth(clamp(local/.4,0,1)));}if(focusedIndex===i)motif.dataset.gesture=(presenting?h.entry.appearance?.entrance:h.entry.appearance?.celebration)||'salute';
+      h.mount.group.userData.fitReins?.(h.rider);
       nameTags[i].n.classList.toggle('sr-name-winner',h.entry.place===1&&f>=1);
       ordered.push({i,progress});
-      for(let j=0;j<42;j++){const age=((distance*.65+j/42)%1),idx=(i*42+j)*3,foot=gait.targets[j%4],side=j%4<2?(j%2?-.23:.23):(j%2?.28:-.28);dustPos[idx]=x+foot.x-age*2.8;dustPos[idx+1]=.055+Math.sin(age*Math.PI)*.24;dustPos[idx+2]=h.root.position.z+side+Math.sin(j*34)*age*.25}
+      for(let j=0;j<42;j++){const puff=dustSample(h.mount,distance,h.motion,j),idx=(i*42+j)*3;dustPos[idx]=puff.x;dustPos[idx+1]=puff.visible?puff.y:-5;dustPos[idx+2]=h.root.position.z+puff.z;}
     });
     const ceremonyAge=elapsed-ceremonyStart;
     if(ceremonyAge>=0){

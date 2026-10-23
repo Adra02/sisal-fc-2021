@@ -1,9 +1,9 @@
 /* Anatomical head topology and shape deltas: MakeHuman CC0, assets/studio/LICENSES.md. */
 import * as T from './vendor/three.module.min.js';
-import {microTexture} from './studio-materials.js';
-import {buildGroom,beardCoverage} from './jockey-groom.js?v=studio-3';
-import data from './assets/studio/human-head.js?v=studio-3';
-import {geometry,mesh,tube,material,smooth,surface} from './studio-geometry.js?v=studio-3';
+import {microTexture,irisTexture,skinDetailTexture} from './studio-materials.js?v=studio-4';
+import {buildGroom,beardCoverage} from './jockey-groom.js?v=studio-4';
+import data from './assets/studio/human-head.js?v=studio-4';
+import {geometry,mesh,tube,material,smooth,surface} from './studio-geometry.js?v=studio-4';
 const faceTargets={oval:{'head-oval':.35},round:{'head-round':.7,'head-fat-incr':.15},square:{'head-square':.65},heart:{'head-triangular':.35,'chin-triangle':.35},angular:{'head-diamond':.4,'head-fat-decr':.3},narrow:{'head-scale-horiz-decr':.3}};
 const jawTargets={soft:{},defined:{'chin-bones-incr':.4},square:{'chin-width-incr':.5},tapered:{'chin-triangle':.5}};
 const noseTargets={straight:{},button:{'nose-scale-depth-decr':.4,'nose-point-up':.25},aquiline:{'nose-curve-convex':.5},broad:{'nose-scale-horiz-incr':.4,'nose-width1-incr':.2},rounded:{'nose-scale-horiz-incr':.18,'nose-width1-incr':.22},upturned:{'nose-point-up':.4}};
@@ -33,25 +33,28 @@ export function facePositions(s,blink=0){
  return p;
 }
 export function buildFace(head,{s,showHelmet=true}){
- const p=facePositions(s),color=[],skin=new T.Color(s.skinColor),lip=new T.Color(s.lipColor||s.skinColor).lerp(new T.Color('#8e4850'),.38),hair=material(s.hairHex||'#65432d',{roughness:.82,sheen:.35,sheenRoughness:.75}),beardColor=s.beardHex||s.hairHex;
+ const p=facePositions(s),color=[],skin=new T.Color(s.skinColor),lip=new T.Color(s.lipColor||s.skinColor).lerp(new T.Color('#8e4850'),.38),beardColor=s.beardHex||s.hairHex;
  for(let i=0;i<p.length;i+=3){const x=p[i],y=p[i+1],z=p[i+2];const c=skin.clone();const lipMask=x>.155&&y<-.036&&y>-.091&&Math.abs(z)<.06*(1-Math.abs(y+.061)*12);if(lipMask)c.lerp(lip,.65);
   const warm=Math.exp(-(((y+.015)/.05)**2+((Math.abs(z)-.07)/.03)**2));c.lerp(new T.Color('#b65e50'),warm*.075);
   const noise=Math.sin(i*17.31)*Math.sin(i*2.73);c.multiplyScalar(1+noise*.014);
-  const freckle=s.freckles!=='none'&&y>-.025&&y<.043&&x>.12&&Math.abs(z)<.1&&Math.sin(i*41.7)>(s.freckles==='dense'?.85:.95);if(freckle)c.multiplyScalar(.7);
   if(s.beautyMark!=='none'&&x>.14&&((y+.026)**2+(z-(s.beautyMark==='left'?-.073:.073))**2)<.000018)c.multiplyScalar(.35);
   const beardMask=beardCoverage(s,x,y,z);if(beardMask)c.lerp(new T.Color(beardColor||'#503523'),beardMask*(s.beard==='stubble'?.25:s.beard==='full'?.78:.55));
   color.push(c.r,c.g,c.b);
  }
- const uv=[];for(let i=0;i<p.length;i+=3)uv.push(.5+Math.atan2(p[i+2],p[i])/(Math.PI*2),(p[i+1]+.21)/.46);const g=geometry({position:Array.from(p),index:data.index,color,uv});const face=mesh(head,g,material('#ffffff',{vertexColors:true,roughness:.62,clearcoat:.025,bumpMap:microTexture('skin'),bumpScale:.0012}), 'anatomical-face');
+ const uv=[];for(let i=0;i<p.length;i+=3)uv.push(.5+Math.atan2(p[i+2],p[i])/(Math.PI*2),(p[i+1]+.21)/.46);const g=geometry({position:Array.from(p),index:data.index,color,uv});const face=mesh(head,g,material('#ffffff',{vertexColors:true,roughness:.55,clearcoat:.035,map:skinDetailTexture(s),bumpMap:microTexture('skin'),bumpScale:.00022}), 'anatomical-face');
  head.userData.faceMesh=face;head.userData.baseFace=p;head.userData.blink=t=>{const target=facePositions(s,t);g.attributes.position.array.set(target);g.attributes.position.needsUpdate=true;g.computeVertexNormals();};
  const browProbe=new T.Mesh(g,new T.MeshBasicMaterial({side:T.DoubleSide})),browRay=new T.Raycaster();browProbe.updateMatrixWorld(true);
  const eyeMat=material('#eee9df',{roughness:.22,clearcoat:1,clearcoatRoughness:.08});const eyes=[];
  for(let n=0;n<2;n++){const pos=data.eyeCenters[n],eye=new T.Group();eye.position.set(...pos);head.add(eye);mesh(eye,new T.SphereGeometry(.024,24,16),eyeMat,'eyeball');
-  const iris=mesh(eye,new T.SphereGeometry(.0108,24,16),material(s.eyeColor||'#644c2c',{roughness:.23,clearcoat:1}),'iris');iris.position.x=.0223;iris.scale.x=.22;
-  const pupil=mesh(eye,new T.SphereGeometry(.005,16,10),material('#0a0c0b',{roughness:.1}),'pupil');pupil.position.x=.025;pupil.scale.x=.2;eyes.push(eye);
+  const ip=[],ii=[],iu=[];for(let row=0;row<=16;row++)for(let j=0;j<=40;j++){const r=.0108*row/16,a=j*Math.PI/20;ip.push(Math.sqrt(.024**2-r*r)+.00012,r*Math.cos(a),r*Math.sin(a));iu.push(.5+Math.cos(a)*row/32,.5+Math.sin(a)*row/32);if(row<16&&j<40){const k=row*41+j;ii.push(k,k+1,k+41,k+1,k+42,k+41);}}
+  mesh(eye,geometry({position:ip,index:ii,uv:iu}),material(s.eyeColor||'#644c2c',{map:irisTexture(),roughness:.23,clearcoat:1}),'iris');eyes.push(eye);
   const sign=n?1:-1,weight={fine:.0018,medium:.003,bold:.0044}[s.browWeight]||.003;
   const b=[];for(let k=0;k<=12;k++){const u=k/12,z=sign*(.019+u*.065);let y=.104+Math.sin(u*Math.PI)*.008;if(s.brow==='arched')y+=Math.sin(u*Math.PI)*.01;if(s.brow==='angled')y+=u*.01;if(s.brow==='soft')y+=Math.sin(u*Math.PI)*.003;if(s.brow==='flat')y-=.01;browRay.set(new T.Vector3(.45,y,z),new T.Vector3(-1,0,0));const hit=browRay.intersectObject(browProbe)[0];b.push([hit?hit.point.x+.00015:.166-u*.025,y,z]);}
-  const brow=tube(head,hair,b,weight,18),curve=new T.CatmullRomCurve3(b.map(v=>new T.Vector3(...v))),bp=brow.geometry.attributes.position;brow.name='surface-brow';for(let ring=0;ring<=18;ring++){const center=curve.getPointAt(ring/18),taper=.16+.84*Math.sin(Math.PI*ring/18)**.45;for(let side=0;side<=6;side++){const i=ring*7+side,v=new T.Vector3().fromBufferAttribute(bp,i).sub(center).multiplyScalar(taper).add(center);bp.setXYZ(i,...v);}}brow.geometry.computeVertexNormals();
+  const curve=new T.CatmullRomCurve3(b.map(v=>new T.Vector3(...v))),bp=[],bi=[];
+  for(let k=0;k<140;k++){const t=(k+.5)/140,root=curve.getPoint(t),taper=.16+.84*Math.sin(Math.PI*t)**.45,len=weight*(2.4+.6*Math.sin(k*31)),width=weight*.13,first=bp.length/3;
+   for(let row=0;row<=3;row++){const f=row/3,v=root.clone().add(new T.Vector3(Math.sin(f*Math.PI)*.0005,f*len*taper,sign*f*len*.3));for(const signSide of [-1,1])bp.push(v.x,v.y,v.z+signSide*width*(1-f*.95));if(row<3){const i=first+row*2;bi.push(i,i+1,i+2,i+1,i+3,i+2);}}
+  }
+  const brow=mesh(head,geometry({position:bp,index:bi}),material(s.hairHex||'#65432d',{roughness:.82,side:T.DoubleSide}),'surface-brow');brow.castShadow=false;
  }
  browProbe.material.dispose();head.userData.eyes=eyes;
  buildGroom(head,g,s);
