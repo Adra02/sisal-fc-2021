@@ -49,4 +49,17 @@ html{scroll-padding-top:105px;scroll-padding-bottom:105px}body{background:#08161
 }
 
 @media(max-width:380px){.topbar{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) 44px}.topbar .club-id{display:none}.topbar .news-launch{grid-column:1}.topbar .ac-account-button{grid-column:2}.topbar .club-bell{grid-column:3}}
+
+
+/* The desktop brand must never inherit .bottomnav button's display:flex on a
+   phone. Its original crest has a large intrinsic height and was stretching
+   every item in the dock to more than the viewport height. */
+.cc-navigation .cc-rail-brand img{width:43px;height:43px;object-fit:contain;flex:0 0 43px}
+@media(max-width:1099px){
+ body{padding-left:0;padding-bottom:0}
+ .cc-navigation{display:flex;flex-direction:row;flex-wrap:nowrap;grid-template-columns:none;align-items:stretch;height:auto;max-height:78px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;touch-action:pan-x}
+ .cc-navigation .cc-rail-brand,.cc-navigation .cc-rail-caption,.cc-navigation .cc-rail-footer{display:none!important}
+ .cc-navigation>[data-tab]{flex:1 0 64px;min-height:52px;height:52px;max-height:60px;min-width:64px}
+ .app{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+}
 @media print{body{padding-left:0;background:white;color:black}.cc-navigation,.topbar,.livebar,.cc-cover-pitch{display:none}.app{padding:0;margin:0;width:100%}.card,.hero,.cc-analysis-drawer,.cc-team-cover{box-shadow:none;break-inside:avoid}.cc-page-heading h2{color:black}.cc-match-timeline{border-color:#aaa}}

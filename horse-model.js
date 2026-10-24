@@ -1,8 +1,8 @@
 import * as T from './vendor/three.module.min.js';
-import {microTexture} from './studio-materials.js?v=studio-6';
-import data from './assets/studio/horse-body.js?v=studio-6';
-import {styleColors} from './horse-style.js?v=studio-6';
-import {geometry,mesh,tube,material,surface,smooth} from './studio-geometry.js?v=studio-6';
+import {microTexture} from './studio-materials.js?v=studio-7';
+import data from './assets/studio/horse-body.js?v=studio-7';
+import {styleColors} from './horse-style.js?v=studio-7';
+import {geometry,mesh,tube,material,surface,smooth} from './studio-geometry.js?v=studio-7';
 // All accounts share the same body. Calculate tack intersections only once.
 const tackIntersections=new Map();
 

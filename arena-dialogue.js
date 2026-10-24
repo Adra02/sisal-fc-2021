@@ -1,4 +1,4 @@
-import {hash} from './arena-simulation.js?v=arena-3';
+import {hash} from './arena-simulation.js?v=arena-4';
 // Procedural fictional banter from the recovered catalogue; finite, not endlessly unique.
 const openings={
 nutmeg:['Chiudi il casello, è passata pure la ricevuta.','Cambio al centro: ti hanno aperto un sottopasso.','Ti è passato il pallone fra le idee.'],
@@ -67,25 +67,26 @@ slide:['Adesso la divisa ha visto il campo.','Bella scivolata. Rialzati con calm
 postLook:['Quel palo l’ha sentito tutto il campo.','Ci siamo girati anche senza vedere il tiro.'],
 behind:['Sono dietro, girati prima di darla.','La voce viene da questa parte.']
 });
-const endings=['Adesso chiudi l’azione.','Fai vedere il prossimo tocco.','Non fermarti a spiegarmelo.','Passa qui e ripartiamo.','La risposta la voglio col pallone.','Ti tengo il posto, muoviti.','Questa la ricorderemo per un po’.','Aspetto la replica sul campo.'];
-const generic=['La palla si passa, non si adotta.','Dai, fammela arrivare sui piedi.','Ci sono, guarda prima di inventare.','Va bene il cinema, ma giochiamo.','Hai visto lo spazio? Era lì.','Prossima giocata, stessa dignità da recuperare.'];
-const answers=['Ho visto. Non serviva il documentario.','Aspetta la prossima e poi parli.','Tieni il pallone e fai vedere tu.','Va bene, questa me la tengo.','Me la segno. Adesso dammela.','Ridevi di più prima del passaggio.','Non ho chiesto la telecronaca.','Pensa al tuo prossimo stop.'];
-const replies=['Eccola la risposta.','Questa volta puoi stare zitto.','Hai ancora qualcosa da aggiungere?','Il pallone ha cambiato opinione.','Adesso ridi con calma.','Lo sapevo che aspettavi questa.','Era ora che arrivasse una giocata.','Continuiamo, prima che ti monti la testa.'];
-const invocations=['Dio mattarello','Madonna tamburo','Gesù cavallo','Madonna canterina','Dio cocainomane','Madonna girarrosto','Dio tostapane','Gesù tergicristallo','Madonna fisarmonica','Dio scolapasta','Gesù monopattino','Madonna frullatore','Dio cavatappi','Madonna carriola','Gesù citofono','Dio paracadute'];
+// Fictional locker-room language: deliberately sharp, only about the action.
+// Templates and combinations are finite. They vary deterministically for all viewers.
+const generic=['La palla si passa, non si adotta.','Dammela sui piedi, cazzo: non stiamo prendendo i satelliti.','Va bene il cinema, ma poi giochiamo.','Prossima giocata: c’è una dignità da recuperare.'];
+const arrivals=['Due tocchi, cazzo. Il terzo lo teniamo per le scuse.','Venite di qua: il pallone ha già finito la pazienza.','Aspettate a fare i fenomeni: prima facciamola girare.','Fate spazio, che i piedi oggi chiedono più metri del solito.','Una semplice, poi vediamo chi deve stare zitto.','Il pallone è pronto. Per i piedi non garantisco un cazzo.','Stessa palla per tutti. Non vale accusarla dopo.','Mettetevi comodi: le scuse le raccogliamo dopo lo stop.','Pronti? Prima la giocata, poi la conferenza stampa del cazzo.','Chi la chiama se la prende, niente sparizioni creative.','Oggi proviamo a non allenare soltanto la bocca.','Muovetevi, che l’erba non cresce a ritmo delle vostre scuse.'];
+const answers=['Ho visto, cazzo. Non serviva il documentario.','Aspetta la prossima e poi parli.','Tieni il pallone e fai vedere tu, fenomeno.','Va bene, questa me la tengo. Ma non ti abituare.','Me la segno. Adesso dammela sui piedi.','Ridevi di più prima del passaggio.','Non ho chiesto la telecronaca, porca miseria.','Pensa al tuo prossimo stop, che l’ultimo era una merda.','La battuta l’hai controllata meglio del pallone.','Hai finito? Ti aspettano due tocchi senza pubblico.','Parla meno forte: ti sente pure il palo.','Sì, una cazzata. Il prossimo pallone però è mio.','Me la tengo. Le tue invece le stiamo ancora raccogliendo.','Stai preparando il passaggio o un altro comizio?','Fai vedere i piedi: della bocca abbiamo già la prova.','Ridi, ridi. Poi non chiedere lo sconto sul prossimo tunnel.'];
+const replies=['Eccola la risposta. Ora parla il pallone.','Questa volta puoi stare zitto, cazzo.','Hai ancora qualcosa da aggiungere?','Il pallone ha cambiato opinione sui tuoi discorsi.','Adesso ridi con calma, fenomeno.','La bocca era veloce. I piedi adesso rispondono.','Continuiamo, prima che ti monti la testa.','Ti tengo il posto: vieni a giocare.'];
+const deities=['Dio','Madonna','Gesù'];
+const objects=['mattarello','tamburo','cavallo','canterina','tostapane','scolapasta','girarrosto','fisarmonica','tergicristallo','monopattino','frullatore','cavatappi','carriola','citofono','paracadute','pantofola','cocomero','trapano','clavicembalo','bruscolino','balestra','frittata','mestolo','lampadario','mandolino','cacciavite','tamburello','candelabro','pattino','turbina','marmellata','pedalò','sgabello','biscottiera','melanzana','lavastoviglie','motosega','portacenere','cannocchiale','gomitolo','rotatoria','fischietto','insalatiera','capotreno','scaffale','mappamondo','centrifuga','cassapanca','salvagente','caffettiera','sottobicchiere','apriscatole','termosifone','cavatore','cocainomane','carillon','maracas','saponetta','saliera','bassotuba','cuscinetto','trombone','mangiadischi','friggitrice'];
+const spice=['La prossima giocala coi piedi, cazzo.','Hai finito il numero? Giochiamo.','Adesso dammela, prima delle scuse.','Questa resta fra noi. E tutto il campo.','Bella cazzata: ora rimedia.','Passa qui e non farle fare un altro viaggio.','Meno cinema, più pallone.','Merda, questa si è vista bene.'];
 export function dialogueFor(scene,serial,actors,context={}){
- const n=hash(scene.id),cycle=Math.floor(serial/64),pick=(arr,offset)=>arr[((serial+offset*n)%arr.length+arr.length)%arr.length];
- const line=pick(openings[scene.event]||generic,1),answer=answers[(Math.floor(serial/3)+n)%answers.length];
- const swear=invocations[(Math.floor(serial/5)+n)%invocations.length];
- const prefix=(serial+n)%3===0?swear+', ':((serial+n)%5===0?'Cazzo, ':'');
- const eventAt=Math.min(34,Math.max(12,context.eventAt??17));
- const first=(scene.event==='sky'?'Quel pallone ha cambiato provincia.':line)+' '+endings[(Math.floor(serial/7)+n)%endings.length];
- const result=[{at:eventAt,until:eventAt+4.3,speaker:actors[1]??actors[0],text:prefix+first},
- {at:eventAt+5,until:eventAt+9.3,speaker:actors[0],text:answer}];
- if(['revenge','rematch','lesson','encourage','save'].includes(scene.event))result.push({at:eventAt+10,until:Math.min(47.7,eventAt+13.7),speaker:actors[0],text:replies[(cycle+n)%replies.length]});
- if(scene.id==='callback')return [
-  {at:13.6,until:17.6,speaker:actors[1]??actors[0],text:prefix+pick(openings.long,2)+' '+pick(['Aspetto la risposta, fenomeno.','Hai lasciato il primo tocco a Carrara?','Cazzo, rincorri pure lo stop.'],3)},
-  {at:28,until:32.2,speaker:actors[0],text:pick(['Ecco la risposta: adesso vai in mezzo.','Parlavi dello stop? Guarda dove è passata questa.','Dio mattarello, il conto è saldato: tocca a te rincorrerla.'],4)},
-  {at:33,until:37,speaker:actors[1]??actors[0],text:pick(['Me la segno. E adesso chiudo le gambe.','Va bene, questa l’hanno vista tutti.','Parlavo meglio prima del tunnel.'],5)}
+ if(!actors.length)return [];
+ const pick=(items,salt)=>items[hash('banter4:'+serial+':'+scene.id+':'+salt)%items.length],a=actors[0],b=actors[1]??a,swear=pick(deities,'deity')+' '+pick(objects,'object');
+ const eventAt=Math.min(34,Math.max(12,context.eventAt??17)),line=scene.event==='sky'?'Quel pallone ha cambiato provincia.':pick(openings[scene.event]||generic,'action');
+ const reaction=swear+', '+line.charAt(0).toLowerCase()+line.slice(1);
+ const result=[{at:3.1,until:7.7,speaker:pick(actors,'arrival-speaker'),text:pick(arrivals,'arrival')},{at:eventAt,until:eventAt+4.5,speaker:b,text:reaction+(reaction.length<82?' '+pick(spice,'tag'):'')},{at:eventAt+5.2,until:Math.min(48.4,eventAt+9.7),speaker:a,text:pick(answers,'answer')}];
+ if(['revenge','rematch','lesson','encourage','save'].includes(scene.event)&&eventAt<29)result.push({at:eventAt+10.4,until:Math.min(48.4,eventAt+14.6),speaker:scene.event==='save'?b:a,text:pick(replies,'reply')});
+ if(scene.id==='callback')return [result[0],
+  {at:13.6,until:17.9,speaker:b,text:swear+', '+pick(openings.long,'bad-stop')+' Adesso rincorri pure lo stop, cazzo.'},
+  {at:28,until:32.2,speaker:a,text:pick(['Ecco la risposta: adesso vai in mezzo.','Parlavi dello stop? Guarda dove è passata questa, cazzo.','Il conto è saldato, fenomeno: tocca a te rincorrerla.','La battuta era bella. Il tunnel molto di più.'],'callback')},
+  {at:33,until:37.4,speaker:b,text:pick(['Me la segno. E adesso chiudo le gambe.','Va bene, questa merda l’hanno vista tutti.','Parlavo meglio prima del tunnel.','Okay, il conto è tornato. Adesso giochiamo.'],'concede')}
  ];
  if(context.botKeeper===false)for(const r of result)r.text=r.text.replace(/il BOT/g,'il portiere').replace(/BOT,/g,'Portiere,');
  return result;

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {SCENES} from '../arena-scenes.js';
 import {FIELD,PAVILION,PROPS,ARENA_BOUNDS,STATIONS} from '../arena-layout.js';
-import {sampleArena,inspectArenaScene,SLOT_SECONDS,EPOCH_MS,sceneAt} from '../arena-simulation.js';
+import {sampleArena,inspectArenaScene,SLOT_SECONDS,EPOCH_MS,sceneAt,episodeAt} from '../arena-simulation.js';
 import {dialogueFor} from '../arena-dialogue.js';
 const snapshot={players:Array.from({length:12},(_,i)=>({key:'p'+i,name:'Player '+i,appearance:{celebration:i%2?'bow':'arms'}})),keeper:null};
 assert.equal(SCENES.length,67);assert.equal(new Set(SCENES.map(s=>s.id)).size,67);assert.equal(EPOCH_MS/1000%SLOT_SECONDS,0,'snapshots change at an episode boundary');
@@ -30,9 +30,9 @@ for(const id of ['volley','tennis'])for(let t=12;t<26;t+=.1)assert(sampleArena(s
 const chain=inspectArenaScene(snapshot,SCENES.find(s=>s.id==='wholeTeam'));assert.equal(chain.cast.length,12);assert.equal(new Set(chain.beats.filter(b=>b.type==='pass').map(b=>b.actor)).size,12,'the whole normal roster takes part in the chain');
 const tiny=inspectArenaScene(snapshot,SCENES.find(s=>s.id==='tinyShot'));assert(tiny.cast[0].track.some(p=>p.p[1]>-12),'tiny shot has an actual run-up, not stationary legs');
 const collect=sampleArena(snapshot,15,SCENES.find(s=>s.id==='shirtCarry'));assert(collect.balls[0].pos[1]>.85,'shirt carry uses the real ball at hand level');
-const callback=SCENES.find(s=>s.id==='callback'),cp=inspectArenaScene(snapshot,callback),lines=dialogueFor(callback,0,cp.cast.map(p=>p.key),{eventAt:cp.eventAt});assert(lines[0].at<cp.beats.find(x=>x.type==='nutmeg').at);assert(lines[1].at>cp.beats.find(x=>x.type==='nutmeg').at,'reply follows successful action');
+const callback=SCENES.find(s=>s.id==='callback'),cp=inspectArenaScene(snapshot,callback),lines=dialogueFor(callback,0,cp.cast.map(p=>p.key),{eventAt:cp.eventAt});assert(lines.find(l=>l.at===13.6).at<cp.beats.find(x=>x.type==='nutmeg').at);assert(lines.find(l=>l.at===28).at>cp.beats.find(x=>x.type==='nutmeg').at,'reply follows successful action');
 for(const n of [0,1,2,3,6,32,128]){const s={players:snapshot.players.slice(0,n)};if(n>12)s.players=Array.from({length:n},(_,i)=>({key:'p'+i,name:'P'+i,appearance:{}}));for(const scene of SCENES){const f=sampleArena(s,17,scene);assert.equal(f.actors.length,n+1);assert(f.actors.every(p=>p.pos.every(Number.isFinite)));}}
 const real=sampleArena({...snapshot,keeper:'p3'},18);assert.equal(real.actors.length,12);assert.equal(real.actors.at(-1).key,'p3');
-const deck=new Set(Array.from({length:67},(_,i)=>sceneAt(i*SLOT_SECONDS).scene.id));assert.equal(deck.size,67);
+const deck=new Set(Array.from({length:67},(_,i)=>sceneAt(episodeAt(i).start+.001).scene.id));assert.equal(deck.size,67);
 for(let t=0;t<49.9;t+=.37){const state=sampleArena(snapshot,t);assert.deepEqual(state,sampleArena(snapshot,t),'direct seek does not depend on frame count');}
 console.log(`PASS ${samples} scene samples across all 67 recovered episodes; independent devices, ball timelines, props outside pitch, tunnel consequence, roof/spare, callback timing, keeper and roster sizes; peak run ${maxSpeed.toFixed(2)} m/s.`);

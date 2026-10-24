@@ -1,5 +1,5 @@
-import {SCENES} from './arena-scenes.js?v=arena-3';
-import {FIELD,PAVILION,STATIONS} from './arena-layout.js?v=arena-3';
+import {SCENES} from './arena-scenes.js?v=arena-4';
+import {FIELD,PAVILION,STATIONS} from './arena-layout.js?v=arena-4';
 export const EPOCH_MS=1800000,SLOT_SECONDS=50,VERSION=2;
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 export const smooth=x=>{x=clamp(x);return x*x*(3-2*x)};
@@ -12,10 +12,21 @@ const angleMix=(a,b,u)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*u;
 export function flight(keys,t){if(t<=keys[0].t)return [...keys[0].p];for(let i=1;i<keys.length;i++){const a=keys[i-1],b=keys[i];if(t<=b.t){const u=clamp((t-a.t)/(b.t-a.t)),p=mix(a.p,b.p,u);p[1]+=4*(b.arc||0)*u*(1-u);return p}}return [...keys.at(-1).p]}
 // Waiting players train in pairs, in separate lanes behind the central drill.
 export function home(i,n){const pair=Math.floor(i/2),cols=Math.min(6,Math.max(1,Math.ceil(Math.sqrt(n/2)))),col=pair%cols,row=Math.floor(pair/cols);return [-13+col*(26/Math.max(1,cols-1))+(i%2?1:-1)*.6,3+row*Math.min(3.0,20/Math.max(1,Math.ceil(n/2/cols)-1))]}
-export function sceneAt(time){const serial=Math.floor(time/SLOT_SECONDS),deck=Math.floor(serial/SCENES.length),order=shuffle(SCENES,hash('SISAL-ARENA-3:'+deck));return {scene:order[((serial%SCENES.length)+SCENES.length)%SCENES.length],serial,t:((time%SLOT_SECONDS)+SLOT_SECONDS)%SLOT_SECONDS};}
-const compiled=new Map(),snapshotIds=new WeakMap();let snapshotSerial=0;
+// A shared half-hour contains 36 episodes with different real durations.
+// Choreography uses a local 50 s story clock; no timer writes or AI requests.
+const epochTimelines=new Map(),worlds=new WeakMap(),forcedPlans=new Map(),snapshotIds=new WeakMap();let snapshotSerial=0;
 function snapshotId(s){if(!snapshotIds.has(s))snapshotIds.set(s,++snapshotSerial);return snapshotIds.get(s);}
-function actorTrack(player,index,n){return {...player,home:home(index,n),track:[],gestures:[],faces:[],personality:hash(player.key)%7};}
+const mod=(n,d)=>((n%d)+d)%d;
+function timeline(epoch){
+ if(epochTimelines.has(epoch))return epochTimelines.get(epoch);
+ const r=random(hash('arena4-tempo:'+epoch)),raw=Array.from({length:36},()=>44+r()*12),factor=1800/raw.reduce((a,b)=>a+b,0);let cursor=epoch*1800;
+ const slots=raw.map((v,i)=>{const serial=epoch*36+i,duration=i===35?(epoch+1)*1800-cursor:v*factor,deck=Math.floor(serial/SCENES.length),scene=shuffle(SCENES,hash('SISAL-ARENA-4:'+deck))[mod(serial,SCENES.length)],arrival=5+r()*3.4,pace=.86+r()*.24;const slot={scene,serial,start:cursor,duration,arrival,actionDuration:26/pace};cursor+=duration;return slot;});
+ epochTimelines.set(epoch,slots);if(epochTimelines.size>4)epochTimelines.delete(epochTimelines.keys().next().value);return slots;
+}
+export function episodeAt(serial){return {...timeline(Math.floor(serial/36))[mod(serial,36)]};}
+function storyClock(slot,elapsed){const {arrival,actionDuration,duration}=slot;if(elapsed<arrival)return {t:elapsed/arrival*9,storyRate:9/arrival};if(elapsed<arrival+actionDuration)return {t:9+(elapsed-arrival)/actionDuration*26,storyRate:26/actionDuration};return {t:35+(elapsed-arrival-actionDuration)/(duration-arrival-actionDuration)*15,storyRate:15/(duration-arrival-actionDuration)};}
+export function sceneAt(time){const slots=timeline(Math.floor(time/1800)),slot=slots.find(s=>time<s.start+s.duration)||slots.at(-1),elapsed=clamp(time-slot.start,0,slot.duration);return {...slot,elapsed,...storyClock(slot,elapsed)};}
+function actorTrack(player,index,n){return {...player,home:home(index,n),track:[],gestures:[],faces:[],personality:hash(player.key)};}
 function posAt(actor,t){const keys=actor.track;if(!keys.length)return [...actor.home];if(t<=keys[0].at)return [...keys[0].p];for(let i=1;i<keys.length;i++){const a=keys[i-1],b=keys[i];if(t<=b.at)return mix(a.p,b.p,smooth((t-a.at)/(b.at-a.at)))}return [...keys.at(-1).p];}
 function locomotion(actor,t){
  const keys=actor.track;let travelled=0,stepCycle=0;
@@ -31,10 +42,11 @@ function gesture(actor,kind,start,end,extra={}){if(actor)actor.gestures.push({ki
 function face(actor,p,start,end){if(actor)actor.faces.push({p,start,end});}
 const foot=(actor,t,target)=>{const p=posAt(actor,t),a=target?angle(p,target):Math.PI;return [p[0]+Math.sin(a)*.40,.14,p[1]+Math.cos(a)*.40]};
 function heldPoint(actor,t,height,forward){const p=posAt(actor,t),facing=[...actor.faces].reverse().find(f=>t>=f.start&&t<=f.end),a=facing?angle(p,facing.p):Math.PI/2;return [p[0]+Math.sin(a)*forward,height,p[1]+Math.cos(a)*forward];}
-function makePlan(snapshot,scene,serial){
+function makePlan(snapshot,scene,serial,origins=null){
  const players=snapshot.players||[],field=players.filter(p=>p.key!==snapshot.keeper),keeper=players.find(p=>p.key===snapshot.keeper)||{key:'__keeper_bot',name:'BOT · Portiere',appearance:{silk:'gold',number:'1'}};
  const all=field.map((p,i)=>actorTrack(p,i,field.length)),k=actorTrack(keeper,0,1);k.home=[0,FIELD.goalZ+1.2];all.push(k);
- const order=shuffle(field.map((_,i)=>i),hash('cast3:'+Math.floor(serial/3))),cast=order.slice(0,scene.kind==='chain'?24:6).map(i=>all[i]);
+ const roster=shuffle(field.map((_,i)=>i),hash('cast4:'+Math.floor(serial/36))),rotation=mod(serial*6,Math.max(1,roster.length)),order=shuffle([...roster.slice(rotation),...roster.slice(0,rotation)].slice(0,scene.kind==='chain'?24:6),hash('roles4:'+serial));for(const i of roster)if(!order.includes(i))order.push(i);const cast=order.slice(0,scene.kind==='chain'?24:6).map(i=>all[i]);
+ if(origins)for(const actor of all)if(origins.has(actor.key))actor.home=[...origins.get(actor.key)];
  if(field.length<3&&!['juggle','shot','rest'].includes(scene.kind))scene={...scene,kind:'juggle',event:'juggle',title:'Palleggi in attesa dei compagni'};
  const [a,b,c,d,e,f]=cast,plan={scene,serial,all,cast,k,balls:[],sounds:[],beats:[],eventAt:17,netAt:null,netX:0,roof:false,order};if(!a)return plan;
  const center=STATIONS[scene.kind]||STATIONS.pass;
@@ -130,12 +142,14 @@ function makePlan(snapshot,scene,serial){
   if(scene.event==='collect'){face(a,b?posAt(b,12):[18,8],11,23);gesture(a,'collect',12,22);plan.collected={actor:a,start:12,end:22};plan.balls.push({initial:null,visibleFrom:16,events:[{start:16,end:18,from:heldPoint(a,16,.94,.30),to:[19.5,.14,7.5],arc:.2}]},{initial:null,visibleFrom:19,events:[{start:19,end:21,from:heldPoint(a,19,.94,.30),to:[20,.14,9.5],arc:.2}]});gesture(b,'sole',22,25);plan.eventAt=20;}
   if(scene.event==='closing'){cast.forEach((p,i)=>gesture(p,i%2?'wave':'bend',18+i*.6,23+i*.6));goto(a,flat(PAVILION.spare),18,24);gesture(a,'collect',24,30);plan.collected={actor:a,start:24,end:34};plan.spareFrom=24;plan.eventAt=25;}
  }
- for(const p of cast){const last=p.track.at(-1),returnAt=Math.max(35,last.at+.2);p.track.push({at:returnAt,p:[...last.p]},{at:48,p:[...p.home]});}
+ // Hold the actual finishing position. The next drill walks from here instead
+ // of resetting the whole squad to identical home spots every 50 seconds.
+ if(scene.kind==='shot'){const last=k.track.at(-1);if(last&&dist(last.p,[0,FIELD.goalZ+1.2])>.1)goto(k,[0,FIELD.goalZ+1.2],Math.max(36,last.at+.1),46);}
  for(const ball of plan.balls)ball.events.sort((x,y)=>x.start-y.start);return plan;
 }
 function sampleBall(script,t){
  if(t<(script.visibleFrom??0)||t>(script.visibleUntil??50))return {pos:[0,.14,0],visible:false};
- let owner=script.initial,lastAt=0,held=owner?foot(owner,0):script.events[0]?.from||[0,.14,0];
+ let owner=script.initial,lastAt=0,held=script.initialPoint|| (owner?foot(owner,0):script.events[0]?.from||[0,.14,0]);
  for(const ev of script.events){
   if(t<ev.start){
    if(owner){const root=posAt(owner,t),lastRoot=posAt(owner,lastAt),nextRoot=posAt(owner,ev.start),u=smooth((t-lastAt)/(ev.start-lastAt));const offset=mix([held[0]-lastRoot[0],held[1],held[2]-lastRoot[1]],[ev.from[0]-nextRoot[0],ev.from[1],ev.from[2]-nextRoot[1]],u);return {pos:[root[0]+offset[0],offset[1],root[1]+offset[2]],visible:true};}
@@ -149,18 +163,67 @@ function sampleBall(script,t){
 }
 export function inspectArenaScene(snapshot,scene,serial=0){return makePlan(snapshot,scene,serial);}
 
+function varyPlan(plan){
+ const {scene,serial}=plan,r=random(hash('stage4:'+serial)),center=STATIONS[scene.kind]||STATIONS.pass;
+ const drill=['pass','rondo','duel','square','chain','juggle'].includes(scene.kind)&&scene.event!=='chest',mirror=scene.kind==='shot'&&!['roof','bottle'].includes(scene.event)&&r()>.5;
+ const yaw=drill?(r()-.5)*1.25:0,shift=drill?[(r()-.5)*3.4,(r()-.5)*3]:[0,0],cos=Math.cos(yaw),sin=Math.sin(yaw);
+ const transform=p=>drill?[center[0]+(p[0]-center[0])*cos-(p[1]-center[1])*sin+shift[0],center[1]+(p[0]-center[0])*sin+(p[1]-center[1])*cos+shift[1]]:mirror?[-p[0],p[1]]:[...p];
+ const transform3=p=>{const v=transform(flat(p));return [v[0],p[1],v[1]];};
+ if(drill||mirror){
+  for(const actor of plan.all){if(!plan.cast.includes(actor)&&actor!==plan.k)continue;for(const key of actor.track)if(key.at>0)key.p=transform(key.p);for(const f of actor.faces)f.p=transform(f.p);}
+  for(const ball of plan.balls)for(const event of ball.events){event.from=transform3(event.from);event.to=transform3(event.to);}
+  for(const sound of plan.sounds)sound.pos=transform3(sound.pos);if(plan.sole)plan.sole.center=transform(plan.sole.center);if(mirror)plan.netX=-plan.netX;
+ }
+ plan.variation={yaw,shift,mirror};return plan;
+}
+function advanceOrigins(plan){return new Map(plan.all.map(a=>[a.key,posAt(a,50)]));}
+function compilePeriod(snapshot,epoch,origins){
+ const plans=[];let previousBall=null;
+ for(const slot of timeline(epoch)){
+  const plan=varyPlan(makePlan(snapshot,slot.scene,slot.serial,origins));
+  // Continue an owned ball with a visible pass and an actual kicking gesture.
+  // An abandoned ball (net/roof/miss) is not magically rolled to a new drill.
+  if(previousBall?.owner&&plan.balls[0]){
+   const giver=plan.all.find(p=>p.key===previousBall.owner),first=plan.balls[0];
+   if(giver&&first.initial){
+    first.initialPoint=[...previousBall.pos];
+    if(giver!==first.initial){const receiver=first.initial,target=sampleBall({...first,initialPoint:undefined},8.7).pos,origin=foot(giver,2,flat(target));first.initial=giver;first.events.unshift({start:2,end:8.7,from:origin,to:target,arc:Math.min(1,dist(flat(origin),flat(target))*.025),owner:receiver});gesture(giver,'kick',1.35,2.55,{contact:2});face(giver,flat(target),.5,3.5);plan.handoverKey=giver.key;plan.sounds.push({at:2,type:'kick',pos:origin});}
+   }
+  }
+  plans.push(plan);origins=advanceOrigins(plan);const ending=plan.balls.at(-1),endBall=ending?sampleBall(ending,49.99):null;const owner=ending?.events.filter(e=>e.end<49.99).at(-1)?.owner||(!ending?.events.length?ending?.initial:null);previousBall=endBall?.visible&&owner?{pos:endBall.pos,owner:owner.key}:null;
+ }
+ return {plans,origins};
+}
+function worldPlan(snapshot,at){
+ let cache=worlds.get(snapshot);if(!cache){cache=new Map();worlds.set(snapshot,cache);}const epoch=Math.floor(at.serial/36);
+ if(!cache.has(epoch)){
+  // One bounded warm-up period makes late joining independent of frame count.
+  // Fair cast rotation visits every normal club member during that period.
+  const warm=compilePeriod(snapshot,epoch-1,null),period=compilePeriod(snapshot,epoch,warm.origins);cache.set(epoch,period);if(cache.size>2)cache.delete(cache.keys().next().value);
+ }
+ return cache.get(epoch).plans[mod(at.serial,36)];
+}
+
 export function sampleArena(snapshot,time,override){
- const at=sceneAt(time),scene=override||at.scene,key=snapshotId(snapshot)+':'+at.serial+':'+scene.id;let plan=compiled.get(key);if(!plan){plan=makePlan(snapshot,scene,at.serial);compiled.set(key,plan);if(compiled.size>6)compiled.delete(compiled.keys().next().value);}
+ const at=override?{scene:override,serial:Math.floor(time/50),t:mod(time,50),elapsed:mod(time,50),duration:50,storyRate:1}:sceneAt(time);let plan;
+ if(override){const key=snapshotId(snapshot)+':'+at.serial+':'+override.id;plan=forcedPlans.get(key);if(!plan){plan=makePlan(snapshot,override,at.serial);forcedPlans.set(key,plan);if(forcedPlans.size>8)forcedPlans.delete(forcedPlans.keys().next().value);}}
+ else plan=worldPlan(snapshot,at);
+ if(!override){const longest=Math.max(0,...plan.cast.map(p=>{const end=p.track.find(k=>k.at>=8&&k.at<=9);return end?dist(p.track[0].p,end.p):0;})),arrival=Math.min(18,Math.max(at.arrival,1.5*longest/4.2)),actionDuration=Math.min(at.actionDuration,at.duration-arrival-4);Object.assign(at,storyClock({...at,arrival,actionDuration},at.elapsed));}
  const t=at.t,balls=plan.balls.map(b=>sampleBall(b,t));
  if(plan.juggle&&t>=plan.juggle.start&&t<=plan.juggle.end){const p=posAt(plan.juggle.actor,t),u=((t-plan.juggle.start)/1.25)%1,w=Math.min(smooth((t-plan.juggle.start)/.45),smooth((plan.juggle.end-t)/.65));balls[0]={pos:mix(balls[0].pos,[p[0]+.32,.21+4*1.08*u*(1-u),p[1]],w),visible:true};}
  if(plan.sole&&t>=plan.sole.start&&t<=plan.sole.end){const {center,duel,start,end}=plan.sole,w=Math.min(smooth((t-start)/.6),smooth((end-t)/.6));balls[0]={pos:mix(balls[0].pos,[center[0]+(duel?Math.sin((t-start)*1.7)*.26:-.25),.14,center[1]],w),visible:true};}
  for(const [holding,height,forward]of [[plan.inspect,.98,.34],[plan.hidden,.82,-.26],[plan.collected,.94,.30]])if(holding&&t>=holding.start&&t<=holding.end){const weight=Math.min(smooth((t-holding.start)/1.2),smooth((holding.end-t)/1.2));balls[0]={pos:mix(balls[0].pos,heldPoint(holding.actor,t,height,forward),weight),visible:true};}
- const actors=plan.all.map(p=>{const pos=posAt(p,t),motion=locomotion(p,t),speed=Math.hypot(...motion.velocity),g=[...p.gestures].reverse().find(g=>t>=g.start&&t<=g.end),facing=[...p.faces].reverse().find(g=>t>=g.start&&t<=g.end),look=facing?.p||flat(balls[0]?.pos||point(pos)),toward=angle(pos,look),moving=speed>.04?Math.atan2(motion.velocity[0],motion.velocity[1]):toward;return {key:p.key,name:p.name,appearance:p.appearance,pos,look,heading:angleMix(toward,moving,.88*(motion.turnWeight||0)),velocity:motion.velocity,travel:motion.travel,stepCycle:motion.stepCycle,strideLength:motion.strideLength,gesture:g?.kind||(speed>.15?(speed>2?'run':'walk'):p===plan.k?'keeper':'idle'),phase:g?clamp((t-g.start)/(g.end-g.start)):0,contact:g?.contact,dirty:plan.stain?.key===p.key&&t>=plan.stain.at,personality:p.personality,foot:null,active:plan.cast.includes(p)||p===plan.k};});
- for(let j=plan.cast.length;j<plan.order.length;j+=2){const x=actors[plan.order[j]],y=actors[plan.order[j+1]];if(!x)continue;if(y){const u=((time+j*1.73)%5)/5,from=u<.5?x:y,to=u<.5?y:x,f=(u%.5)*2;from.look=to.pos;to.look=from.pos;from.heading=angle(from.pos,to.pos);to.heading=angle(to.pos,from.pos);from.gesture=f<.16?'kick':'idle';from.phase=clamp(f/.16);to.gesture=f>.82?'trap':'idle';to.phase=clamp((f-.82)/.18);balls.push({pos:mix(point(from.pos),point(to.pos),smooth(f)),visible:true});}else{x.gesture='juggle';balls.push({pos:[x.pos[0]+.3,.22+Math.abs(Math.sin(time*2.5))*.85,x.pos[1]],visible:true});}}
+ const actors=plan.all.map(p=>{const pos=posAt(p,t),motion=locomotion(p,t),speed=Math.hypot(...motion.velocity),g=[...p.gestures].reverse().find(g=>t>=g.start&&t<=g.end),facing=[...p.faces].reverse().find(g=>t>=g.start&&t<=g.end),look=facing?.p||flat(balls[0]?.pos||point(pos)),toward=angle(pos,look),moving=speed>.04?Math.atan2(motion.velocity[0],motion.velocity[1]):toward;return {key:p.key,name:p.name,appearance:p.appearance,pos,look,heading:angleMix(toward,moving,.88*(motion.turnWeight||0)),velocity:motion.velocity.map(v=>v*at.storyRate),actionTime:t,travel:motion.travel,stepCycle:motion.stepCycle,strideLength:motion.strideLength,gesture:g?.kind||(speed>.15?(speed>2?'run':'walk'):p===plan.k?'keeper':'idle'),phase:g?clamp((t-g.start)/(g.end-g.start)):0,contact:g?.contact,dirty:plan.stain?.key===p.key&&t>=plan.stain.at,personality:p.personality,foot:null,active:plan.cast.includes(p)||p===plan.k};});
+ const waiting=plan.order.slice(plan.cast.length).filter(i=>t>=3.5||plan.all[i].key!==plan.handoverKey),pairs=[];while(waiting.length){const i=waiting.shift(),x=actors[i];let nearest=-1,distance=7;waiting.forEach((k,j)=>{const d=dist(x.pos,actors[k].pos);if(d<distance){nearest=j;distance=d;}});pairs.push([i,nearest>=0?waiting.splice(nearest,1)[0]:null]);}
+ for(let pair=0;pair<pairs.length;pair++){const j=pair*2;const x=actors[pairs[pair][0]],y=pairs[pair][1]!=null?actors[pairs[pair][1]]:null;if(!x)continue;if(y){const u=((time+j*1.73)%5)/5,from=u<.5?x:y,to=u<.5?y:x,f=(u%.5)*2;from.look=to.pos;to.look=from.pos;from.heading=angle(from.pos,to.pos);to.heading=angle(to.pos,from.pos);from.contact=undefined;to.contact=undefined;from.gesture=f<.16?'kick':'idle';from.phase=clamp(f/.16);to.gesture=f>.82?'trap':'idle';to.phase=clamp((f-.82)/.18);balls.push({pos:mix(point(from.pos),point(to.pos),smooth(f)),visible:true});}else{x.gesture='juggle';balls.push({pos:[x.pos[0]+.3,.22+Math.abs(Math.sin(time*2.5))*.85,x.pos[1]],visible:true});}}
  let focus=plan.cast.length?plan.cast.map(p=>posAt(p,t)):[[0,-8]];
+ if(plan.cast.length&&t>=9&&!['shot','rest','chain'].includes(plan.scene.kind)){
+  const ball=flat(balls[0]?.pos||point(posAt(plan.cast[0],t))),near=plan.cast.map(p=>({pos:posAt(p,t),distance:dist(posAt(p,t),ball)})).sort((a,b)=>a.distance-b.distance).slice(0,3);if(near.length)focus=[ball,...near.map(p=>p.pos)];
+ }
+ if(plan.scene.kind==='rest')focus=plan.cast.slice(0,2).map(p=>posAt(p,t));
  if(plan.scene.kind==='shot')focus.push(posAt(plan.k,t),flat(balls[0]?.pos||[0,.14,FIELD.goalZ]));
  if(plan.roof&&t>13&&t<35){const subject=t<19?plan.cast[0]:(plan.cast[1]||plan.cast[0]);focus=[posAt(subject,t),[PAVILION.x,PAVILION.z]];}
  if(plan.scene.id==='netRecovery'&&t>19&&t<34)focus=[posAt(plan.cast[0],t),posAt(plan.k,t),flat(balls[0].pos)];
  const props={net:plan.netAt!=null&&t>=plan.netAt?Math.exp(-(t-plan.netAt)*1.8)*Math.sin((t-plan.netAt)*18)*.30:0,netX:plan.netX,bottle:plan.bottleAt!=null?smooth((t-plan.bottleAt)/.4):0,spare:plan.spareFrom!=null&&t>=plan.spareFrom,hidden:!!plan.hidden&&t>=plan.hidden.start&&t<=plan.hidden.end,tennis:plan.scene.kind==='tennis',stains:[]};
- return {actors,balls,scene:plan.scene,serial:at.serial,t,props,sounds:plan.sounds,cast:plan.cast.map(p=>p.key),eventAt:plan.eventAt,beats:plan.beats,consequence:plan.consequence,focus};
+ return {actors,balls,scene:plan.scene,serial:at.serial,t,elapsed:at.elapsed,duration:at.duration,storyRate:at.storyRate,variation:plan.variation||null,props,sounds:plan.sounds,cast:plan.cast.map(p=>p.key),eventAt:plan.eventAt,beats:plan.beats,consequence:plan.consequence,focus};
 }

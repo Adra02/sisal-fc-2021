@@ -1,9 +1,9 @@
 /* Same saved identity and common proportions as the personal jockey. Locomotion
    is driven by distance along the shared path, with a planted-foot stance. */
 import * as T from './vendor/three.module.min.js';
-import {createJockey} from './jockey-model.js?v=studio-6';
-import {styleColors,paintSilks} from './horse-style.js?v=studio-6';
-import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-6';
+import {createJockey} from './jockey-model.js?v=studio-7';
+import {styleColors,paintSilks} from './horse-style.js?v=studio-7';
+import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-7';
 const clamp=T.MathUtils.clamp,TAU=Math.PI*2,scale=.86;
 const ease=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
 const axis=new T.Vector3(),bend=new T.Vector3();
@@ -11,7 +11,7 @@ function joint(a,b,l1,l2,pole,out){axis.subVectors(b,a);const d=clamp(axis.lengt
 export function makeAvatar(player,quality=1){
  const s=styleColors(player.appearance),root=new T.Group();root.name='arena-player-'+(player.key||'');
  const c=document.createElement('canvas');c.width=c.height=256;paintSilks(c.getContext('2d'),256,256,s);const tx=new T.CanvasTexture(c);tx.colorSpace=T.SRGBColorSpace;
- const model=createJockey({custom:s,standing:true,detail:quality ? .42 : .22,silk:material('#fff',{map:tx})});
+ const model=createJockey({custom:s,standing:true,detail:quality ? .65 : .30,silk:material('#fff',{map:tx})});
  const {rider,head,skeleton}=model;rider.scale.setScalar(scale);rider.position.y=.94*scale+.055;root.add(rider);
  const rig=rider.userData.arenaRig;let fullDetail=true;const fibres=[];rider.traverse(o=>{if(o.name.includes('fibres'))fibres.push(o)});
  const stainCanvas=document.createElement('canvas');stainCanvas.width=stainCanvas.height=64;const dc=stainCanvas.getContext('2d');for(let i=0;i<55;i++){dc.fillStyle=`rgba(57,85,32,${.12+(i%4)*.06})`;dc.beginPath();dc.ellipse(32+Math.sin(i*19)*21,32+Math.cos(i*13)*20,2+i%6,1+i%4,i,0,TAU);dc.fill();}
@@ -24,8 +24,9 @@ export function makeAvatar(player,quality=1){
  function update(p,time,dt,velocity){
   const delta=time-(previousTime??time),v=p.velocity||velocity||[delta>0&&delta<.5?(p.pos[0]-(previous?.[0]??p.pos[0]))/delta:0,delta>0&&delta<.5?(p.pos[1]-(previous?.[1]??p.pos[1]))/delta:0];
   const speed=Math.min(7,Math.hypot(...v)),moving=speed>.04,heading=p.heading??Math.atan2(p.look[0]-p.pos[0],p.look[1]-p.pos[1]);
-  root.position.set(p.pos[0],0,p.pos[1]);root.rotation.set(0,heading-Math.PI/2,0);
-  const g=p.gesture||'idle',ph=clamp(p.phase||0,0,1),seed=(p.personality||0)*.137,cycleBase=p.stepCycle??time*(moving?speed/.98:0),sitting=['sit','seatedTrap'].includes(g);
+  root.position.set(p.pos[0],0,p.pos[1]);const targetYaw=heading-Math.PI/2,yaw=previousTime!=null&&delta>0&&delta<.25?root.rotation.y+Math.atan2(Math.sin(targetYaw-root.rotation.y),Math.cos(targetYaw-root.rotation.y))*(1-Math.exp(-delta*11)):targetYaw;root.rotation.set(0,yaw,0);
+  const actionTime=p.actionTime??time;
+  const g=p.gesture||'idle',ph=clamp(p.phase||0,0,1),seed=((p.personality||0)%997)/997*5.3,cycleBase=p.stepCycle??time*(moving?speed/.98:0),sitting=['sit','seatedTrap'].includes(g);
   const gestureWeight=Math.min(ease(ph*7),ease((1-ph)*7)),moveWeight=clamp(speed/.55,0,1),runWeight=clamp((speed-1.4)/2.2,0,1),stanceFraction=.62-.22*runWeight;
   let lower=.10*moveWeight+.10*runWeight,lean=clamp(speed/6,0,1)*.13;
   if(['bend','collect','inspect','breath','laugh','bow'].includes(g))lean+={bend:.68,collect:.40,inspect:.10,breath:.24,laugh:.16,bow:.65}[g]*gestureWeight;
@@ -43,9 +44,9 @@ export function makeAvatar(player,quality=1){
    const cycle=((cycleBase+seed+(sign>0?.5:0))%1+1)%1,stance=cycle<stanceFraction,fx=moveWeight*(stance?(stanceFraction/2-cycle)*stride:(-stanceFraction/2+stanceFraction*ease((cycle-stanceFraction)/(1-stanceFraction)))*stride),lift=moving&&!stance?Math.sin((cycle-stanceFraction)/(1-stanceFraction)*Math.PI)*(.10+.08*clamp(speed/4,0,1)):0;
    hip.set(0,-.05-lower+bob,sign*.106);foot.set(dx*fx,-.94+lift,sign*.13+dz*fx);
    if(sign>0){
-    if(g==='kick'||g==='heel'||g==='volley'){const impact=clamp((p.contact!=null?(time-(p.contact-.65))/1.2:ph),0,1),backswing=Math.sin(impact*Math.PI),snap=impact<.36?-.23*Math.sin(impact/.36*Math.PI/2):impact<.54?-.23+.63*ease((impact-.36)/.18):.40*(1-ease((impact-.54)/.46));foot.x=(g==='heel'?-1:1)*snap;foot.y+=g==='volley'?.48/scale*gestureWeight:.16*backswing;}
+    if(g==='kick'||g==='heel'||g==='volley'){const impact=clamp((p.contact!=null?(actionTime-(p.contact-.65))/1.2:ph),0,1),backswing=Math.sin(impact*Math.PI),snap=impact<.36?-.23*Math.sin(impact/.36*Math.PI/2):impact<.54?-.23+.63*ease((impact-.36)/.18):.40*(1-ease((impact-.54)/.46));foot.x=(g==='heel'?-1:1)*snap;foot.y+=g==='volley'?.48/scale*gestureWeight:.16*backswing;}
     if(g==='trap'){foot.x=.35*gestureWeight;foot.y+=.07*gestureWeight;}
-    if(g==='juggle'){const u=((time-10)/1.25%1+1)%1;foot.x=.30;foot.y+=.04+.15*Math.max(0,Math.sin(u*TAU));}
+    if(g==='juggle'){const u=((actionTime-10)/1.25%1+1)%1;foot.x=.30;foot.y+=.04+.15*Math.max(0,Math.sin(u*TAU));}
     if(g==='sole'||g==='lookBoot'){foot.x=.33;foot.y+=g==='sole'?.15:.30;}
    }
    if(g==='nutmeg')foot.z=sign*(.13+.19*gestureWeight);
@@ -79,9 +80,9 @@ export function makeAvatar(player,quality=1){
    shoulder.toArray(targets[side+'Shoulder']);elbow.toArray(targets[side+'Elbow']);hand.toArray(targets[side+'Wrist']);
   }
   rig(targets);stain.visible=!!p.dirty;drink.visible=g==='drink';
-  if(fullDetail){rider.userData.idle(time,{x:0,y:0},false);const tick=Math.floor(time*12);if(tick!==lastFaceTick){lastFaceTick=tick;const emote=['laugh','celebrate','clap','arms'].includes(g)?'grin':['kick','trap','block','keeper'].includes(g)?'focused':null;head.userData.expression?.(emote,emote?gestureWeight*(emote==='grin'?.65:.35):0);}}
+  if(fullDetail){rider.userData.idle(time+seed,{x:0,y:0},false);const tick=Math.floor(time*12);if(tick!==lastFaceTick){lastFaceTick=tick;const emote=p.speaking?'talk':['laugh','celebrate','clap','arms'].includes(g)?'grin':['kick','trap','block','keeper'].includes(g)?'focused':null;head.userData.expression?.(emote,emote?(emote==='talk'?.30+.45*Math.abs(Math.sin(actionTime*9+seed)):gestureWeight*(emote==='grin'?.65:.35)):0);}}
   const lookAngle=Math.atan2(p.look[0]-p.pos[0],p.look[1]-p.pos[1])-heading;
-  head.rotation.z=lean*.18;head.rotation.y=clamp(Math.atan2(Math.sin(lookAngle),Math.cos(lookAngle)),-.65,.65)+(g==='laugh'?Math.sin(time*6)*.03:0);
+  head.rotation.z=lean*.18+(p.speaking?Math.sin(actionTime*3+seed)*.018:0);head.rotation.y=clamp(Math.atan2(Math.sin(lookAngle),Math.cos(lookAngle)),-.65,.65)+(g==='laugh'?Math.sin(time*6)*.03:0);
   previous=p.pos;previousTime=time;root.userData.gesture=g;root.userData.stepCycle=cycleBase;
  }
  return {root,update,head,model,limbs:skeleton.bones,setDetail:full=>{fullDetail=full;for(const o of fibres)o.visible=full;},dispose:()=>disposeTree(root)};

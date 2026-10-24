@@ -1,13 +1,13 @@
-import {placeLabels,leaderLine} from './scene-labels.js?v=studio-6';
-import {spectatorPose} from './race-crowd.js?v=studio-6';
-import {animateGallop,dustSample} from './horse-gait.js?v=studio-6';
-import {createHorse} from './horse-model.js?v=studio-6';
-import {createJockey} from './jockey-model.js?v=studio-6';
-import {signaturePose} from './race-signature.js?v=studio-6';
-import {styleColors,paintSilks} from './horse-style.js?v=studio-6';
+import {placeLabels,leaderLine} from './scene-labels.js?v=studio-7';
+import {spectatorPose} from './race-crowd.js?v=studio-7';
+import {animateGallop,dustSample} from './horse-gait.js?v=studio-7';
+import {createHorse} from './horse-model.js?v=studio-7';
+import {createJockey} from './jockey-model.js?v=studio-7';
+import {signaturePose} from './race-signature.js?v=studio-7';
+import {styleColors,paintSilks} from './horse-style.js?v=studio-7';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
 import * as T from './vendor/three.module.min.js';
-import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=studio-6';
+import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=studio-7';
 import {randomSource,raceSeed,motionProfile,racePlan,plannedProgress,spectatorProfile} from './race-motion.js?v=32.1.39';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const smooth=x=>x*x*(3-2*x);

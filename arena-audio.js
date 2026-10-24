@@ -1,6 +1,6 @@
 export function arenaAudio(){
- let ctx,enabled=false,nodes=new Set(),played=new Set(),lastFoot=0;
- const stop=()=>{for(const node of nodes){try{node.stop()}catch{}node.disconnect()}nodes.clear();played.clear();ctx?.suspend().catch(()=>{})};
+ let ctx,enabled=false,nodes=new Set(),played=new Set(),feet=new Map(),lastFoot=0;
+ const stop=()=>{for(const node of nodes){try{node.stop()}catch{}node.disconnect()}nodes.clear();played.clear();feet.clear();ctx?.suspend().catch(()=>{})};
  async function toggle(){enabled=!enabled;if(enabled){const AC=globalThis.AudioContext||globalThis.webkitAudioContext;if(!AC){enabled=false;return false}ctx ||= new AC();await ctx.resume();}else stop();return enabled}
  function play(type,distance=8){
   if(!enabled||!ctx||ctx.state!=='running')return;
@@ -15,7 +15,11 @@ export function arenaAudio(){
   if(!enabled||delta>.25)return;
   for(const s of frame.sounds){const id=frame.serial+':'+s.at+':'+s.type;if(frame.t>=s.at&&frame.t<s.at+.12&&!played.has(id)){played.add(id);play(s.type,Math.hypot(camera.x-s.pos[0],camera.z-s.pos[2]))}}
   if(played.size>100)played.clear();
-  if(performance.now()-lastFoot>330&&frame.actors.some(p=>p.gesture==='run'||p.gesture==='walk')){play('step',20);lastFoot=performance.now()}
+  // Footfalls follow the nearest moving actors' distance-driven gait instead
+  // of a single metronome shared by the whole squad.
+  const nearest=frame.actors.filter(p=>Math.hypot(...p.velocity)>.15).map(p=>({p,d:Math.hypot(camera.x-p.pos[0],camera.z-p.pos[1])})).sort((a,b)=>a.d-b.d).slice(0,2);
+  for(const {p,d}of nearest){const beat=Math.floor(p.stepCycle*2),old=feet.get(p.key);feet.set(p.key,beat);if(old!=null&&beat!==old&&performance.now()-lastFoot>85){play('step',d);lastFoot=performance.now();}}
+
  }
  return {toggle,update,stop,resume:()=>{if(enabled)ctx?.resume().catch(()=>{})},dispose:()=>{stop();ctx?.close().catch(()=>{})},get enabled(){return enabled}};
 }
