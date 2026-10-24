@@ -1,6 +1,6 @@
 {
   "name": "sisal-fc-2021-fc27-command-center",
-  "version": "32.1.42",
+  "version": "32.1.43",
   "private": true,
   "type": "module",
   "engines": {
@@ -34,7 +34,7 @@
     "test:migration": "node scripts/test-shared-contract.mjs && node scripts/test-supabase.mjs && node scripts/test-supabase-api.mjs && node scripts/test-migration.mjs && node scripts/test-news-client.mjs && node scripts/test-export.mjs && node scripts/test-no-legacy-storage.mjs",
     "test:accounts": "node scripts/test-accounts.mjs && node scripts/test-account-ui.mjs && node scripts/test-account-app.mjs",
     "test:account-race": "node scripts/test-account-race.mjs",
-    "test:upgrade": "node scripts/test-historical-recovery.mjs && node scripts/test-data-matrix-v5.mjs && node scripts/test-data-flow-v5.mjs && node scripts/test-eyes-helmet.mjs && node scripts/test-portrait-v5.mjs && node scripts/test-arena-simulation.mjs && node scripts/test-arena-avatar.mjs && node scripts/test-arena-ui.mjs && node scripts/test-arena-renderer.mjs && node scripts/test-arena-sql.mjs && node scripts/test-accounts.mjs && node scripts/test-account-ui.mjs && node scripts/test-release-resources.mjs"
+    "test:upgrade": "node scripts/test-historical-recovery.mjs && node scripts/test-data-matrix-v5.mjs && node scripts/test-data-flow-v5.mjs && node scripts/test-eyes-helmet.mjs && node scripts/test-portrait-v5.mjs && node scripts/test-face-emotes-v6.mjs && node scripts/test-arena-simulation.mjs && node scripts/test-arena-avatar.mjs && node scripts/test-arena-gait-v6.mjs && node scripts/test-label-layout-v6.mjs && node scripts/test-arena-overlays-v6.mjs && node scripts/test-club-workspace-v6.mjs && node scripts/test-arena-ui.mjs && node scripts/test-arena-renderer.mjs && node scripts/test-arena-sql.mjs && node scripts/test-accounts.mjs && node scripts/test-account-ui.mjs && node scripts/test-release-resources.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.9",

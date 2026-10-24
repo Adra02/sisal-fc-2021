@@ -1,7 +1,7 @@
 /* Surface-rooted hair and facial hair. Cosmetic geometry only; no network/state. */
 import * as T from './vendor/three.module.min.js';
-import {geometry,mesh,material,smooth,surface} from './studio-geometry.js?v=studio-5';
-import {microTexture} from './studio-materials.js?v=studio-5';
+import {geometry,mesh,material,smooth,surface} from './studio-geometry.js?v=studio-6';
+import {microTexture} from './studio-materials.js?v=studio-6';
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const noise=n=>{const x=Math.sin(n*127.1+19.7)*43758.5453;return x-Math.floor(x);};
 export function beardCoverage(s,x,y,z){

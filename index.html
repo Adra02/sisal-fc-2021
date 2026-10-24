@@ -369,9 +369,9 @@ body:after{content:"";position:fixed;right:-8vw;top:88px;width:min(650px,72vw);h
 </style><style>
 .sr-award-names strong:before{content:attr(data-place);display:inline-grid;place-items:center;width:17px;height:17px;border:1px solid #fff8;border-radius:50%;background:var(--medal);color:#15241b;font:900 10px Georgia;margin-right:5px;vertical-align:middle}.sr-award-sparks{position:absolute;inset:0;pointer-events:none;overflow:hidden}.sr-award-sparks i{position:absolute;width:4px;height:4px;background:#ffe9a6;border-radius:50%;box-shadow:0 0 9px #e7ca71;opacity:0;animation:srMedalSpark 1.7s ease both}.sr-medal-grid,.sr-ceremony>h3,.sr-ceremony>p,.sr-ceremony>small{position:relative;z-index:1}@keyframes srMedalSpark{0%{opacity:0;transform:translateY(20px) scale(0)}30%{opacity:.85}100%{opacity:0;transform:translateY(-35px) scale(.4)}}@media(prefers-reduced-motion:reduce){.sr-award-sparks{display:none}}
 .sr-winner-spotlight{position:relative;z-index:2;display:flex;align-items:center;justify-content:center;gap:14px;max-width:520px;margin:5px auto 12px;padding:11px 18px;border:1px solid #edcb63;border-radius:16px;background:linear-gradient(110deg,#473915cc,#142c24f2 65%,#6f5421aa);box-shadow:0 0 0 2px #edcb6320,0 0 34px #e7c76238,inset 0 1px #fff5;color:#fff4c5;animation:srWinnerSpotlight .8s cubic-bezier(.2,.9,.25,1.2) both}.sr-winner-spotlight[hidden]{display:none}.sr-winner-spotlight>div:last-child{text-align:left}.sr-winner-spotlight small{display:block;font:700 9px system-ui;letter-spacing:.18em;color:#ffe49a}.sr-winner-spotlight strong{display:block;margin:2px 0;font:900 18px system-ui;overflow-wrap:anywhere}.sr-winner-spotlight em{display:block;font:700 10px system-ui;font-style:normal;color:#d7edc9}.sr-cup{font-size:52px;line-height:1;filter:drop-shadow(0 0 9px #ffe58a);animation:srCupCelebrate 1.2s ease-in-out infinite alternate}.sr-winner-reveal .sr-cup{animation:srCupCelebrate .65s ease-in-out infinite alternate}.sr-winner-spotlight:after{content:'';position:absolute;inset:-8px;border:1px solid #f3d77855;border-radius:20px;animation:srWinnerHalo 1.4s ease-out infinite}.sr-winner-spotlight~.sr-medal-grid{margin-top:4px}@keyframes srWinnerSpotlight{from{opacity:0;transform:translateY(20px) scale(.85)}to{opacity:1;transform:none}}@keyframes srCupCelebrate{from{transform:translateY(4px) rotate(-5deg)}to{transform:translateY(-7px) rotate(5deg)}}@keyframes srWinnerHalo{from{opacity:.7;transform:scale(.98)}to{opacity:0;transform:scale(1.04)}}
-</style><link rel="stylesheet" href="./sisal-ui.css?v=32.1.39"><link rel="stylesheet" href="./sisal-pro.css?v=studio-5"><link rel="stylesheet" href="./comunicati.css?v=3-supabase"><link rel="stylesheet" href="./account.css?v=paper-pages">
+</style><link rel="stylesheet" href="./sisal-ui.css?v=32.1.39"><link rel="stylesheet" href="./sisal-pro.css?v=studio-6"><link rel="stylesheet" href="./comunicati.css?v=3-supabase"><link rel="stylesheet" href="./account.css?v=paper-pages">
 <script src="./account-boot.js?v=paper-pages"></script>
-<link rel="stylesheet" href="./club-update.css?v=paper-pages"><link rel="stylesheet" href="./studio.css?v=studio-5"><link rel="stylesheet" href="./club-modern.css?v=studio-5"></head>
+<link rel="stylesheet" href="./club-update.css?v=paper-pages"><link rel="stylesheet" href="./studio.css?v=studio-6"><link rel="stylesheet" href="./club-modern.css?v=studio-6"></head>
 <body class="account-locked">
 <div id="pullRefresh" class="pull-refresh" aria-hidden="true"><div class="pull-refresh-inner"><div class="pull-refresh-logo"><img src="./assets/sisal-branding.png" alt=""></div><div class="pull-refresh-copy"><b>AGGIORNA SCHERMATA</b><span id="pullRefreshText">Trascina per aggiornare la schermata</span></div></div></div>
 <div class="decor"><div class="gridlines"></div><div class="orb a"></div><div class="orb b"></div></div>
@@ -379,15 +379,15 @@ body:after{content:"";position:fixed;right:-8vw;top:88px;width:min(650px,72vw);h
 <header class="topbar"><div><div class="club-brand"><img src="./assets/sisal-branding.png" alt="SISAL FC 2021"><h1 id="clubName" class="sr-only">SISAL FC 2021</h1></div><div class="status" id="status">Caricamento archivio centrale…</div></div><div class="club-id" id="clubId">—</div></header>
 <div class="livebar"><span class="pulse"></span><span id="liveStatus">Archivio centrale · caricamento…</span></div>
 <main id="content"></main>
-<div class="footer">V32.2 · Sisal Studio · Archivio dati centrale · fino a 10 file per squadra · riconoscimento automatico dei JSON · IA Gemini 3.5 Flash-Lite</div>
+<div class="footer">Sisal FC 2021 · FC27 Command Center · v32.1.43</div>
 </div>
 <nav class="bottomnav"><button data-tab="team" class="active">⚡<span>Squadra</span></button><button data-tab="players">👥<span>Giocatori</span></button><button data-tab="top">🏆<span>Top 3</span></button><button data-tab="pitch">⚽<span>Campo</span></button><button data-tab="matches">📅<span>Partite</span></button><button data-tab="fun">🎉<span>Fun</span></button><button data-tab="opponent">🕵️<span>Avversario</span></button><button data-tab="ai">✦<span>IA</span></button><button data-tab="data">⚙️<span>I tuoi dati</span></button></nav>
 <div id="modalRoot"></div><div class="toast" id="toast"></div>
-<script type="module" src="./account.js?v=studio-5"></script>
+<script type="module" src="./account.js?v=studio-6"></script>
 <script src="./race-audio.js?v=32.1.39" defer></script>
-<script src="./sisal-pro.js?v=studio-5" defer></script>
-<script src="./index-inline.js?v=studio-5" defer></script>
+<script src="./sisal-pro.js?v=studio-6" defer></script>
+<script src="./index-inline.js?v=studio-6" defer></script>
 <script type="module" src="./comunicati.js?v=paper-pages"></script>
-<script type="module" src="./editorial-ui.js?v=studio-5"></script><script type="module" src="./studio-ui.js?v=studio-5"></script><script type="module" src="./club-experience.js?v=studio-5"></script></body>
+<script type="module" src="./editorial-ui.js?v=studio-6"></script><script type="module" src="./studio-ui.js?v=studio-6"></script><script type="module" src="./club-experience.js?v=studio-6"></script><script type="module" src="./club-workspace.js?v=studio-6"></script></body>
 </html>
 

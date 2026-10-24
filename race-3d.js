@@ -1,12 +1,13 @@
-import {spectatorPose} from './race-crowd.js?v=studio-5';
-import {animateGallop,dustSample} from './horse-gait.js?v=studio-5';
-import {createHorse} from './horse-model.js?v=studio-5';
-import {createJockey} from './jockey-model.js?v=studio-5';
-import {signaturePose} from './race-signature.js?v=studio-5';
-import {styleColors,paintSilks} from './horse-style.js?v=studio-5';
+import {placeLabels,leaderLine} from './scene-labels.js?v=studio-6';
+import {spectatorPose} from './race-crowd.js?v=studio-6';
+import {animateGallop,dustSample} from './horse-gait.js?v=studio-6';
+import {createHorse} from './horse-model.js?v=studio-6';
+import {createJockey} from './jockey-model.js?v=studio-6';
+import {signaturePose} from './race-signature.js?v=studio-6';
+import {styleColors,paintSilks} from './horse-style.js?v=studio-6';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
 import * as T from './vendor/three.module.min.js';
-import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=studio-5';
+import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=studio-6';
 import {randomSource,raceSeed,motionProfile,racePlan,plannedProgress,spectatorProfile} from './race-motion.js?v=32.1.39';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const smooth=x=>x*x*(3-2*x);
@@ -214,7 +215,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
   function lost(e){e.preventDefault();dispose(false)}canvas.addEventListener('webglcontextlost',lost);
   function visibility(){lastTime=0;if(document.hidden){audio?.pause();cancelAnimationFrame(raf)}else if(!disposed){audio?.resume();raf=requestAnimationFrame(frame)}}document.addEventListener('visibilitychange',visibility);
   const observer=new MutationObserver(()=>{if(!host.isConnected)dispose(false)});observer.observe(document.body,{childList:true,subtree:true});
-  let viewWidth=host.clientWidth,viewHeight=host.clientHeight,labelSizes=[],renderWidth=0,renderHeight=0;
+  let viewWidth=host.clientWidth,viewHeight=host.clientHeight,labelSizes=[],renderWidth=0,renderHeight=0,previousLabelLayout=new Map();
   const resize=new ResizeObserver(()=>{viewWidth=host.clientWidth;viewHeight=host.clientHeight;if(viewWidth&&viewHeight){labelSizes=nameTags.map(({n})=>({w:n.offsetWidth,h:n.offsetHeight}))}});resize.observe(host);
   ui.querySelector('[data-camera]').onclick=()=>{mode=(mode+1)%3};ui.querySelector('[data-skip]').onclick=()=>dispose(true);
   ui.querySelector('[data-skip]').textContent='Vai alla classifica';
@@ -349,19 +350,24 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     sun.position.set(center-10,24,18);sun.target.position.set(center,0,0);
     // Project labels from each head, then separate overlapping names with leader lines.
     camera.updateMatrixWorld();scene.updateMatrixWorld();
-    const boxes=[];
-    horses.forEach((h,i)=>{
-      h.head.getWorldPosition(world);world.y+=.45;world.project(camera);
-      const w=renderWidth,hh=renderHeight,ax=(world.x*.5+.5)*w,ay=(-world.y*.5+.5)*hh;
-      const {n,line}=nameTags[i];n.hidden=focusedIndex>=0||world.z>1;line.hidden=n.hidden;const nw=labelSizes[i]?.w||150,nh=labelSizes[i]?.h||26;
-      let x=clamp(ax-nw/2,8,Math.max(8,w-nw-8)),y=Math.max(42,ay-nh-14);
-      for(let attempt=0;attempt<entries.length+1;attempt++){
-        if(!boxes.some(b=>x<b.x+b.w+6&&x+nw+6>b.x&&y<b.y+b.h+5&&y+nh+5>b.y))break;
-        y-=nh+7;
-      }
-      y=Math.max(38,y);boxes.push({x,y,w:nw,h:nh});n.style.transform=`translate(${x}px,${y}px)`;
-      const dx=ax-(x+nw/2),dy=ay-(y+nh);line.style.left=`${x+nw/2}px`;line.style.top=`${y+nh}px`;line.style.width=`${Math.hypot(dx,dy)}px`;line.style.transform=`rotate(${Math.atan2(dy,dx)}rad)`;
+    namesLayer.style.height=renderHeight+'px';
+    const labelItems=horses.map((h,i)=>{
+      h.head.getWorldPosition(world);world.y+=.34;world.project(camera);
+      const ax=(world.x*.5+.5)*renderWidth,ay=(-world.y*.5+.5)*renderHeight;
+      return {id:i,ax,ay,w:labelSizes[i]?.w||Math.min(mobile?150:190,24+entries[i].name.length*(mobile?5.7:6.7)),h:labelSizes[i]?.h||25,visible:focusedIndex<0&&world.z>-1&&world.z<1&&Math.abs(world.x)<1.1&&Math.abs(world.y)<1.12};
     });
+    const blockers=labelItems.filter(x=>x.visible).map(x=>({x:x.ax-16,y:x.ay+6,w:32,h:52}));
+    if(count.textContent.trim())blockers.push({x:renderWidth-112,y:Math.max(45,renderHeight*.10),w:102,h:66});
+    if(!winnerBanner.hidden)blockers.push({x:12,y:48,w:Math.min(430,renderWidth-24),h:Math.min(110,winnerBanner.offsetHeight||65)});
+    if(!tiePanel.hidden)blockers.push({x:12,y:85,w:Math.min(360,renderWidth-24),h:Math.min(180,tiePanel.offsetHeight||90)});
+    const boxes=placeLabels(labelItems,{width:renderWidth,height:renderHeight,top:51,bottom:8,gap:6,obstacles:blockers,previous:previousLabelLayout});
+    let hiddenNames=0;
+    for(const item of labelItems){
+      const {n,line}=nameTags[item.id],box=boxes.get(item.id);n.hidden=line.hidden=!box||box.hidden;if(n.hidden){if(item.visible)hiddenNames++;continue;}
+      n.style.transform=`translate(${Math.round(box.x)}px,${Math.round(box.y)}px)`;
+      const l=leaderLine(box,item.ax,item.ay);line.style.left=`${l.x}px`;line.style.top=`${l.y}px`;line.style.width=`${l.length}px`;line.style.transform=`rotate(${l.angle}rad)`;
+    }
+    host.dataset.hiddenNameCount=String(hiddenNames);previousLabelLayout=boxes;
     if(lastHUD!==Math.floor(elapsed*24)||replayActive){
       lastHUD=Math.floor(elapsed*24);
       const visuallyCrossed=i=>elapsed>=choreography[i].finishAt;

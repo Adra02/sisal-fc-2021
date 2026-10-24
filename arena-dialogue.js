@@ -1,5 +1,5 @@
-import {hash} from './arena-simulation.js?v=arena-2';
-// Editorial fictional banter, never quotes or claims about members' real lives.
+import {hash} from './arena-simulation.js?v=arena-3';
+// Procedural fictional banter from the recovered catalogue; finite, not endlessly unique.
 const openings={
 nutmeg:['Chiudi il casello, è passata pure la ricevuta.','Cambio al centro: ti hanno aperto un sottopasso.','Ti è passato il pallone fra le idee.'],
 roof:['Il tetto ringrazia per la consegna.','Cerchi la porta o il satellite?','Quello torna con il prossimo bollettino meteo.'],
@@ -72,15 +72,21 @@ const generic=['La palla si passa, non si adotta.','Dai, fammela arrivare sui pi
 const answers=['Ho visto. Non serviva il documentario.','Aspetta la prossima e poi parli.','Tieni il pallone e fai vedere tu.','Va bene, questa me la tengo.','Me la segno. Adesso dammela.','Ridevi di più prima del passaggio.','Non ho chiesto la telecronaca.','Pensa al tuo prossimo stop.'];
 const replies=['Eccola la risposta.','Questa volta puoi stare zitto.','Hai ancora qualcosa da aggiungere?','Il pallone ha cambiato opinione.','Adesso ridi con calma.','Lo sapevo che aspettavi questa.','Era ora che arrivasse una giocata.','Continuiamo, prima che ti monti la testa.'];
 const invocations=['Dio mattarello','Madonna tamburo','Gesù cavallo','Madonna canterina','Dio cocainomane','Madonna girarrosto','Dio tostapane','Gesù tergicristallo','Madonna fisarmonica','Dio scolapasta','Gesù monopattino','Madonna frullatore','Dio cavatappi','Madonna carriola','Gesù citofono','Dio paracadute'];
-export function dialogueFor(scene,serial,actors){
+export function dialogueFor(scene,serial,actors,context={}){
  const n=hash(scene.id),cycle=Math.floor(serial/64),pick=(arr,offset)=>arr[((serial+offset*n)%arr.length+arr.length)%arr.length];
  const line=pick(openings[scene.event]||generic,1),answer=answers[(Math.floor(serial/3)+n)%answers.length];
  const swear=invocations[(Math.floor(serial/5)+n)%invocations.length];
  const prefix=(serial+n)%3===0?swear+', ':((serial+n)%5===0?'Cazzo, ':'');
- const eventAt=scene.event==='sky'?16:11;
+ const eventAt=Math.min(34,Math.max(12,context.eventAt??17));
  const first=(scene.event==='sky'?'Quel pallone ha cambiato provincia.':line)+' '+endings[(Math.floor(serial/7)+n)%endings.length];
- const result=[{at:eventAt,until:eventAt+3.5,speaker:actors[1]??actors[0],text:prefix+first},
- {at:eventAt+4,until:eventAt+7.5,speaker:actors[0],text:answer}];
- if(['revenge','rematch','lesson','encourage','save'].includes(scene.event))result.push({at:21,until:24,speaker:actors[0],text:replies[(cycle+n)%replies.length]});
+ const result=[{at:eventAt,until:eventAt+4.3,speaker:actors[1]??actors[0],text:prefix+first},
+ {at:eventAt+5,until:eventAt+9.3,speaker:actors[0],text:answer}];
+ if(['revenge','rematch','lesson','encourage','save'].includes(scene.event))result.push({at:eventAt+10,until:Math.min(47.7,eventAt+13.7),speaker:actors[0],text:replies[(cycle+n)%replies.length]});
+ if(scene.id==='callback')return [
+  {at:13.6,until:17.6,speaker:actors[1]??actors[0],text:prefix+pick(openings.long,2)+' '+pick(['Aspetto la risposta, fenomeno.','Hai lasciato il primo tocco a Carrara?','Cazzo, rincorri pure lo stop.'],3)},
+  {at:28,until:32.2,speaker:actors[0],text:pick(['Ecco la risposta: adesso vai in mezzo.','Parlavi dello stop? Guarda dove è passata questa.','Dio mattarello, il conto è saldato: tocca a te rincorrerla.'],4)},
+  {at:33,until:37,speaker:actors[1]??actors[0],text:pick(['Me la segno. E adesso chiudo le gambe.','Va bene, questa l’hanno vista tutti.','Parlavo meglio prima del tunnel.'],5)}
+ ];
+ if(context.botKeeper===false)for(const r of result)r.text=r.text.replace(/il BOT/g,'il portiere').replace(/BOT,/g,'Portiere,');
  return result;
 }

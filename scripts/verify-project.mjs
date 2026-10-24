@@ -30,10 +30,10 @@ const appScript=html.match(/src="\.\/(index-inline\.js\?v=[^"]+)"/)?.[1];
 assert.ok(appScript,'application entry point declared');
 assert.ok(sw.includes('./'+appScript),'service worker caches the actual application entry point');
 assert.match(js,/APP_VERSION='v\d+\.\d+\.\d+'/);
-assert.match(sw,/const CACHE='sisal-fc27-studio-5'/);
+assert.match(sw,/const CACHE='sisal-fc27-studio-6'/);
 for(const file of ['studio-viewer.js','studio-ui.js','studio-geometry.js','studio-materials.js','studio.css','horse-model.js','assets/studio/human-head.js','assets/studio/human-body.js','assets/studio/horse-body.js','vendor/Reflector.js'])await fs.access(path.join(root,file));
-assert.match(html,/studio-ui\.js\?v=studio-5/);
-assert.match(html,/studio\.css\?v=studio-5/);
+assert.match(html,/studio-ui\.js\?v=studio-6/);
+assert.match(html,/studio\.css\?v=studio-6/);
 
 for(const text of ['Dati totali','Stagione corrente','Overall Stats','Giocatori','Carriera giocatori','Campionato','Playoff','Amichevoli','Playoff Achievements','OVR','Profilo Pro','Informazioni club','/api/club-data','DATA_FILES']) {
   assert.match(js,new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));

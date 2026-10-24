@@ -1,4 +1,5 @@
-// Choreography catalogue: only club-approved episodes. All choices are shared, not random per device.
+// 67 entries recovered from the original Arena delivery. See the delivery audit for provenance.
+// Choreography order is shared; missing historical numbered proposals are not invented.
 export const SCENES=[
 ['rondo','Torello','rondo','pass'],['tunnel','Tunnel: si cambia al centro','rondo','nutmeg'],
 ['roof','Un pallone di riserva','shot','roof'],['callback','La risposta arriva sul campo','duel','revenge'],

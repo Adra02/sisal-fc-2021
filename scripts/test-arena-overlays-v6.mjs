@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {JSDOM} from 'jsdom';
+import {createArenaOverlay} from '../arena-overlays.js';
+const dom=new JSDOM('<div id="stage"></div>',{url:'https://test.invalid'});globalThis.document=dom.window.document;
+const stage=document.getElementById('stage'),players=Array.from({length:10},(_,i)=>({key:'p'+i,name:i===1?'<img src=x onerror=alert(1)>':'Player '+i,appearance:{}}));let selected='';
+const overlay=createArenaOverlay(stage,players,{selfKey:'p0',onSelect:k=>selected=k}),frame={width:390,height:410,anchors:players.map((p,i)=>({key:p.key,name:p.name,x:190+(i%3)*2,y:185+(i%4)*2,visible:true,self:i===0,active:true})),dialogue:{speaker:'p2',name:'Player 2',text:'Cazzo, il pallone è sul tetto: prendo quello di riserva.'}};
+overlay.update(frame);assert(stage.querySelector('.arena-name.is-self b').textContent==='TU');assert(!stage.querySelector('img'),'names are text, never HTML');
+assert(!stage.querySelector('.arena-speech').hidden);assert.equal(stage.querySelector('.arena-speech').dataset.speaker,'p2');assert.match(stage.querySelector('.arena-speech-tail path').getAttribute('d'),new RegExp('L '+frame.anchors[2].x+' '+(frame.anchors[2].y-5)+' L'),'bubble points to the real speaker');
+const boxes=[...stage.querySelectorAll('.arena-name:not([hidden])')].map(n=>{const [x,y]=n.style.transform.match(/[\d.]+/g).map(Number);return {x,y,w:Math.min(140,30+n.title.length*6),h:25};});assert(boxes.length>3,'dense roster has readable names');
+stage.querySelector('[data-key="p0"]').click();assert.equal(selected,'p0');
+overlay.update({...frame,dialogue:{...frame.dialogue,speaker:'p0',name:'Player 0'}});assert.equal(stage.querySelector('.arena-speech>b').textContent,'Player 0','speaker changes even if the phrase is repeated');
+overlay.update({...frame,anchors:frame.anchors.map(a=>({...a,visible:false}))});assert(stage.querySelector('.arena-speech').hidden,'off-screen speech never attaches to another player or a fake subtitle');overlay.update(frame);assert(!stage.querySelector('.arena-speech').hidden);
+overlay.update({...frame,dialogue:null});assert(stage.querySelector('.arena-speech').hidden);assert(stage.querySelector('.arena-speech-tail').hasAttribute('hidden'));
+overlay.dispose();overlay.dispose();assert.equal(stage.children.length,0);dom.window.close();
+console.log('PASS real DOM overlay: personal TU badge, escaped names, clickable follow, speaker-anchored comic balloon, hide/show and cleanup. Layout DOM simulated.');

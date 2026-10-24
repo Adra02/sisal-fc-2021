@@ -1,84 +1,88 @@
-/* Arena movement uses the SAME fitted body, face, rooted hair and saved style as racing. */
+/* Same saved identity and common proportions as the personal jockey. Locomotion
+   is driven by distance along the shared path, with a planted-foot stance. */
 import * as T from './vendor/three.module.min.js';
-import {createJockey} from './jockey-model.js?v=studio-5';
-import {styleColors,paintSilks} from './horse-style.js?v=studio-5';
-import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-5';
+import {createJockey} from './jockey-model.js?v=studio-6';
+import {styleColors,paintSilks} from './horse-style.js?v=studio-6';
+import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-6';
 const clamp=T.MathUtils.clamp,TAU=Math.PI*2,scale=.86;
 const ease=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
-function joint(a,b,l1,l2,pole){
- const axis=new T.Vector3().subVectors(b,a),d=clamp(axis.length(),.015,l1+l2-.0001);axis.normalize();
- const along=(l1*l1-l2*l2+d*d)/(2*d),bend=pole.clone().addScaledVector(axis,-pole.dot(axis)).normalize();
- return a.clone().addScaledVector(axis,along).addScaledVector(bend,Math.sqrt(Math.max(0,l1*l1-along*along)));
-}
+const axis=new T.Vector3(),bend=new T.Vector3();
+function joint(a,b,l1,l2,pole,out){axis.subVectors(b,a);const d=clamp(axis.length(),.015,l1+l2-.0001);axis.normalize();const along=(l1*l1-l2*l2+d*d)/(2*d);bend.copy(pole).addScaledVector(axis,-pole.dot(axis)).normalize();return out.copy(a).addScaledVector(axis,along).addScaledVector(bend,Math.sqrt(Math.max(0,l1*l1-along*along)));}
 export function makeAvatar(player,quality=1){
  const s=styleColors(player.appearance),root=new T.Group();root.name='arena-player-'+(player.key||'');
- const c=document.createElement('canvas');c.width=c.height=256;paintSilks(c.getContext('2d'),256,256,s);
- const tx=new T.CanvasTexture(c);tx.colorSpace=T.SRGBColorSpace;
- const model=createJockey({custom:s,standing:true,detail:quality?.40:.20,silk:material('#fff',{map:tx})});
+ const c=document.createElement('canvas');c.width=c.height=256;paintSilks(c.getContext('2d'),256,256,s);const tx=new T.CanvasTexture(c);tx.colorSpace=T.SRGBColorSpace;
+ const model=createJockey({custom:s,standing:true,detail:quality ? .42 : .22,silk:material('#fff',{map:tx})});
  const {rider,head,skeleton}=model;rider.scale.setScalar(scale);rider.position.y=.94*scale+.055;root.add(rider);
- const rig=rider.userData.arenaRig;let fullDetail=true;
- const fibres=[];rider.traverse(o=>{if(o.name.includes('fibres'))fibres.push(o);});
- // A small irregular grass stain stays attached to the leg, not floating in world space.
- const stainCanvas=document.createElement('canvas');stainCanvas.width=stainCanvas.height=64;const dc=stainCanvas.getContext('2d');
- for(let i=0;i<55;i++){dc.fillStyle=`rgba(57,85,32,${.12+(i%4)*.06})`;dc.beginPath();dc.ellipse(32+Math.sin(i*19)*21,32+Math.cos(i*13)*20,2+i%6,1+i%4,i,0,TAU);dc.fill();}
+ const rig=rider.userData.arenaRig;let fullDetail=true;const fibres=[];rider.traverse(o=>{if(o.name.includes('fibres'))fibres.push(o)});
+ const stainCanvas=document.createElement('canvas');stainCanvas.width=stainCanvas.height=64;const dc=stainCanvas.getContext('2d');for(let i=0;i<55;i++){dc.fillStyle=`rgba(57,85,32,${.12+(i%4)*.06})`;dc.beginPath();dc.ellipse(32+Math.sin(i*19)*21,32+Math.cos(i*13)*20,2+i%6,1+i%4,i,0,TAU);dc.fill();}
  const stainMap=new T.CanvasTexture(stainCanvas);stainMap.colorSpace=T.SRGBColorSpace;
- const thigh=skeleton.bones.find(b=>b.name==='lHip');const stain=mesh(thigh,new T.PlaneGeometry(.14,.20),material('#fff',{map:stainMap,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}),'arena-grass-stain');stain.rotation.y=Math.PI/2;stain.position.set(.082,-.22,0);stain.castShadow=false;
- const wrist=skeleton.bones.find(b=>b.name==='rWrist'),drink=new T.Group();wrist.add(drink);
- mesh(drink,new T.CylinderGeometry(.028,.033,.14,12),material('#84bca2',{roughness:.35}), 'arena-water-bottle').position.y=.065;
- mesh(drink,new T.CylinderGeometry(.016,.016,.02,10),material('#e4eae3'),'bottle-cap').position.y=.145;drink.visible=false;
- let previous=null,previousTime=null;
+ const thigh=skeleton.bones.find(b=>b.name==='lHip'),stain=mesh(thigh,new T.PlaneGeometry(.14,.20),material('#fff',{map:stainMap,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}),'arena-grass-stain');stain.rotation.y=Math.PI/2;stain.position.set(.082,-.22,0);stain.castShadow=false;
+ const wrist=skeleton.bones.find(b=>b.name==='rWrist'),drink=new T.Group();wrist.add(drink);mesh(drink,new T.CylinderGeometry(.028,.033,.14,12),material('#8dbea2',{roughness:.35}),'arena-water-bottle').position.y=.065;mesh(drink,new T.CylinderGeometry(.016,.016,.02,10),material('#e4eae3'),'bottle-cap').position.y=.145;drink.visible=false;
+ const targets={pelvis:[0,0,0],chest:[0,.49,0]};for(const side of ['l','r'])for(const bone of ['Hip','Knee','Ankle','Shoulder','Elbow','Wrist'])targets[side+bone]=[0,0,0];
+ const hip=new T.Vector3(),foot=new T.Vector3(),knee=new T.Vector3(),shoulder=new T.Vector3(),hand=new T.Vector3(),elbow=new T.Vector3(),poleLeg=new T.Vector3(),poleArm=new T.Vector3(),baseHand=new T.Vector3();
+ let previous=null,previousTime=null,lastFaceTick=-1;
  function update(p,time,dt,velocity){
-  // Derive movement from the simulation (same time on every device), never accumulated frames.
-  const delta=time-(previousTime??time),vx=velocity?.[0]??(delta>0&&delta<.5?(p.pos[0]-(previous?.[0]??p.pos[0]))/delta:0),vz=velocity?.[1]??(delta>0&&delta<.5?(p.pos[1]-(previous?.[1]??p.pos[1]))/delta:0);
-  const speed=Math.min(4,Math.hypot(vx,vz)),moving=speed>.035,heading=Math.atan2(p.look[0]-p.pos[0],p.look[1]-p.pos[1]);
+  const delta=time-(previousTime??time),v=p.velocity||velocity||[delta>0&&delta<.5?(p.pos[0]-(previous?.[0]??p.pos[0]))/delta:0,delta>0&&delta<.5?(p.pos[1]-(previous?.[1]??p.pos[1]))/delta:0];
+  const speed=Math.min(7,Math.hypot(...v)),moving=speed>.04,heading=p.heading??Math.atan2(p.look[0]-p.pos[0],p.look[1]-p.pos[1]);
   root.position.set(p.pos[0],0,p.pos[1]);root.rotation.set(0,heading-Math.PI/2,0);
-  const g=p.gesture||'idle',ph=clamp(p.phase||0,0,1),phase=time*7.2+(p.personality||0)*2.1,targets={};
-  let lower=0,lean=0;
-  if(['bend','collect','inspect','breath','laugh','bow'].includes(g))lean={bend:.65,collect:.48,inspect:.12,breath:.32,laugh:.24,bow:.65}[g];
-  if(g==='laces'){lower=.48;lean=.62;}if(g==='sit'){lower=.38;lean=.10;}
-  if(['slide','getUp'].includes(g)){const f=g==='slide'?ease(ph):1-ease(ph);lower=f*.56;lean=-.42*f;}
-  if(g==='dive'){lower=.40*Math.sin(ph*Math.PI);root.rotation.z=Math.sin(ph*Math.PI)*.62;}
-  if(g==='stumble')root.rotation.z=Math.sin(ph*Math.PI*4)*.12;
-  const bob=moving?Math.sin(phase*2)*.008:Math.sin(time*1.65)*.0015;
-  targets.pelvis=[0,-lower+bob,0];targets.chest=[Math.sin(lean)*.49,Math.cos(lean)*.49-lower+bob,0];
-  const dir=new T.Vector3(vx,0,vz).applyAxisAngle(new T.Vector3(0,1,0),-root.rotation.y);if(speed>.001)dir.divideScalar(Math.max(speed,.001));
+  const g=p.gesture||'idle',ph=clamp(p.phase||0,0,1),seed=(p.personality||0)*.137,cycleBase=p.stepCycle??time*(moving?speed/.98:0),sitting=['sit','seatedTrap'].includes(g);
+  const gestureWeight=Math.min(ease(ph*7),ease((1-ph)*7)),moveWeight=clamp(speed/.55,0,1),runWeight=clamp((speed-1.4)/2.2,0,1),stanceFraction=.62-.22*runWeight;
+  let lower=.10*moveWeight+.10*runWeight,lean=clamp(speed/6,0,1)*.13;
+  if(['bend','collect','inspect','breath','laugh','bow'].includes(g))lean+={bend:.68,collect:.40,inspect:.10,breath:.24,laugh:.16,bow:.65}[g]*gestureWeight;
+  if(g==='laces'){lower=.43*gestureWeight;lean=.55*gestureWeight;}
+  if(sitting){lower=.39*gestureWeight;lean=.07;}
+  if(['slide','getUp'].includes(g)){const f=g==='slide'?ease(ph):1-ease(ph);lower=.58*f;lean=-.36*f;}
+  if(g==='dive'){const f=Math.sin(ph*Math.PI);lower=.42*f;root.rotation.z=f*.65;}
+  if(g==='stumble')root.rotation.z=Math.sin(ph*Math.PI*4)*.10*gestureWeight;
+  // Path distances are metres; the rig is scaled, so compensate in rig space.
+  const stride=(p.strideLength||1.1)/scale,bob=moving?Math.sin((cycleBase+seed)*TAU*2)*(.008+.008*clamp(speed/4,0,1)):Math.sin(time*1.6+seed)*.0015;
+  targets.pelvis[0]=0;targets.pelvis[1]=-lower+bob;targets.pelvis[2]=Math.sin((cycleBase+seed)*TAU)*.006*moveWeight;
+  targets.chest[0]=Math.sin(lean)*.49;targets.chest[1]=Math.cos(lean)*.49-lower+bob;targets.chest[2]=-targets.pelvis[2]*.5;
+  const moveAngle=speed>.001?Math.atan2(v[0],v[1])-heading:0,dx=Math.cos(moveAngle),dz=-Math.sin(moveAngle);
   for(const [side,sign]of [['l',-1],['r',1]]){
-   const cycle=(((phase+(sign>0?Math.PI:0))/TAU)%1+1)%1,stride=Math.min(.58,speed*.47),swing=cycle>.62;
-   const fx=moving?(swing?-.5+ease((cycle-.62)/.38):.5-cycle/.62)*stride:0,lift=moving&&swing?Math.sin((cycle-.62)/.38*Math.PI)*.13:0;
-   const hip=new T.Vector3(0,-.05-lower+bob,sign*.106),foot=new T.Vector3(dir.x*fx,-.94+lift,sign*.13+dir.z*fx);
+   const cycle=((cycleBase+seed+(sign>0?.5:0))%1+1)%1,stance=cycle<stanceFraction,fx=moveWeight*(stance?(stanceFraction/2-cycle)*stride:(-stanceFraction/2+stanceFraction*ease((cycle-stanceFraction)/(1-stanceFraction)))*stride),lift=moving&&!stance?Math.sin((cycle-stanceFraction)/(1-stanceFraction)*Math.PI)*(.10+.08*clamp(speed/4,0,1)):0;
+   hip.set(0,-.05-lower+bob,sign*.106);foot.set(dx*fx,-.94+lift,sign*.13+dz*fx);
    if(sign>0){
-    if(g==='kick'||g==='heel'){foot.x=(g==='heel'?-1:1)*(-.13+.76*Math.sin(ph*Math.PI));foot.y+=.22*Math.sin(ph*Math.PI);}
-    if(g==='juggle'){foot.x=.26;foot.y+=.06+.18*Math.max(0,Math.cos((time-5)*TAU/1.4));}
-    if(g==='sole'||g==='lookBoot'){foot.x=.32;foot.y+=g==='sole'?.17:.33;}
+    if(g==='kick'||g==='heel'||g==='volley'){const impact=clamp((p.contact!=null?(time-(p.contact-.65))/1.2:ph),0,1),backswing=Math.sin(impact*Math.PI),snap=impact<.36?-.23*Math.sin(impact/.36*Math.PI/2):impact<.54?-.23+.63*ease((impact-.36)/.18):.40*(1-ease((impact-.54)/.46));foot.x=(g==='heel'?-1:1)*snap;foot.y+=g==='volley'?.48/scale*gestureWeight:.16*backswing;}
+    if(g==='trap'){foot.x=.35*gestureWeight;foot.y+=.07*gestureWeight;}
+    if(g==='juggle'){const u=((time-10)/1.25%1+1)%1;foot.x=.30;foot.y+=.04+.15*Math.max(0,Math.sin(u*TAU));}
+    if(g==='sole'||g==='lookBoot'){foot.x=.33;foot.y+=g==='sole'?.15:.30;}
    }
-   if(g==='nutmeg')foot.z=sign*.31;
+   if(g==='nutmeg')foot.z=sign*(.13+.19*gestureWeight);
    if(g==='block')foot.z=sign*.075;
-   if(['sit','laces'].includes(g))foot.x=.35;
-   if(g==='slide')foot.x=sign>0?.69:.35;
-   const knee=joint(hip,foot,.43,.47,new T.Vector3(1,0,sign*.1));
-   targets[side+'Hip']=hip.toArray();targets[side+'Knee']=knee.toArray();targets[side+'Ankle']=foot.toArray();
-   const shoulder=new T.Vector3(targets.chest[0],targets.chest[1],sign*.207),hand=new T.Vector3(-dir.x*fx*.62,-.10-lower,sign*.24);
-   if(['arms','celebrate'].includes(g))hand.set(0,.99-lower,sign*.43);
+   if(sitting){foot.x=.42;foot.y=-.93;if(sign>0&&g==='seatedTrap')foot.x+=.08*gestureWeight;}
+   if(g==='laces')foot.x=.30;
+   if(g==='slide')foot.x=sign>0?.64:.34;
+   poleLeg.set(1,0,sign*.10);joint(hip,foot,.43,.47,poleLeg,knee);
+   hip.toArray(targets[side+'Hip']);knee.toArray(targets[side+'Knee']);foot.toArray(targets[side+'Ankle']);
+   shoulder.set(targets.chest[0],targets.chest[1],sign*.207);hand.set(-dx*fx*.58,-.10-lower,sign*.24-dz*fx*.28);baseHand.copy(hand);
+   if(['arms','celebrate'].includes(g))hand.lerp(new T.Vector3(0,.99-lower,sign*.43),gestureWeight);
    if(['salute','wave','call','highFive','crowd'].includes(g)&&sign>0)hand.set(.12,.79-lower,g==='crowd'?.57:.22);
-   if(['shrug','dodge','stumble'].includes(g))hand.set(.12,.24-lower,sign*.49);
-   if(['point','referee','explain'].includes(g)&&sign>0)hand.set(.49,.46-lower,.24);
-   if(['handsHips','keeper','freeze'].includes(g))hand.set(.10,.05-lower,sign*.22);
-   if(['clap','pat'].includes(g))hand.set(.40,.34-lower,sign*(.045+.09*Math.abs(Math.sin(time*7))));
+   if(['shrug','dodge','stumble','balance'].includes(g))hand.set(.12,.24-lower,sign*.48);
+   if(['point','referee','explain','search'].includes(g)&&sign>0)hand.set(.49,.46-lower,.24);
+   if(['handsHips','freeze'].includes(g))hand.set(.10,.05-lower,sign*.22);
+   if(g==='keeper')hand.set(.13,.03-lower,sign*.35);
+   if(['clap','pat'].includes(g))hand.set(.40,.34-lower,sign*(.045+.07*Math.abs(Math.sin(time*6))));
    if(g==='cover')hand.set(.18,.67-lower,sign*.075);
    if(g==='drink'&&sign>0)hand.set(.18,.70-lower,.05);
    if(g==='hair'&&sign>0)hand.set(.02,.91-lower,.07);
-   if(['inspect','collect'].includes(g))hand.set(.41,.12-lower,sign*.10);
+   if(['inspect','collect'].includes(g))hand.set(.39,.12-lower,sign*.10);
    if(g==='hide')hand.set(-.16,-.03-lower,sign*.07);
-   if(g==='laces')hand.set(.38,-.72,sign*.08);
+   if(g==='laces')hand.set(.34,-.70,sign*.08);
    if(g==='breath')hand.set(.27,-.38-lower,sign*.14);
    if(g==='laugh')hand.set(.29,.10-lower,sign*.14);
-   const elbow=joint(shoulder,hand,.31,.30,new T.Vector3(-.45,0,sign));
-   targets[side+'Shoulder']=shoulder.toArray();targets[side+'Elbow']=elbow.toArray();targets[side+'Wrist']=hand.toArray();
+   if(g==='chest')hand.set(.08,.25-lower,sign*.40);
+   if(g==='dive')hand.set(.42,.73-lower,sign*.26);
+   if(sitting)hand.set(.36,-.31-lower,sign*.16);
+   if(g!=='keeper')hand.lerp(baseHand,1-gestureWeight);
+   poleArm.set(-.45,0,sign);joint(shoulder,hand,.31,.30,poleArm,elbow);
+   shoulder.toArray(targets[side+'Shoulder']);elbow.toArray(targets[side+'Elbow']);hand.toArray(targets[side+'Wrist']);
   }
   rig(targets);stain.visible=!!p.dirty;drink.visible=g==='drink';
-  if(fullDetail)rider.userData.idle(time,{x:0,y:0},false);
-  head.rotation.z=lean*.20;head.rotation.y=g==='laugh'?Math.sin(time*6)*.05:0;
-  previous=[...p.pos];previousTime=time;
+  if(fullDetail){rider.userData.idle(time,{x:0,y:0},false);const tick=Math.floor(time*12);if(tick!==lastFaceTick){lastFaceTick=tick;const emote=['laugh','celebrate','clap','arms'].includes(g)?'grin':['kick','trap','block','keeper'].includes(g)?'focused':null;head.userData.expression?.(emote,emote?gestureWeight*(emote==='grin'?.65:.35):0);}}
+  const lookAngle=Math.atan2(p.look[0]-p.pos[0],p.look[1]-p.pos[1])-heading;
+  head.rotation.z=lean*.18;head.rotation.y=clamp(Math.atan2(Math.sin(lookAngle),Math.cos(lookAngle)),-.65,.65)+(g==='laugh'?Math.sin(time*6)*.03:0);
+  previous=p.pos;previousTime=time;root.userData.gesture=g;root.userData.stepCycle=cycleBase;
  }
  return {root,update,head,model,limbs:skeleton.bones,setDetail:full=>{fullDetail=full;for(const o of fibres)o.visible=full;},dispose:()=>disposeTree(root)};
 }

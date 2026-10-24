@@ -1,9 +1,9 @@
 /* Anatomical head topology and shape deltas: MakeHuman CC0, assets/studio/LICENSES.md. */
 import * as T from './vendor/three.module.min.js';
-import {microTexture,irisTexture,skinDetailTexture} from './studio-materials.js?v=studio-5';
-import {buildGroom,beardCoverage} from './jockey-groom.js?v=studio-5';
-import data from './assets/studio/human-head.js?v=studio-5';
-import {geometry,mesh,tube,material,smooth,surface} from './studio-geometry.js?v=studio-5';
+import {microTexture,irisTexture,skinDetailTexture} from './studio-materials.js?v=studio-6';
+import {buildGroom,beardCoverage} from './jockey-groom.js?v=studio-6';
+import data from './assets/studio/human-head.js?v=studio-6';
+import {geometry,mesh,tube,material,smooth,surface} from './studio-geometry.js?v=studio-6';
 const faceTargets={oval:{'head-oval':.35},round:{'head-round':.7,'head-fat-incr':.15},square:{'head-square':.65},heart:{'head-triangular':.35,'chin-triangle':.35},angular:{'head-diamond':.4,'head-fat-decr':.3},narrow:{'head-scale-horiz-decr':.3}};
 const jawTargets={soft:{},defined:{'chin-bones-incr':.4},square:{'chin-width-incr':.5},tapered:{'chin-triangle':.5}};
 const noseTargets={straight:{},button:{'nose-scale-depth-decr':.4,'nose-point-up':.25},aquiline:{'nose-curve-convex':.5},broad:{'nose-scale-horiz-incr':.4,'nose-width1-incr':.2},rounded:{'nose-scale-horiz-incr':.18,'nose-width1-incr':.22},upturned:{'nose-point-up':.4}};
@@ -42,7 +42,16 @@ export function buildFace(head,{s,showHelmet=true,detail=1}){
   color.push(c.r,c.g,c.b);
  }
  const uv=[];for(let i=0;i<p.length;i+=3)uv.push(.5+Math.atan2(p[i+2],p[i])/(Math.PI*2),(p[i+1]+.21)/.46);const g=geometry({position:Array.from(p),index:data.index,color,uv});const face=mesh(head,g,material('#ffffff',{vertexColors:true,roughness:.55,clearcoat:.035,map:skinDetailTexture(s),bumpMap:microTexture('skin'),bumpScale:.00022}), 'anatomical-face');
- head.userData.faceMesh=face;head.userData.baseFace=p;head.userData.blink=t=>{const target=facePositions(s,t);g.attributes.position.array.set(target);g.attributes.position.needsUpdate=true;g.computeVertexNormals();};
+ // Temporary gestures blend over the saved identity, then return to it.
+ // Cache the morph targets: no full facial solve is needed at every frame.
+ const emotions=new Map(),closed=facePositions(s,1),groomBindings=[];let emotion=null,emotionWeight=0,blinkWeight=0;
+ function updateFace(){const target=emotion?emotions.get(emotion):p,out=g.attributes.position.array,neutral=(!emotion||emotionWeight===0)&&blinkWeight===0;if(neutral)out.set(p);else for(let i=0;i<out.length;i++)out[i]=p[i]+(target[i]-p[i])*emotionWeight+(closed[i]-p[i])*blinkWeight;g.attributes.position.needsUpdate=true;g.computeVertexNormals();
+  // Beard roots follow facial morphs as well as the head joint. A smile must
+  // not pull the skin out from underneath a stationary moustache/beard.
+  for(const binding of groomBindings){const position=binding.mesh.geometry.attributes.position,a=position.array;if(neutral)a.set(binding.base);else for(let root=0;root<binding.ids.length;root++){const source=binding.ids[root]*3,dx=out[source]-p[source],dy=out[source+1]-p[source+1],dz=out[source+2]-p[source+2];for(let j=0;j<binding.verticesPerRoot;j++){const k=(root*binding.verticesPerRoot+j)*3;a[k]=binding.base[k]+dx;a[k+1]=binding.base[k+1]+dy;a[k+2]=binding.base[k+2]+dz;}}position.needsUpdate=true;}
+ }
+ head.userData.faceMesh=face;head.userData.baseFace=p;head.userData.blink=t=>{blinkWeight=t;updateFace();};
+ head.userData.expression=(kind,weight=0)=>{if(kind&&!emotions.has(kind))emotions.set(kind,facePositions({...s,expression:kind}));if(kind===emotion&&Math.abs(weight-emotionWeight)<.025)return;emotion=kind;emotionWeight=T.MathUtils.clamp(weight,0,1);updateFace();};
  const browProbe=new T.Mesh(g,new T.MeshBasicMaterial({side:T.DoubleSide})),browRay=new T.Raycaster();browProbe.updateMatrixWorld(true);
  const eyeMat=material('#eee9df',{roughness:.22,clearcoat:1,clearcoatRoughness:.08});const eyes=[];
  for(let n=0;n<2;n++){const pos=data.eyeCenters[n],eye=new T.Group();eye.position.set(...pos);head.add(eye);mesh(eye,new T.SphereGeometry(.024,24,16),eyeMat,'eyeball');
@@ -58,6 +67,11 @@ export function buildFace(head,{s,showHelmet=true,detail=1}){
  }
  browProbe.material.dispose();head.userData.eyes=eyes;
  buildGroom(head,g,s,{detail});
+ for(const child of head.children.filter(o=>o.name==='beard-volume'||o.name==='rooted-beard-fibres')){
+  const roots=child.name==='beard-volume'?child.geometry.attributes.surfaceRoot.array:child.userData.surfaceRoots,ids=new Uint32Array(roots.length/3),base=Float32Array.from(child.geometry.attributes.position.array),verticesPerRoot=child.name==='beard-volume'?1:(child.userData.segments+1)*2;
+  for(let root=0;root<ids.length;root++){let distance=Infinity,nearest=0;for(let i=0;i<p.length;i+=3){const d=(p[i]-roots[root*3])**2+(p[i+1]-roots[root*3+1])**2+(p[i+2]-roots[root*3+2])**2;if(d<distance){distance=d;nearest=i/3;}}ids[root]=nearest;}
+  groomBindings.push({mesh:child,ids,base,verticesPerRoot});
+ }
  if(s.scar!=='none'){const z=s.scar==='browLeft'?-.055:.055,y=s.scar==='cheek'?-.01:.11;tube(head,material(s.skinColor).clone(),[[.17,y-.014,z-.005],[.173,y,z],[.17,y+.014,z+.005]],.0015,10);}
  if(s.wrinkles!=='none')for(let k=0;k<3;k++)tube(head,material(s.skinColor,{roughness:.8}),[[.168,.125+k*.013,-.045],[.174,.128+k*.013,0],[.168,.125+k*.013,.045]],s.wrinkles==='defined'?.0009:.00045,18);
  if(s.goggles!=='none')for(const z of [-.05,.05]){const ring=mesh(head,new T.TorusGeometry(.034,.003,8,32),material('#2b302d'),'goggle-frame');ring.rotation.y=Math.PI/2;ring.position.set(.163,.06,z);const glass=mesh(head,new T.CircleGeometry(.031,32),material(s.goggles==='amber'?'#b97f2c':s.goggles==='dark'?'#15201b':'#d1eff2',{transparent:true,opacity:s.goggles==='dark'?.85:.28,side:T.DoubleSide,roughness:.08}));glass.rotation.y=Math.PI/2;glass.position.copy(ring.position);glass.position.x+=.001;}
