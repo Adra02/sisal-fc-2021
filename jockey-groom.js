@@ -1,7 +1,7 @@
 /* Surface-rooted hair and facial hair. Cosmetic geometry only; no network/state. */
 import * as T from './vendor/three.module.min.js';
-import {geometry,mesh,material,smooth,surface} from './studio-geometry.js?v=studio-4';
-import {microTexture} from './studio-materials.js?v=studio-4';
+import {geometry,mesh,material,smooth,surface} from './studio-geometry.js?v=studio-5';
+import {microTexture} from './studio-materials.js?v=studio-5';
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const noise=n=>{const x=Math.sin(n*127.1+19.7)*43758.5453;return x-Math.floor(x);};
 export function beardCoverage(s,x,y,z){
@@ -75,7 +75,7 @@ function hairTexture(curly){
  for(let i=0;i<(curly?5400:2400);i++){const x=noise(i+72)*1024,y=noise(i+810)*512,v=105+Math.floor(noise(i+190)*120);c.strokeStyle=`rgb(${v},${v},${v})`;c.lineWidth=curly?.65:.5;c.beginPath();if(curly)c.ellipse(x,y,2+noise(i+71)*3,3+noise(i+17)*4,noise(i+222)*Math.PI,0,Math.PI*(1.2+noise(i+23)*.7));else{c.moveTo(x,y);c.bezierCurveTo(x-2,y+9,x+2,y+22,x-4,y+34);}c.stroke();}
  hairSources.set(curly,canvas);const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;return map;
 }
-export function buildGroom(head,g,s){
+export function buildGroom(head,g,s,{detail=1}={}){
  const skin=new T.Color(s.skinColor),hairColor=new T.Color(s.hairHex||'#65432d');
  if(s.hair!=='bald'){
   const length={buzz:.0006,crop:.008,side:.013,quiff:.029,curly:.018,waves:.014,long:.012,ponytail:.011,braids:.009,mohawk:.035,bob:.014}[s.hair]||.008;
@@ -90,8 +90,8 @@ export function buildGroom(head,g,s){
   const texture=hairTexture(s.hair==='curly'||s.hairTexture==='coiled');
   const hm=material('#fff',{vertexColors:true,roughness:.77,sheen:.22,sheenRoughness:.77,map:texture,bumpMap:texture,bumpScale:s.hair==='curly'?.0008:.00035});
   const scalp=mesh(head,hg,hm,'scalp-hair');head.userData.hair=scalp;
-  groom(head,hg,{color:s.hairHex,count:s.hair==='buzz'?1600:s.hair==='curly'?2800:2400,length:s.hair==='buzz'?.0013:s.hair==='curly'?.024:.012,curly:s.hair==='curly'||s.hairTexture==='coiled',coverage:(x,y,z)=>smooth(0,.01,scalpDistance(s,x,y,z)),flow:p=>new T.Vector3(['long','bob'].includes(s.hair)?-.05:-1,['long','bob'].includes(s.hair)?-1:-.15,(s.hairPart==='left'?.5:s.hairPart==='right'?-.5:Math.sign(p.z)*.22))});
-  if(['long','bob','ponytail','braids'].includes(s.hair))longHair(head,scalp,s,hairColor);
+  groom(head,hg,{color:s.hairHex,count:Math.round((s.hair==='buzz'?1600:s.hair==='curly'?2800:2400)*detail),length:s.hair==='buzz'?.0013:s.hair==='curly'?.024:.012,curly:s.hair==='curly'||s.hairTexture==='coiled',coverage:(x,y,z)=>smooth(0,.01,scalpDistance(s,x,y,z)),flow:p=>new T.Vector3(['long','bob'].includes(s.hair)?-.05:-1,['long','bob'].includes(s.hair)?-1:-.15,(s.hairPart==='left'?.5:s.hairPart==='right'?-.5:Math.sign(p.z)*.22))});
+  if(['long','bob','ponytail','braids'].includes(s.hair))longHair(head,scalp,s,hairColor,detail);
  }
  if(s.beard!=='none'){
   // Stubble/short-beard roots are exactly on the face. A full beard alone has
@@ -99,12 +99,12 @@ export function buildGroom(head,g,s){
   const coverage=(...p)=>beardCoverage(s,...p),full=s.beard==='full';
   const bg=clippedSurface(g,(...p)=>coverage(...p)-.02,(p,d)=>full?.00010+.012*smooth(0,.7,d)*smooth(-.02,-.13,p.y):.00006,(p,d)=>skin.clone().lerp(new T.Color(s.beardHex||s.hairHex),smooth(0,.38,d)),.45);
   if(full){const bm=mesh(head,bg,material('#fff',{vertexColors:true,roughness:.92,bumpMap:microTexture('hair'),bumpScale:.0007}),'beard-volume');bm.castShadow=false;}
-  const fibres=groom(head,bg,{name:'rooted-beard-fibres',color:s.beardHex||s.hairHex,count:full?3400:s.beard==='stubble'?2400:3000,length:full?.012:s.beard==='stubble'?.0014:s.beard==='short'?.004:.006,beard:true,coverage});
+  const fibres=groom(head,bg,{name:'rooted-beard-fibres',color:s.beardHex||s.hairHex,count:Math.round((full?3400:s.beard==='stubble'?2400:3000)*detail),length:full?.012:s.beard==='stubble'?.0014:s.beard==='short'?.004:.006,beard:true,coverage});
   if(fibres)fibres.userData.beardStyle=s.beard;
   if(!full)bg.dispose();
  }
 }
-function longHair(head,scalp,s,color){
+function longHair(head,scalp,s,color,detail=1){
  const mat=material(color,{roughness:.82,sheen:.35,map:hairTexture(false),bumpMap:microTexture('hair',256),bumpScale:.0009,side:T.DoubleSide});const probe=new T.Mesh(scalp.geometry,new T.MeshBasicMaterial({side:T.DoubleSide}));probe.updateMatrixWorld(true);
  const ray=new T.Raycaster(),anchors=[];
  for(let k=0;k<=56;k++){const a=Math.PI*(.34+k/56*1.32),dir=new T.Vector3(Math.cos(a),0,Math.sin(a));ray.set(dir.clone().multiplyScalar(.4).add(new T.Vector3(0,.17,0)),dir.clone().negate());const hit=ray.intersectObject(probe)[0];anchors.push(hit?hit.point.clone():new T.Vector3(Math.cos(a)*.13,.17,Math.sin(a)*.13));}
@@ -112,7 +112,7 @@ function longHair(head,scalp,s,color){
  if(s.hair==='long'||s.hair==='bob'){
   const len=s.hair==='bob'?.22:.35;
   const locks=surface(head,mat,(u,v)=>{const a=u*56,k=Math.min(55,Math.floor(a)),root=anchors[k].clone().lerp(anchors[k+1],a-k),radial=new T.Vector3(root.x,0,root.z).normalize(),length=len+.010*Math.sin(u*83)+.006*Math.sin(u*193),y=root.y-v*length,earClearance=.026*Math.exp(-(((y-.018)/.065)**2))*smooth(0,.12,v),fold=Math.sin(u*183+v*.7)*.0012*Math.sin(Math.PI*v);return root.addScaledVector(radial,earClearance+Math.sin(v*Math.PI)*.019+v*.010+fold).add(new T.Vector3(-v*v*.025,-v*length,0)).toArray();},144,40);locks.name='rooted-long-hair';
-  groom(head,locks.geometry,{color:color,count:2400,length:.021,flow:()=>new T.Vector3(-.05,-1,0)});
+  groom(head,locks.geometry,{color:color,count:Math.round(2400*detail),length:.021,flow:()=>new T.Vector3(-.05,-1,0)});
  }else{
   // Gather at the nape with the first ring intersecting the anatomical scalp.
   const root=anchors[28].clone(),tailEnd=s.hair==='braids'?.29:.32,braids=s.hair==='braids'?3:1;

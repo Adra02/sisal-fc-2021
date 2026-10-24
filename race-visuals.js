@@ -56,8 +56,8 @@ export function enhanceTrack({scene,renderer,geo,mat,texture,mesh,cube,box,track
   const wet=profile.weather==='rain'||profile.weather==='wet';
   const sky=texture((c,w,h)=>{
     const gradient=c.createLinearGradient(0,0,0,h);
-    gradient.addColorStop(0,night?'#07142b':sunset?'#345373':'#5989b0');
-    gradient.addColorStop(.42,night?'#233c57':sunset?'#e6bb94':'#c4d5dc');
+    gradient.addColorStop(0,night?'#07142b':sunset?'#356786':'#4c9ac0');
+    gradient.addColorStop(.42,night?'#233c57':sunset?'#e7bb90':'#bfdce2');
     gradient.addColorStop(.53,night?'#33454a':sunset?'#e9cda3':'#dfe2d1');
     gradient.addColorStop(1,'#273c29');c.fillStyle=gradient;c.fillRect(0,0,w,h);
     // Soft cloud banks baked once, not regenerated every frame.
@@ -70,10 +70,10 @@ export function enhanceTrack({scene,renderer,geo,mat,texture,mesh,cube,box,track
   scene.fog=new T.Fog(night?'#263c42':sunset?'#c8b69b':'#b4c6c0',65,190);
   const anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
   const grassMap=texture((c,w,h)=>{
-    c.fillStyle='#486c3d';c.fillRect(0,0,w,h);
-    for(let i=0;i<14000;i++){c.strokeStyle=i%3?'#658147':'#314d30';const x=random()*w,y=random()*h;c.beginPath();c.moveTo(x,y);c.lineTo(x+(random()-.5)*3,y-2-random()*4);c.stroke();}
+    c.fillStyle='#387b45';c.fillRect(0,0,w,h);
+    for(let i=0;i<14000;i++){c.strokeStyle=i%3?'#689957':'#28613b';const x=random()*w,y=random()*h;c.beginPath();c.moveTo(x,y);c.lineTo(x+(random()-.5)*3,y-2-random()*4);c.stroke();}
   },256,256);grassMap.wrapS=grassMap.wrapT=T.RepeatWrapping;grassMap.repeat.set(45,24);grassMap.anisotropy=anisotropy;
-  const grass=mat('#a1b58c',{map:grassMap,roughness:1});
+  const grass=mat('#d1e7ca',{map:grassMap,roughness:1});
   const ground=mesh(scene,geo(new T.PlaneGeometry(215,125)),grass,[35,-.041,0]);ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;ground.castShadow=false;
   const grassDark=mat('#284e32',{roughness:1}),edge=mat('#64725a',{roughness:.94});
   for(const z of [-trackHalf-.18,trackHalf+.18])cube(scene,edge,[35,.01,z],[160,.12,.2]);
@@ -85,10 +85,11 @@ export function enhanceTrack({scene,renderer,geo,mat,texture,mesh,cube,box,track
   for(let i=0;i<160;i++){dummy.position.set(-44+i*1.08,.5+random()*.15,-trackHalf-2.4);dummy.rotation.set(random()*.2,random()*Math.PI,0);dummy.scale.set(.7,.65+random()*.35,.6);dummy.updateMatrix();shrubs.setMatrixAt(i,dummy.matrix);shrubs.setColorAt(i,new T.Color().setHSL(.31+random()*.05,.25,.17+random()*.09));}shrubs.castShadow=true;shrubs.receiveShadow=true;scene.add(shrubs);
   // Floodlight rigs and warm emissive LED ribbon; no expensive extra shadow maps.
   const metal=mat('#34443f',{metalness:.6,roughness:.43});
+  const concreteFoot=mat('#8b9c8c',{roughness:.96});
   const lamp=mat('#f6ebd4',{emissive:'#dceeff',emissiveIntensity:night?3:1.1,roughness:.3});
   for(const x of [-22,18,58,98]){
     const z=-trackHalf-11;
-    cube(scene,metal,[x,7,z],[.24,14,.24]);cube(scene,metal,[x,13.6,z],[4,.8,.25]);
+    cube(scene,metal,[x,7,z],[.24,14,.24]);cube(scene,concreteFoot,[x,.10,z],[.9,.20,.9]);cube(scene,metal,[x,13.6,z],[4,.8,.25]);
     for(let k=0;k<5;k++)cube(scene,lamp,[x-1.55+k*.78,13.6,z+.18],[.56,.5,.06]);
   }
   const led=mat('#72ac91',{emissive:'#388466',emissiveIntensity:night?.8:.2,roughness:.7});cube(scene,led,[35,3.95,-trackHalf-5.4],[106,.09,.1]);
@@ -109,7 +110,8 @@ export function enhanceTrack({scene,renderer,geo,mat,texture,mesh,cube,box,track
   const grooming=mesh(scene,geo(new T.PlaneGeometry(158,trackHalf*2-.45)),mat('#fff',{map:groomingMap,transparent:true,depthWrite:false,roughness:1,polygonOffset:true,polygonOffsetFactor:-1}),[35,.041,0]);grooming.rotation.x=-Math.PI/2;grooming.castShadow=false;
   // Cloth flags: geometry deforms on the GPU. Static bounds include wind travel.
   const flagGeo=geo(new T.PlaneGeometry(2.3,1.3,10,4));
-  const flagMat=mat('#d6e4d6',{side:T.DoubleSide,roughness:.9});
+  const flagMap=texture((c,w,h)=>{c.fillStyle='#16784d';c.fillRect(0,0,w,h);c.fillStyle='#d6edcf';c.fillRect(0,0,w*.065,h);c.font='800 62px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText('SISAL',w*.54,h*.48,w*.78);c.font='500 17px Arial';c.fillText('FC 2021',w*.54,h*.78)},512,256);
+  const flagMat=mat('#ffffff',{map:flagMap,side:T.DoubleSide,roughness:.9});
   flagMat.userData.sisalDeform=true;
   const wind={value:0};
   flagMat.onBeforeCompile=shader=>{shader.uniforms.sisalWind=wind;shader.vertexShader='uniform float sisalWind;\n'+shader.vertexShader;shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed.z += sin(position.x * 3.8 - sisalWind * 2.7) * (uv.x * uv.x) * 0.22;');};

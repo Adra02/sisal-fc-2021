@@ -1,6 +1,6 @@
 import {requireAccount,errorResponse} from '../lib/accounts.js';
 import { withStoreRequest } from '../lib/shared-store.js';
-import { buildTeam } from '../lib/data-pipeline.js';
+import { buildTeam, resolveStoredTotals } from '../lib/data-pipeline.js';
 import { hasStorageConfig, readAllFiles, readRoleMemory, readRoleTotals } from '../lib/shared-store.js';
 
 const GEMINI_MODEL = 'gemini-3.5-flash-lite';
@@ -33,16 +33,17 @@ function number(value, fallback = 0) {
 function compactRecentPlayer(p) {
   if (!p) return null;
   return {
+    name:p.name||null,
     appearances: number(p.appearances ?? p.games),
     goals: number(p.goals),
     assists: number(p.assists),
     rating: p.rating == null ? null : number(p.rating),
-    shots: number(p.shots),
+    shots: p.shots==null?null:number(p.shots),
     passesMade: number(p.passesMade),
-    passAttempts: number(p.passAttempts),
+    passAttempts: p.passAttempts==null?null:number(p.passAttempts),
     passAccuracy: p.passAccuracy == null ? null : number(p.passAccuracy),
     tacklesMade: number(p.tacklesMade),
-    tackleAttempts: number(p.tackleAttempts),
+    tackleAttempts: p.tackleAttempts==null?null:number(p.tackleAttempts),
     tackleSuccess: p.tackleSuccess == null ? null : number(p.tackleSuccess),
     saves: number(p.saves),
     goalsConceded: p.goalsConceded == null ? null : number(p.goalsConceded),
@@ -77,7 +78,7 @@ function compactSeasonPlayer(p) {
     assists: number(p.assists),
     rating: p.rating == null ? null : number(p.rating),
     winRate: p.winRate == null ? null : number(p.winRate),
-    shots: number(p.shots),
+    shots: p.shots==null?null:number(p.shots),
     shotAccuracy: p.shotAccuracy == null ? null : number(p.shotAccuracy),
     passesMade: number(p.passesMade),
     passAttempts: p.passAttempts == null ? null : number(p.passAttempts),
@@ -128,11 +129,11 @@ function compactMatch(m, clubId) {
       goals: number(p.goals),
       assists: number(p.assists),
       rating: p.rating == null ? null : number(p.rating),
-      shots: number(p.shots),
+      shots: p.shots==null?null:number(p.shots),
       passesMade: number(p.passesMade),
-      passAttempts: number(p.passAttempts),
+      passAttempts: p.passAttempts==null?null:number(p.passAttempts),
       tacklesMade: number(p.tacklesMade),
-      tackleAttempts: number(p.tackleAttempts),
+      tackleAttempts: p.tackleAttempts==null?null:number(p.tackleAttempts),
       saves: number(p.saves),
       goalsConceded: p.goalsConceded == null ? null : number(p.goalsConceded),
       cleanSheets: number(p.cleanSheets),
@@ -154,41 +155,38 @@ function compactMatch(m, clubId) {
   };
 }
 
-function compactTeam(team) {
-  if (!team) return null;
-  return {
-    role: team.role,
-    club: team.club,
-    fileStatus: team.fileStatus,
-    complete: Boolean(team.complete),
-    ready: Boolean(team.ready),
-    playerStatsScope: team.playerStatsScope,
-    playerStatsScopeLabel: team.playerStatsScopeLabel,
-    teamProfile: team.teamProfile || null,
-    sourceFields: team.sourceFields || null,
-    playerPositionCount: team.teamProfile?.playerPositionCount || null,
-    sourceFileMap: Object.fromEntries(Object.entries(team.fileStatus || {}).map(([category, info]) => [category, {present:Boolean(info.present), fileName:info.fileName || null, rows:info.rows || 0, detection:info.detection || null, aiRecognition:info.aiRecognition ? {category:info.aiRecognition.category || null, confidence:info.aiRecognition.confidence ?? null, recognizedBy:info.aiRecognition.recognizedBy || null, summary:info.aiRecognition.summary || null, totals:info.aiRecognition.totals || null, clubId:info.aiRecognition.clubId || null, clubName:info.aiRecognition.clubName || null} : null}])) ,
-    overall: (() => {
-      const { fouls, foulsAvailableMatches, foulsCoverage, foulsPerAvailableMatch, ...overallWithoutFouls } = team.overall || {};
-      return overallWithoutFouls;
-    })(),
-    byCompetition: team.byCompetition,
-    recent5: {
-      team: team.recent5?.team || null,
-      players: (team.recent5?.players || []).map(compactRecentPlayer),
-      matches: (team.recent5?.matches || []).map(m => compactMatch(m, team.club?.id))
-    },
-    manualTotals: team.manualTotals || null,
-    historicalMemory: (team.memory?.snapshots || []).slice(0, 12),
-    sourceData: team.sourceData || {},
-    matchTrend: team.matchTrend || [],
-    players: (team.players || []).map(compactSeasonPlayer),
-    rosterReconciliation: team.rosterReconciliation || null,
-    dataQuality: team.dataQuality || null,
-    fun: team.fun || null,
-    matchArchive: (team.matchArchive || team.matches || []).map(m => compactMatch(m, team.club?.id))
-  };
+function compactTeam(team,mode='normal') {
+ if(!team)return null;
+ const pick=(obj,keys)=>Object.fromEntries(keys.filter(k=>obj?.[k]!==undefined).map(k=>[k,obj[k]]));
+ const slimPlayer=p=>({...pick(p,['id','name','position','favoritePosition','games','goals','assists','rating','winRate','shots','shotsEstimated','passAttemptsEstimated','tackleAttemptsEstimated','passAccuracy','tackleSuccess','passesMade','passAttempts','tacklesMade','tackleAttempts','saves','cleanSheets','mom','fouls','performanceIndex','recent5Index','sourceScope']),career:p.career,recent5:compactRecentPlayer(p.recent5),fromUploadedMatchArchive:compactRecentPlayer(p.matchAggregate)});
+ const matchRows=(team.matchArchive||team.matches||[]).slice(0,30).map(m=>{
+  const row=compactMatch(m,team.club?.id);
+  // Named per-match figures are already in recent5/players; no raw EA payload duplication.
+  delete row.players;return row;
+ });
+ return {role:team.role,club:pick(team.club,['id','name','platform']),ready:!!team.ready,complete:!!team.complete,
+  playerStatsScope:team.playerStatsScope,playerStatsScopeLabel:team.playerStatsScopeLabel,
+  manualTotals:team.manualTotals,teamProfile:team.teamProfile,overall:team.overall,byCompetition:team.byCompetition,
+  sourceFileMap:Object.fromEntries(Object.entries(team.fileStatus||{}).map(([k,f])=>[k,pick(f,['present','fileName','rows','uploadedAt'])])),
+  sourceFields:mode==='audit'?Object.fromEntries(['totals','season','overallStats'].map(k=>[k,team.sourceFields?.[k]?.fieldShape||null])):undefined,
+  recent5:{team:team.recent5?.team,matches:(team.recent5?.matches||[]).map(m=>{const row=compactMatch(m,team.club?.id);row.players=row.players.map(p=>pick(p,['name','goals','assists','rating','shots','mom','fouls']));return row})},
+  shooting:team.shooting,technical:team.technical,
+  players:(team.players||[]).slice(0,60).map(slimPlayer),matchArchive:matchRows,
+  historicalMemory:(team.memory?.snapshots||[]).slice(-2).map(s=>pick(s,['at','createdAt','manualTotals','automaticTotals','archive','recent5'])),
+  dataQuality:team.dataQuality,rosterReconciliation:team.rosterReconciliation,
+  fun:mode==='fun'?team.fun:undefined};
 }
+function automaticAudit(team){
+ const q=team?.dataQuality||{},t=team?.manualTotals?.totals,lines=[];
+ if(t)lines.push(`Storico verificato: ${t.matches} partite, ${t.wins} vittorie, ${t.draws} pareggi, ${t.losses} sconfitte; ${t.goals} gol fatti e ${t.against} subiti. Fonte: ${team.manualTotals.fileName||team.manualTotals.source}.`);
+ else lines.push('Totale storico non verificabile con le sorgenti disponibili. Non uso la stagione come sostituto.');
+ lines.push(`Archivio: ${team?.overall?.matches||0} partite; ultime 5: ${team?.recent5?.team?.matches||0}. Sono periodi distinti.`);
+ const diagnostics=[...(q.errors||[]).map(x=>'Errore: '+x),...(q.warnings||[]).map(x=>'Avviso: '+x)];
+ lines.push(...diagnostics.slice(0,4));if(diagnostics.length>4)lines.push(`Altri ${diagnostics.length-4} rilievi nel controllo qualità della tabella.`);
+ if(!q.errors?.length)lines.push('Nessun errore strutturale rilevato dai controlli numerici automatici.');
+ return lines.join('\n');
+}
+function auditReport(own,opponent){return 'LA TUA SQUADRA\n'+automaticAudit(own)+(opponent?.ready?'\n\nAVVERSARIO · '+opponent.club.name+'\n'+automaticAudit(opponent):'');}
 
 function buildPrompt({ question, mode, notes, formation, formationCatalog, own, opponent, knowledge }) {
   const modeText = mode === 'opponent'
@@ -216,17 +214,17 @@ function buildPrompt({ question, mode, notes, formation, formationCatalog, own, 
     '1) `players[].games/goals/assists/rating/passAccuracy/tackleSuccess/...` sono statistiche cumulative del file Giocatori quando `playerStatsScope` è `season-player-file`.',
     '2) `recent5.team`, `recent5.players` e `recent5.matches` sono calcolati esclusivamente sulle ULTIME 5 partite archiviate, ordinate dalla più recente alla più vecchia.',
     '3) `matchArchive` contiene lo storico delle partite caricate. `overall.matches` è il numero di partite archiviate disponibili, non necessariamente il totale storico della squadra.',
-    '4) `manualTotals` è il totale storico ufficiale mostrato nella tabella Totale quando presente. Può provenire dal file Dati totali riconosciuto dall’IA, da una modifica manuale o da una precedente importazione ProClubTracker.',
+    '4) `manualTotals` è il totale storico riconciliato mostrato nella tabella Totale: proviene dal JSON cumulativo valido (Overall Stats o Dati totali), oppure da una modifica manuale esplicita più recente. La stagione non è lo storico.',
     '5) `players[].fromUploadedMatchArchive` è una statistica ricavata dalle sole partite caricate e NON deve essere sommata o fusa con la statistica cumulativa del file Giocatori.',
     '6) Se `playerStatsScope` è `uploaded-matches`, le statistiche giocatore derivano dalle sole partite disponibili e non vanno chiamate “stagionali complete”.',
     '7) `historicalMemory` contiene snapshot storici salvati dal sito; usala per confrontare l’evoluzione nel tempo, ma non inventare dati mancanti.',
     '7-bis) `historicalMemory[].currentProfile.recentCodes` conserva lastMatch/lastOpponent solo come memoria grezza. Non mostrarli come statistiche e non interpretarli come risultati senza una fonte affidabile.',
-    '8) Il file `totals` / Dati totali ha priorità per Partite/Vittorie/Pareggi/Sconfitte/Gol/Gol subiti storici. Usa anche gli altri campi realmente presenti (cleanSheets, points, promotions, relegations, bestDivision, currentDivision, platform, gamesPlayedPlayoff).',
+    '8) `manualTotals` è già riconciliato dalle sorgenti cumulative: Overall Stats quando valido, poi Dati totali. Non rimpiazzarlo con il file della stagione, con somme di giocatori o con il campione di partite. Clean sheet e medie storiche restano null se la sorgente cumulativa non li fornisce.',
     '9) `overallStats` contiene dati storici/di stato aggiuntivi come skillRating, wstreak, unbeatenstreak, leagueAppearances, division finish counts, lastMatch0-9 e lastOpponent0-9. Non interpretare i codici numerici `lastMatch*` come risultati W/D/L senza una fonte che ne definisca il significato.',
     '10) `clubInfo` contiene identità e dettagli tecnici del club (clubId, regionId, teamId, stadio, kit, crest). Trattali come metadati, non come statistiche sportive.',
     '11) `players` è la fonte dettagliata del giocatore e deve essere sfruttata quando presente: OVR, winRate, tiri e % tiro, passaggi e % passaggi, tackle e %, clean sheet, MOTM, rossi, altezza, posizione codice, stile e nazionalità del Pro.',
     '12) `career` è una fonte separata di carriera giocatore. Non sommare automaticamente career a players: usali come scope distinto e segnala eventuali differenze.',
-    '13) `sourceFileMap` è la mappa delle 10 sorgenti e `sourceFields` mostra la forma/campi disponibili. `sourceData` conserva gli export originali quando disponibili: usali per recuperare campi non ancora normalizzati.',
+    '13) `sourceFileMap` identifica le sorgenti; `sourceFields`, quando incluso, ne descrive la struttura. Gli export grezzi duplicati non sono inclusi nel prompt. Non ricostruire valori assenti.',
     '14) `playerPositionCount` riporta la distribuzione delle posizioni esportata dal file Giocatori. Usala come dato di composizione rosa, non come valore di rendimento.',
     '15) `performanceIndex` e `recent5Index` sono indicatori sintetici 0-100 del backend; non sono l’OVR EA. Usali per confrontare rendimento e forma, spiegando che sono metriche interne.',
     '16) `matchTrend` è l’andamento delle partite archiviate disponibili; la memoria storica può contenere `currentProfile` per confrontare skill rating e stato del club tra aggiornamenti.' ,
@@ -245,7 +243,7 @@ function buildPrompt({ question, mode, notes, formation, formationCatalog, own, 
     'La sezione fun contiene record e curiosità calcolati dal backend: può essere usata come contesto numerico. I record cumulative hanno etichetta cumulative; la forma è U5.',
     'Il backend non usa la IA per correggere automaticamente numeri sorgente: se trovi una discrepanza, segnalala e indica entrambi gli scope invece di scegliere arbitrariamente un valore.',
     'I giocatori del file Giocatori e quelli trovati nell’archivio partite vengono riconciliati per nome. Un giocatore match-only non va escluso. Non filtrare mai per piattaforma.',
-    'Per i totali storici usa `manualTotals` quando presente; in sua assenza considera il file Dati totali riconosciuto dall’IA solo se contiene tutti i sei valori e la verifica aritmetica torna. Non chiamare mai U5 il totale storico.',
+    'Per il totale storico usa solo `manualTotals` riconciliato. Se manca, dichiaralo: non sostituirlo con U5, archivio o stagione.',
     'Per i FALLI usa prima i totali di squadra presenti in `overall` o nel singolo match. Usa la somma dei giocatori solo quando il totale squadra non è disponibile per quella gara. Non contare due volte la stessa gara.',
     'La knowledge FC27 è solo contesto generale sul gameplay; non sostituisce i dati della squadra.',
     'PER LE FORMAZIONI: quando l’utente chiede formazione/titolari/ruoli, NON serve che esista un pulsante dedicato. Rispondi direttamente nella modalità normale. Scegli modulo e ruoli usando prima posizione/favoritePosition, poi rendimento cumulativo e U5. Un giocatore può occupare un solo slot; non duplicarlo. Se mancano giocatori, costruisci comunque la formazione con quelli disponibili e indica gli slot scoperti. Non trasformare automaticamente un forward in CB o un defender in GK solo per riempire un modulo: gli adattamenti vanno motivati da statistiche e compatibilità di reparto.' ,
@@ -265,24 +263,24 @@ function buildPrompt({ question, mode, notes, formation, formationCatalog, own, 
     `FORMAZIONE CORRENTE:\n${JSON.stringify(formation || {})}`,
     '',
     'DATASET NOSTRA SQUADRA:',
-    JSON.stringify(compactTeam(own)),
+    JSON.stringify(compactTeam(own,mode)),
     '',
     'DATASET AVVERSARIO:',
-    JSON.stringify(mode === 'opponent' ? compactTeam(opponent) : null),
+    JSON.stringify(mode === 'opponent'||mode==='audit'||/avversari|avversario|confront|scouting/i.test(question) ? compactTeam(opponent,mode) : null),
     '',
     'KNOWLEDGE FC27:',
     JSON.stringify(knowledge || null)
   ].join('\n');
 }
 
-async function askGemini(apiKey, prompt, { jsonMode = false, maxOutputTokens = 2600 } = {}) {
+async function askGemini(apiKey, prompt, { jsonMode = false, maxOutputTokens = 2600, timeoutMs=45000 } = {}) {
   const generationConfig = {
     maxOutputTokens,
     responseMimeType: jsonMode ? 'application/json' : 'text/plain'
   };
   const response = await fetch(GEMINI_ENDPOINT, {
     method: 'POST',
-    signal: AbortSignal.timeout(45000),
+    signal: AbortSignal.timeout(timeoutMs),
     headers: {
       'content-type': 'application/json',
       'x-goog-api-key': apiKey
@@ -622,17 +620,18 @@ function formationAnswer(recommendation) {
 async function loadCentralTeams() {
   const teams=await Promise.all(['own','opponent'].map(async role=>{
     const [files,memory,manualTotals]=await Promise.all([readAllFiles(role),readRoleMemory(role),readRoleTotals(role)]);
-    return {...buildTeam({fileRecords:files,role}),memory,manualTotals};
+    const team=buildTeam({fileRecords:files,role});return {...team,memory,manualTotals:resolveStoredTotals(team,manualTotals)};
   }));
   return {own:teams[0],opponent:teams[1]};
 }
 
 async function handlePOST(request) {
+  const startedAt=Date.now();
   if (request.method !== 'POST') return json({ ok:false, code:'METHOD_NOT_ALLOWED', error:'Metodo non consentito.' }, 405);
   if (!hasStorageConfig()) return json({ ok:false, code:'SUPABASE_NOT_CONFIGURED', error:'Archivio centrale non configurato su Vercel. Configura Supabase su Vercel.' }, 503);
 
   const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
-  if (!apiKey) return json({ ok:false, code:'MISSING_GEMINI_API_KEY', error:'Manca GEMINI_API_KEY nelle Environment Variables di Vercel.', model:GEMINI_MODEL }, 500);
+
 
   let body = {};
   try { body = await request.json(); }
@@ -641,12 +640,14 @@ async function handlePOST(request) {
   const question = String(body?.question || '').trim();
   if (!question) return json({ ok:false, code:'MISSING_QUESTION', error:'Scrivi una domanda.' }, 400);
 
+  let ownForAudit=null,opponentForAudit=null;
   try {
-    const { own, opponent } = await loadCentralTeams();
+    const { own, opponent } = await loadCentralTeams();ownForAudit=own;opponentForAudit=opponent;
     if (!own.ready) return json({ ok:false, code:'OWN_DATA_EMPTY', error:'Non sono ancora presenti dati della tua squadra nell’archivio centrale. Carica almeno un file.' }, 422);
     if (body?.mode === 'opponent' && !opponent.ready) return json({ ok:false, code:'OPPONENT_DATA_EMPTY', error:'Non sono ancora presenti dati dell’avversario nell’archivio centrale. Carica almeno un file.' }, 422);
 
     const mode = ['opponent', 'fun', 'audit', 'fouls', 'formation'].includes(body?.mode) ? body.mode : 'normal';
+    if(!apiKey){if(mode==='audit')return json({ok:true,fallback:true,aiAvailable:false,answer:auditReport(own,opponent)+'\n\nGemini non configurato: questo è il controllo automatico dei dati.'});return json({ok:false,code:'MISSING_GEMINI_API_KEY',error:'Manca GEMINI_API_KEY nelle Environment Variables di Vercel.',model:GEMINI_MODEL},500);}
     const formationCatalog = Array.isArray(body?.formationCatalog) ? body.formationCatalog.slice(0, 40) : [];
 
     const knowledge = body?.knowledge && typeof body.knowledge === 'object'
@@ -670,7 +671,8 @@ async function handlePOST(request) {
 
     const answer = await askGemini(apiKey, prompt, {
       jsonMode: mode === 'formation',
-      maxOutputTokens: mode === 'formation' ? 1800 : 2600
+      maxOutputTokens: mode === 'formation' ? 1800 : 1000,
+      timeoutMs:Math.max(1000,Math.min(45000,52000-(Date.now()-startedAt)))
     });
 
     if (mode === 'formation') {
@@ -702,6 +704,7 @@ async function handlePOST(request) {
     });
   } catch (error) {
     const status = Number(error?.status || 502);
+    if(body.mode==='audit'&&ownForAudit)return json({ok:true,mode:'audit',aiAvailable:false,fallback:true,code:status===429?'GEMINI_QUOTA':'AI_UNAVAILABLE',answer:auditReport(ownForAudit,opponentForAudit)+'\n\n'+(status===429?'Quota IA temporaneamente esaurita. Questo è il controllo automatico dei dati; il parere Gemini non è disponibile.':'Gemini non disponibile. Questo è il controllo automatico dei dati.'),model:GEMINI_MODEL});
     return json({
       ok: false,
       code: status === 429 ? 'GEMINI_QUOTA' : 'AI_REQUEST_FAILED',

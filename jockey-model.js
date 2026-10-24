@@ -1,12 +1,12 @@
 import * as T from './vendor/three.module.min.js';
-import {microTexture} from './studio-materials.js?v=studio-4';
-import bodyData from './assets/studio/human-body.js?v=studio-4';
-import {buildFace} from './jockey-face.js?v=studio-4';
-import {styleColors} from './horse-style.js?v=studio-4';
-import {geometry,mesh,tube,material} from './studio-geometry.js?v=studio-4';
+import {microTexture} from './studio-materials.js?v=studio-5';
+import bodyData from './assets/studio/human-body.js?v=studio-5';
+import {buildFace} from './jockey-face.js?v=studio-5';
+import {styleColors} from './horse-style.js?v=studio-5';
+import {geometry,mesh,tube,material} from './studio-geometry.js?v=studio-5';
 // The same body, joint rig and head scale for every account and every view.
-export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,custom,index=0,showHelmet=true,standing=false}){
- custom=custom||styleColors({});const rider=new T.Group();rider.name='sisal-jockey';
+export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,custom,index=0,showHelmet,standing=false,detail=1}){
+ custom=custom||styleColors({});showHelmet=showHelmet??custom.helmetVisible!=='off';const rider=new T.Group();rider.name='sisal-jockey';
  const g=geometry(bodyData);g.setAttribute('skinIndex',new T.Uint16BufferAttribute(bodyData.skinIndex,4));g.setAttribute('skinWeight',new T.Float32BufferAttribute(bodyData.skinWeight,4));
  const uv=[];for(let i=0;i<bodyData.position.length;i+=3)uv.push((bodyData.position[i+2]+.62)/1.24,(bodyData.position[i+1]+1.1)/2.1);g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));
  g.clearGroups();let start=0,last=bodyData.materials[0];for(let i=1;i<=bodyData.materials.length;i++)if(bodyData.materials[i]!==last){g.addGroup(start*3,(i-start)*3,last);start=i;last=bodyData.materials[i];}
@@ -15,16 +15,18 @@ export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,c
  const bones=bodyData.bones.map(([name])=>{const b=new T.Bone();b.name=name;return b;});
  bodyData.bones.forEach(([,parent,pos],i)=>{bones[i].position.set(...pos);if(parent>=0){bones[i].position.sub(new T.Vector3(...bodyData.bones[parent][2]));bones[parent].add(bones[i]);}else body.add(bones[i]);});
  const skeleton=new T.Skeleton(bones);body.bind(skeleton);
+ const poseOrientations=bones.map(()=>new T.Quaternion());
  const targets={pelvis:[0,0,0],chest:standing?[0,.49,0]:[.18,.45,0],lShoulder:standing?[0,.49,-.207]:[.23,.43,-.207],rShoulder:standing?[0,.49,.207]:[.23,.43,.207],lElbow:standing?[.03,.18,-.24]:[.48,.19,-.26],rElbow:standing?[.03,.18,.24]:[.48,.19,.26],lWrist:standing?[.04,-.1,-.23]:[.72,.18,-.17],rWrist:standing?[.04,-.1,.23]:[.72,.18,.17],lHip:[0,-.05,-.106],rHip:[0,-.05,.106],lKnee:standing?[0,-.48,-.12]:[.31,-.27,-.40],rKnee:standing?[0,-.48,.12]:[.31,-.27,.40],lAnkle:standing?[0,-.94,-.13]:[.02,-.61,-.46],rAnkle:standing?[0,-.94,.13]:[.02,-.61,.46]};
  function solve(t,kind='rest'){
   for(let i=0;i<bones.length;i++){
    const b=bones[i],[name,parent,rest]=bodyData.bones[i],target=new T.Vector3(...t[name]);
-   body.updateMatrixWorld(true);b.position.copy(parent<0?target:bones[parent].worldToLocal(target.clone()));
+   const parentQ=parent<0?null:poseOrientations[parent];
+   b.position.copy(target);if(parent>=0)b.position.sub(new T.Vector3(...t[bodyData.bones[parent][0]])).applyQuaternion(parentQ.clone().invert());
    let q=new T.Quaternion();const child=bodyData.bones.findIndex((x,j)=>x[1]===i&&j>i);
-   if(name==='chest')q.setFromAxisAngle(new T.Vector3(0,0,1),(standing?0:kind==='racing'?-.50:-.22)+(kind==='bow'?-.22:0));
+   if(name==='chest')q.setFromAxisAngle(new T.Vector3(0,0,1),kind==='arena'?-Math.atan2(t.chest[0]-t.pelvis[0],t.chest[1]-t.pelvis[1]):(standing?0:kind==='racing'?-.50:-.22)+(kind==='bow'?-.22:0));
    else if(name!=='pelvis'&&child>=0){const from=new T.Vector3(...bodyData.bones[child][2]).sub(new T.Vector3(...rest)).normalize(),to=new T.Vector3(...t[bodyData.bones[child][0]]).sub(target).normalize();q.setFromUnitVectors(from,to);}
    else if(name.includes('Wrist')){const from=new T.Vector3(.08,-.025,name[0]==='l'?-.07:.07).normalize(),to=new T.Vector3(...(kind==='arms'?[0,1,0]:kind==='salute'&&name[0]==='r'?[.1,.8,-.4]:[1,-.1,0])).normalize();q.setFromUnitVectors(from,to);}
-   if(parent>=0){const parentQ=new T.Quaternion();bones[parent].getWorldQuaternion(parentQ);q.premultiply(parentQ.invert());}b.quaternion.copy(q);
+   poseOrientations[i].copy(q);if(parent>=0)q.premultiply(parentQ.clone().invert());b.quaternion.copy(q);
   }
   body.updateMatrixWorld(true);return bones.map(b=>({p:b.position.clone(),q:b.quaternion.clone()}));
  }
@@ -42,7 +44,7 @@ export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,c
  // A matched 0.108 scale removes the old jagged, detached head/collar seam.
  const chest=bones[1],neckBind=new T.Vector3(.05076,.624,0),chestBind=new T.Vector3(...bodyData.bones[1][2]);
  const head=new T.Group();head.name='jockey-neck-pivot';head.position.copy(neckBind.clone().sub(chestBind));chest.add(head);
- const faceFrame=new T.Group();faceFrame.position.y=.715068-.624;faceFrame.scale.setScalar(.675);head.add(faceFrame);buildFace(faceFrame,{s:custom,showHelmet});head.userData=faceFrame.userData;
+ const faceFrame=new T.Group();faceFrame.position.y=.715068-.624;faceFrame.scale.setScalar(.675);head.add(faceFrame);buildFace(faceFrame,{s:custom,showHelmet,detail});head.userData=faceFrame.userData;
  const gear=new T.Group();gear.name='jockey-helmet';faceFrame.add(gear);gear.visible=showHelmet;
  const helmMat=helmet||mat(custom.helmetColor,{roughness:.4,clearcoat:.5});
  const cap=mesh(gear,new T.SphereGeometry(1,40,24,0,Math.PI*2,0,Math.PI*.53),helmMat);cap.scale.set(.19,.215,.18);cap.position.set(.004,.115,0);
@@ -65,6 +67,7 @@ export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,c
   if(w>0){head.rotation.z=(standing?0:.17)+(kind==='bow'?-.14*w:0);head.rotation.y=kind==='crowd'?.3*w:0;}
  };
  rider.userData.idle=(time,pointer={x:0,y:0},reduced=false)=>{idleTime=time;head.rotation.y=reduced?0:T.MathUtils.lerp(head.rotation.y,pointer.x*.18,.09);head.rotation.z=(standing?0:.17)-(reduced?0:pointer.y*.04);if(head.userData.eyes)for(const eye of head.userData.eyes)eye.rotation.y=reduced?0:pointer.x*.10;const phase=time%5.4,blink=!reduced&&phase<.16?Math.sin(phase/.16*Math.PI):0;if(blink>0||head.userData.wasBlink){head.userData.blink?.(blink);head.userData.wasBlink=blink>0;}};
+ rider.userData.arenaRig=standing?t=>{solve(t,'arena');}:undefined;
  rider.userData.headgear=gear;rider.userData.faceFrame=faceFrame;
  rider.userData.pose('salute',0,true,0);return {rider,head,arms,body,skeleton};
 }

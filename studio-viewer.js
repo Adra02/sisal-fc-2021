@@ -1,14 +1,14 @@
-import {environmentTexture} from './studio-materials.js?v=studio-4';
+import {environmentTexture} from './studio-materials.js?v=studio-5';
 import * as T from './vendor/three.module.min.js';
 import {Reflector} from './vendor/Reflector.js';
-import {createJockey} from './jockey-model.js?v=studio-4';
-import {createHorse} from './horse-model.js?v=studio-4';
-import {styleColors,paintSilks,validateStyle} from './horse-style.js?v=studio-4';
-import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-4';
-import {signaturePose} from './race-signature.js?v=studio-4';
+import {createJockey} from './jockey-model.js?v=studio-5';
+import {createHorse} from './horse-model.js?v=studio-5';
+import {styleColors,paintSilks,validateStyle} from './horse-style.js?v=studio-5';
+import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-5';
+import {signaturePose} from './race-signature.js?v=studio-5';
 const cameras={horse:{at:[0,1.78,0],height:4.15,width:4.7},face:{at:[.04,.75,0],height:.48,width:.36},hair:{at:[.01,.81,0],height:.51,width:.40},outfit:{at:[0,.02,0],height:2.35,width:1.08},gloves:{at:[.06,-.08,.23],height:.49,width:.46},saddle:{at:[-.25,1.96,0],height:1.7,width:1.9},number:{at:[-.31,1.90,.37],height:1.15,width:1.25},helmet:{at:[.03,.84,0],height:.52,width:.42},signature:{at:[0,.08,0],height:2.52,width:1.5}};
 const isHorse=part=>['horse','saddle','number'].includes(part);
-export function cameraPart(key){if(['skin','face','jaw','cheeks','nose','ears','eyes','eyeShape','brow','browWeight','mouth','lips','expression','beard','beardColor','freckles','wrinkles','scar','beautyMark','goggles'].includes(key))return 'face';if(['hair','hairColor','hairTexture','hairPart'].includes(key))return 'hair';if(['silk','accent','pattern','breeches'].includes(key))return 'outfit';if(['saddle','trim','cloth'].includes(key))return 'saddle';if(['entrance','celebration','nickname'].includes(key))return 'signature';return key==='gloves'?'gloves':key==='number'?'number':key==='helmet'?'helmet':'horse';}
+export function cameraPart(key){if(['skin','face','jaw','cheeks','nose','ears','eyes','eyeShape','brow','browWeight','mouth','lips','expression','beard','beardColor','freckles','wrinkles','scar','beautyMark','goggles'].includes(key))return 'face';if(['hair','hairColor','hairTexture','hairPart'].includes(key))return 'hair';if(['silk','accent','pattern','breeches'].includes(key))return 'outfit';if(['saddle','trim','cloth'].includes(key))return 'saddle';if(['entrance','celebration','nickname'].includes(key))return 'signature';return key==='gloves'?'gloves':key==='number'?'number':['helmet','helmetVisible'].includes(key)?'helmet':'horse';}
 export function mountStudio(host,{appearance={},name='',part='horse',controls=true,onInspect=()=>{}}={}){
  let renderer;try{renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});}catch{return null;}
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,mobile=matchMedia('(pointer:coarse)').matches;
@@ -31,7 +31,7 @@ export function mountStudio(host,{appearance={},name='',part='horse',controls=tr
  function clearModel(m){if(m){scene.remove(m);disposeTree(m);}}
  // Rebuild the head and its rooted hair together; face-only morphs detached the hair.
  function rebuild(){clearModel(model);clearModel(before);model=make(current);before=compare?make(baseline):null;if(before)before.visible=false;pending=false;applyFocus();}
- function applyFocus(){const horse=isHorse(activePart);desired.set(...cameras[activePart].at);floor.position.y=horse?.005:-1.055;ring.position.y=floor.position.y+.003;ring.scale.setScalar(horse?1.9:1);for(const m of [model,before])if(m){const gear=m.userData.j.rider.userData.headgear;gear.visible=helmetOverride??!['face','hair'].includes(activePart);gear.position.y=exploded?.20:0;if(m.userData.h)for(const o of m.userData.h.group.children)if(o.name==='embroidered-number-cloth')o.position.z=exploded?Math.sign(o.geometry.attributes.position.getZ(0))*.10:0;}
+ function applyFocus(){const horse=isHorse(activePart);desired.set(...cameras[activePart].at);floor.position.y=horse?.005:-1.055;ring.position.y=floor.position.y+.003;ring.scale.setScalar(horse?1.9:1);for(const m of [model,before])if(m){const gear=m.userData.j.rider.userData.headgear;gear.visible=helmetOverride??(m===before?baseline:current).helmetVisible!=='off';gear.position.y=exploded?.20:0;if(m.userData.h)for(const o of m.userData.h.group.children)if(o.name==='embroidered-number-cloth')o.position.z=exploded?Math.sign(o.geometry.attributes.position.getZ(0))*.10:0;}
   namePlate.position.set(0,floor.position.y+.008,horse?1.10:.57);namePlate.scale.setScalar(horse?1:.48);namePlate.visible=['horse','outfit','signature'].includes(activePart);
   caption.textContent=compare?'SALVATO  |  MODIFICHE':mirror?'RETRO  |  FRONTE':exploded?'ISPEZIONE · CASCO E SELLERIA':name;
  }

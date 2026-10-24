@@ -1,12 +1,12 @@
-import {spectatorPose} from './race-crowd.js?v=studio-4';
-import {animateGallop,dustSample} from './horse-gait.js?v=studio-4';
-import {createHorse} from './horse-model.js?v=studio-4';
-import {createJockey} from './jockey-model.js?v=studio-4';
-import {signaturePose} from './race-signature.js?v=studio-4';
-import {styleColors,paintSilks} from './horse-style.js?v=studio-4';
+import {spectatorPose} from './race-crowd.js?v=studio-5';
+import {animateGallop,dustSample} from './horse-gait.js?v=studio-5';
+import {createHorse} from './horse-model.js?v=studio-5';
+import {createJockey} from './jockey-model.js?v=studio-5';
+import {signaturePose} from './race-signature.js?v=studio-5';
+import {styleColors,paintSilks} from './horse-style.js?v=studio-5';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
 import * as T from './vendor/three.module.min.js';
-import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=studio-4';
+import {sculptGeometry,enhanceTrack,mergeRigidParts} from './race-visuals.js?v=studio-5';
 import {randomSource,raceSeed,motionProfile,racePlan,plannedProgress,spectatorProfile} from './race-motion.js?v=32.1.39';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const smooth=x=>x*x*(3-2*x);
@@ -26,7 +26,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
   let renderScale=Math.min(devicePixelRatio||1,mobile?1.25:1.75);
   renderer.setPixelRatio(renderScale);
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
-  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.94;
+  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
   const canvas=renderer.domElement;canvas.setAttribute('aria-label','Corsa 3D: animazione della classifica ultime 5, con pari merito');host.appendChild(canvas);
   const scene=new T.Scene(),night=['night','stadium'].includes(profile.lighting);
   const sunset=profile.lighting==='sunset';
@@ -48,7 +48,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
     return mesh(p,geo(new T.PlaneGeometry(...size)),mat('#ffffff',{map,roughness:1}),[0,0,0]);
   }
   scene.add(new T.HemisphereLight(night?'#9ec4ff':'#edf5ff','#554934',night?1.5:1.9));
-  const sun=new T.DirectionalLight(night?'#bbd6ff':sunset?'#ffc286':'#ffe4ba',night?2.5:3);sun.position.set(-15,24,18);sun.castShadow=true;sun.shadow.mapSize.set(matchMedia('(pointer: coarse)').matches?1024:2048,matchMedia('(pointer: coarse)').matches?1024:2048);Object.assign(sun.shadow.camera,{left:-28,right:28,top:20,bottom:-20,near:1,far:90});sun.shadow.normalBias=.018;sun.shadow.bias=-.00015;scene.add(sun,sun.target);
+  const sun=new T.DirectionalLight(night?'#bbd6ff':sunset?'#ffc286':'#fff0d6',night?2.5:3);sun.position.set(-15,24,18);sun.castShadow=true;sun.shadow.mapSize.set(matchMedia('(pointer: coarse)').matches?1024:2048,matchMedia('(pointer: coarse)').matches?1024:2048);Object.assign(sun.shadow.camera,{left:-28,right:28,top:20,bottom:-20,near:1,far:90});sun.shadow.normalBias=.018;sun.shadow.bias=-.00015;scene.add(sun,sun.target);
   const rim=new T.DirectionalLight('#d3e7ef',.75);rim.position.set(10,9,-18);scene.add(rim);
   cube(scene,mats.grass,[35,-.25,0],[220,.4,130]);
   const dirtMap=texture((c,w,h)=>{c.fillStyle='#b19676';c.fillRect(0,0,w,h);let seed=24;for(let i=0;i<18000;i++){seed=(seed*1664525+1013904223)>>>0;const x=seed%w;seed=(seed*1664525+1013904223)>>>0;const y=seed%h;c.fillStyle=i%2?'#8e765b':'#c0a480';c.fillRect(x,y,1+(i%3),1)}},512,512);dirtMap.wrapS=dirtMap.wrapT=T.RepeatWrapping;dirtMap.repeat.set(24,3);mats.dirt.map=dirtMap;mats.dirt.color.set('#ddcfb9');
@@ -57,7 +57,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
   for(const z of [-trackHalf-.5,trackHalf+.5]){cube(scene,mats.white,[35,1.15,z],[160,.13,.13]);cube(scene,mats.white,[35,.68,z],[160,.08,.08]);for(let x=-42;x<118;x+=4)cube(scene,mats.white,[x,.56,z],[.13,1.15,.14])}
   for(let x=-10;x<106;x+=18){const b=sign('SISAL FC 2021',512,128,scene,[7,1.4]);b.position.set(x,.85,-7.3)}
   // Grandstand: real stepped volumes, seats and architectural canopy.
-  const seatMats=['#345e58','#688d80','#bdad89'].map(x=>mat(x));
+  const seatMats=['#207653','#42946d','#c6ba97'].map(x=>mat(x));
   for(let row=0;row<5;row++){cube(scene,mats.dark,[36,row*.65, -13-row*1.35],[105,.65,1.8]);for(let i=0;i<68;i++)cube(scene,seatMats[(i+row)%3],[-15+i*1.5,.6+row*.65,-13-row*1.35],[.8,.45,.65])}
   cube(scene,mats.dark,[36,6.4,-16],[110,.28,10]);for(let x=-14;x<90;x+=12)link(scene,mats.metal,[x,0,-20],[x,6.4,-20],.15);
   const banner=sign('S I S A L   /   R A C I N G   C L U B',1024,128,scene,[40,1.9]);banner.position.set(30,4.9,-11.8);
@@ -128,7 +128,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 Â
   for(let z=-Math.floor(trackHalf);z<=Math.floor(trackHalf);z++)for(let a=0;a<2;a++)cube(scene,(z+a)%2?mats.white:mats.black,[48+a*.45,.055,z],[.45,.025,1]);
   for(const z of [-trackHalf-1,trackHalf+1])cube(scene,z>0?mat('#182b2a',{transparent:true,opacity:.25,depthWrite:false}):mats.dark,[49,3.7,z],[.45,7.4,.45]);
   cube(scene,mats.dark,[49,7.3,0],[.55,.65,trackHalf*2+2.5]);
-  const finish=sign('FINISH',512,128,scene,[5,1.2]);finish.rotation.y=-Math.PI/2;finish.position.set(48.65,7.15,0);
+  const finish=sign('SISAL Â· ARRIVO',512,128,scene,[5,1.2]);finish.rotation.y=-Math.PI/2;finish.position.set(48.65,7.15,0);
   const contactMap=texture((c,w,h)=>{const g=c.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);g.addColorStop(0,'rgba(10,16,11,.4)');g.addColorStop(.45,'rgba(10,16,11,.23)');g.addColorStop(1,'rgba(10,16,11,0)');c.fillStyle=g;c.fillRect(0,0,w,h)},128,128);
   const contactMaterial=new T.MeshBasicMaterial({map:contactMap,transparent:true,opacity:.7,depthWrite:false});resources.add(contactMaterial);
   function horse(entry,index){

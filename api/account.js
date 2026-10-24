@@ -1,3 +1,4 @@
+import {arenaState} from '../lib/arena.js';
 import {rpc} from '../lib/supabase.js';
 import {timingSafeEqual} from 'node:crypto';
 import {accountRpc,hashPassword,verifyPassword,hashToken,token,cookie,sessionHash,requireAccount,sameOrigin,limit,roster,fail,errorResponse} from '../lib/accounts.js';
@@ -11,6 +12,7 @@ export async function GET(req){try{
   const taken=new Set([...d.accounts.map(x=>x.key),...await rpc('sisal_excluded_keys',{})]);
   return ok({ok:true,hasOwner:d.hasOwner,register:r.players.filter(x=>!taken.has(x.key)),login:d.accounts.filter(x=>x.status==='active'),rosterAvailable:r.available});
  }
+ if(action==='arena')return ok(await arenaState(sessionHash(req)));
  const user=await requireAccount(req);
  if(action==='me')return ok({ok:true,user});
  if(action==='appearances')return ok({ok:true,styles:await accountRpc('appearances',{},sessionHash(req)),excluded:await accountRpc('lineup_exclusions',{},sessionHash(req))});
@@ -40,11 +42,12 @@ export async function POST(req){try{
  if(action==='logout'||action==='logout_all'){await accountRpc(action,{},session);return ok({ok:true},'');}
  if(action==='appearance'){const appearance=validateStyle({...user.appearance,...p.appearance});if(!Number.isInteger(p.revision))throw fail('CONFLICT');return ok({ok:true,user:await accountRpc(action,{appearance,revision:p.revision},session)});}
  // All credential/role changes need the acting user's password, not a remembered cookie alone.
- if(['password','approve','reject','suspend','reactivate','promote','demote','reset_token','import_token','revoke_import','delete_account','allow_registration'].includes(action)){
+ if(['password','approve','reject','suspend','reactivate','promote','demote','reset_token','import_token','revoke_import','delete_account','allow_registration','arena_keeper'].includes(action)){
   await limit(req,'sensitive',user.id);
   const c=await accountRpc('credentials',{key:user.player_key});if(!await verifyPassword(p.currentPassword,c?.hash))throw fail('RECENT_LOGIN');
   if(action==='password'){await accountRpc('password',{version:c.version,hash:await hashPassword(p.password)},session);return ok({ok:true},'');}
   if(!user.is_admin)throw fail('FORBIDDEN');
+  if(action==='arena_keeper')return ok(await rpc('sisal_arena',{p_action:'keeper',p_session:session,p:{key:nameKey(p.key)}}));
   const value=token();const params={id:p.id,key:nameKey(p.key),token:hashToken(value)};
   const result=await accountRpc(action,params,session);
   return ok({...result,...(['reset_token','import_token'].includes(action)?{token:value}:{})});

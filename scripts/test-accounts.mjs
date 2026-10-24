@@ -14,6 +14,8 @@ const db=new PGlite();await db.exec('create role anon;create role authenticated;
 await db.exec(await fs.readFile(new URL('../setup/01-database.sql',import.meta.url),'utf8'));
 const sql=await fs.readFile(new URL('../setup/accounts/01-accounts.sql',import.meta.url),'utf8');await db.exec(sql);await db.exec(sql);
 await db.exec(await fs.readFile(new URL('../setup/08-club-editorial.sql',import.meta.url),'utf8'));
+await db.exec(await fs.readFile(new URL('./fixtures/accounts-v12.sql',import.meta.url),'utf8'));
+await db.exec(await fs.readFile(new URL('../setup/13-sisal-arena.sql',import.meta.url),'utf8'));
 process.env.SUPABASE_URL='https://local.supabase.co';process.env.SUPABASE_SECRET_KEY='test-key';process.env.SISAL_BOOTSTRAP_SECRET='a'.repeat(40);
 globalThis.fetch=async(input,options)=>{const url=new URL(input);assert.equal(url.hostname,'local.supabase.co');const name=url.pathname.split('/').at(-1);assert(url.pathname.startsWith('/rest/v1/rpc/'));const p=JSON.parse(options.body);try{
  const keys=Object.keys(p);const r=await db.query(`select ${name}(${keys.map((k,i)=>k+' => $'+(i+1)).join(',')}) as value`,Object.values(p));return Response.json(r.rows[0].value);
@@ -43,9 +45,9 @@ const member=(await req({action:'login',key:'compagno_a',password})).cookie;cons
 check(member!==member2,'independent PC phone sessions');
 check((await req(null,{method:'GET',action:'admin',cookie:member})).r.status===403,'member cannot admin');
 check((await req({action:'promote',id:aid,currentPassword:password},{cookie:member})).r.status===403,'cannot self promote');
-const app={...DEFAULT,coat:'black',pattern:'chevron',silk:'burgundy',marking:'star'};
+const app={...DEFAULT,coat:'black',helmetVisible:'off',pattern:'chevron',silk:'burgundy',marking:'star'};
 check((await req({action:'appearance',appearance:app,revision:1},{cookie:member})).data.user.appearance.coat==='black','save cosmetic');
-check((await req(null,{method:'GET',action:'me',cookie:member2})).data.user.appearance.pattern==='chevron','cross device appearance');
+check((await req(null,{method:'GET',action:'me',cookie:member2})).data.user.appearance.pattern==='chevron'&& (await req(null,{method:'GET',action:'me',cookie:member2})).data.user.appearance.helmetVisible==='off','cross device appearance');
 check((await req({action:'appearance',appearance:app,revision:1},{cookie:member2})).r.status===409,'stale save conflict');
 check((await req({action:'appearance',appearance:{...app,speed:999},revision:2},{cookie:member})).data.code==='INVALID_STYLE','reject gameplay modifications');
 check((await req({action:'logout'},{cookie:member,originHeader:'https://evil.example'})).r.status===403,'csrf denied');

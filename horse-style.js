@@ -10,6 +10,7 @@ export const OPTIONS={...FACE_OPTIONS,
  accent:{ivory:['Avorio','#f0e8d5'],gold:['Oro','#dfbc69'],green:['Verde','#23845a'],black:['Nero','#212b27']},
  pattern:{diamonds:['Losanghe'],hoops:['Fasce orizzontali'],sash:['Fascia diagonale'],stripes:['Righe'],chevron:['Chevron'],plain:['Tinta unita']},
  saddle:{brown:['Cuoio','#66432b'],black:['Nero','#252323'],tan:['Miele','#ac7a47']},
+ helmetVisible:{on:['Con casco'],off:['Senza casco']},
  helmet:{matching:['Coordinato'],black:['Nero'],ivory:['Avorio']},
  cloth:{matching:['Coordinato'],forest:['Verde bosco','#104c38'],navy:['Blu notte','#192d49'],ivory:['Avorio','#e6ddca'],wine:['Bordeaux','#642936']},
  trim:{gold:['Ottone','#d4b473'],silver:['Acciaio','#c3cbd0'],dark:['Brunito','#565c59']},
@@ -18,7 +19,7 @@ export const OPTIONS={...FACE_OPTIONS,
  breeches:{ivory:['Avorio','#e6ddca'],white:['Bianco','#f2f0e9'],grey:['Grigio perla','#aeb6b2']}
 
 };
-export const DEFAULT={...FACE_DEFAULT,entrance:'salute',celebration:'salute',introduction:'on',nickname:'',coat:'bay',mane:'dark',silk:'green',accent:'ivory',pattern:'sash',saddle:'brown',helmet:'matching',cloth:'matching',trim:'gold',socks:'none',gloves:'black',breeches:'ivory',number:''};
+export const DEFAULT={...FACE_DEFAULT,entrance:'salute',celebration:'salute',introduction:'on',nickname:'',coat:'bay',mane:'dark',silk:'green',accent:'ivory',pattern:'sash',saddle:'brown',helmet:'matching',helmetVisible:'on',cloth:'matching',trim:'gold',socks:'none',gloves:'black',breeches:'ivory',number:''};
 export const nameKey=v=>String(v??'').normalize('NFKC').replace(/\s+/g,' ').trim().toLowerCase();
 // Legacy marking values are accepted but discarded: no face marking is rendered or saved.
 export function validateStyle(input){

@@ -1,0 +1,72 @@
+/* Sisal Club / Emerald edition. Last layer over the existing functional UI. */
+:root{
+ --bg:#06130f;--panel:#10291f;--panel2:#153328;--line:#335448;
+ --text:#f0f7f1;--muted:#afc4b8;--green:#5de69c;--green2:#1cb873;--green3:#a4efbf;
+ --gold:#e4c883;--studio-ink:#f0f7f1;--studio-muted:#b2c9bb;
+ --club-border:rgba(153,205,174,.19);--club-shadow:0 14px 40px #0003;
+ color-scheme:dark;
+}
+html{scroll-padding-top:116px;scroll-padding-bottom:96px}
+body{background:#06130f;background-image:radial-gradient(ellipse at 8% 0%,#16523a66,transparent 46%),radial-gradient(ellipse at 95% 35%,#14403c35,transparent 50%);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+body:before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(112deg,transparent 44%,#59db9510 44.1%,transparent 44.3%),linear-gradient(0deg,#80bd9822 1px,transparent 1px);background-size:auto,100% 96px;mask-image:linear-gradient(#0008,transparent 75%)}
+.app{width:min(1240px,100%);padding:18px 22px 112px}
+.topbar{gap:12px;padding:12px 0 18px;background:linear-gradient(#06130ff7 65%,#06130f00);backdrop-filter:blur(12px);align-items:center;isolation:isolate}
+.topbar>div:first-child{min-width:0;flex:1}.topbar .club-brand{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:5px;min-height:62px;width:fit-content;cursor:pointer;border-radius:10px;outline-offset:5px;transition:filter .2s}
+.topbar .club-brand img{max-height:58px;width:min(365px,100%);filter:none}.club-brand:focus-visible{outline:2px solid var(--green)}.club-brand:hover{filter:brightness(1.12)}
+.club-arena-cue{display:inline-flex;align-items:center;gap:7px;font:750 9px/1.2 system-ui;letter-spacing:.18em;color:#a5dfba;padding:2px 1px}.club-arena-cue>span{font-size:14px;letter-spacing:0}.club-arena-cue i{width:5px;height:5px;border-radius:50%;background:#65e49e;box-shadow:0 0 9px #6df0a94d}
+.status{font-size:11px;line-height:1.5;color:#a4bbae;margin-top:5px;overflow-wrap:anywhere}.club-id{border:1px solid var(--club-border);background:#142e23;box-shadow:none;border-radius:9px;color:#cde4d5}
+.topbar .ac-account-button,.topbar .club-bell{border:1px solid var(--club-border);background:#153428;color:#dfede3;min-height:44px;box-shadow:0 4px 12px #0002;border-radius:10px;font-size:11px;white-space:nowrap}
+.topbar .club-bell b{border:2px solid #122b20;background:#5de69c;color:#062314;font-variant-numeric:tabular-nums}
+:where(.btn,.ac button,.club-bell,.ac-account-button,.club-notifications button,.paper-reader button){transition:background-color .18s,border-color .18s,box-shadow .18s,transform .18s}
+:where(button,a,input,select,textarea):focus-visible{outline:2px solid #8af1b6;outline-offset:3px}
+:where(input,select,textarea){accent-color:#51df91}
+.btn{border-radius:9px;border-color:#365e49;min-height:42px}.btn:not(.ghost):not(.danger){background:linear-gradient(145deg,#4ddd92,#27b971);color:#062619;text-shadow:none;box-shadow:0 4px 15px #29c1771c}
+.btn.ghost{background:#163428;color:#d2e7d9;border:1px solid #476b563d;box-shadow:none}.btn:hover{filter:brightness(1.07)}
+:where(.card,.section-card,.player-profile-section){border:1px solid var(--club-border);border-radius:16px;background:linear-gradient(140deg,#122e23,#0c241b);box-shadow:var(--club-shadow);overflow-wrap:anywhere}
+.card{padding:20px}.card:has(>.table-wrap){padding-bottom:12px}
+:where(h2,h3,.table-caption){color:#eaf7ed;letter-spacing:-.025em}.kicker,.eyebrow{color:#82dcaa;letter-spacing:.17em}
+:where(.section-head,.card-head){gap:12px;align-items:center;border-bottom-color:var(--club-border)}
+:where(.section-head h2,.card h2){font-weight:800;font-size:clamp(20px,3.6vw,29px);line-height:1.15}
+.stat{background:#183b2b80;border:1px solid #628c6c30;border-radius:12px;box-shadow:inset 0 1px 0 #b5edc00d}
+.stat>strong{color:#f1f9ed;letter-spacing:-.045em;font-variant-numeric:tabular-nums;line-height:1.12}.stat>span,.stat>small{color:#b1cbbc;font-weight:600}
+.table-wrap{border:1px solid #426c513b;border-radius:12px;background:#092318;scrollbar-color:#4e785c #0b271c;scrollbar-width:thin}
+table{font-variant-numeric:tabular-nums}thead th{background:#17382a;color:#c3ddcc;border-bottom:1px solid #446b5259;letter-spacing:.025em;font-weight:750}
+tbody td{border-bottom-color:#33523d52}tbody tr:nth-child(2n){background:#9fdbad04}tbody tr:hover{background:#8bddb310}
+:where([data-player],.player-link){color:#e1f4e6;text-underline-offset:4px}.studio-row-selected{background:#5de69c12!important;box-shadow:inset 3px 0 #65dfa0}
+:where(.rank-row,.match-card){border-color:#315c474d;border-radius:12px;background:linear-gradient(100deg,#193d2b99,#102e22);box-shadow:0 5px 16px #0002}
+.score-grid .score-big{font-weight:850;letter-spacing:-.07em;color:#e5f7e9;text-shadow:none}.score-grid{gap:16px}.score-grid .score-box{border-radius:15px;background:#133527;border-color:#64856844}
+:where(.chip,.badge,.pill){border-radius:7px;letter-spacing:.015em}.pitch{border-color:#94c49d88;background-color:#1d673c;box-shadow:0 10px 0 #062d1b,0 20px 38px #0004}.pitch .dot{box-shadow:0 6px 12px #0006,0 1px 0 #efffce66 inset}
+/* The navigation stays anchored; its indicator moves without moving the labels. */
+.bottomnav{bottom:max(12px,env(safe-area-inset-bottom));left:50%;right:auto;transform:translateX(-50%);width:min(1170px,calc(100% - 28px));padding:6px;border:1px solid #6897785c;border-radius:17px;background:#0e2a20f5;box-shadow:0 12px 36px #0009,inset 0 1px 0 #b3d8bf12;backdrop-filter:blur(16px);gap:3px;scrollbar-width:none}
+.bottomnav button{min-height:54px;border-radius:11px;color:#a9c4b3;font-weight:650;flex:1 0 auto;padding:7px 13px}.bottomnav button.active{color:#a6f5c8;background:transparent;text-shadow:none}.bottomnav .sisal-nav-icon{stroke-width:1.6;width:21px;height:21px}.studio-nav-indicator{border:1px solid #5adc8f55;background:linear-gradient(145deg,#43da8b28,#3a9b6712);border-radius:11px}
+/* Editorial content retains a newspaper hierarchy and large readable body text. */
+.news-section,.news-feed{border-color:var(--club-border)}.news-article{border-color:#6a966b44;background:linear-gradient(150deg,#163625,#0e291d);box-shadow:var(--club-shadow)}
+.news-article h2,.news-article h3{color:#f1f6e9;letter-spacing:-.025em}.news-article img{border-radius:8px}.paper-reader{border-color:#77936c66;box-shadow:0 25px 70px #0005}.paper-reader [data-portrait-image]{filter:contrast(1.02) saturate(.96)}
+.club-notifications{border:1px solid #53765f70;background:#0e291e;box-shadow:0 20px 85px #0009;border-radius:17px}.club-notifications>header{background:linear-gradient(130deg,#17432f,#102b20);border-bottom:1px solid #6b98764d}.club-notifications .notice-symbol{border-radius:10px;background:#1e4932;color:#b7f1c4}.club-notifications .unread{background:#38765019}.club-notifications .notice-copy strong{font-weight:650;line-height:1.35}.club-notice-tools{border-color:var(--club-border)}
+.club-notifications [data-event]{transition:background .15s}.club-notifications [data-event]:hover{background:#4ac28319}.club-notifications .notice-arrow{color:#69d696}
+/* Personal studio: fixed preview + independently scrolling options preserved. */
+#ac-panel{background:#0b2319;border:1px solid #527a5d;border-radius:18px;box-shadow:0 22px 90px #000a}.ac-bar{background:linear-gradient(110deg,#1b4831,#0c281c);border-color:#678b6155}.ac-hero h2{color:#f0f7ed;letter-spacing:-.04em}.ac-kicker{color:#9ad8aa}
+.ac-tabs{border-bottom-color:#43694c55}.ac-tabs button[aria-selected=true]{color:#aaf5c4;border-color:#6bdf99;background:#2b74422b}.ac-primary{background:linear-gradient(130deg,#50dd91,#27b775);color:#062718;border-color:#88e4a659}.ac-part-tabs{background:#0c2419;border-color:#446a4d}.ac-part-tabs button[aria-pressed=true],.ac-face-tabs button[aria-pressed=true]{background:#2d6640;color:#e5f9e8;border-color:#84bc8d}.ac-style-group{border-color:#587c5744}.ac-style-field label{font-size:12px;font-weight:650;color:#cedfca}.ac-style-field select{background:#153321;border-color:#5b7c5359;border-radius:8px;min-height:42px}.ac-swatches button[aria-pressed=true]{outline:2px solid #c2ebbd;outline-offset:2px}.ac-save-bar{background:#102a1ef7;border-top:1px solid #72956a4d}
+.ac-identity{letter-spacing:.02em}.studio-host{border:1px solid #456e5355;background:#122d22}.studio-host .studio-caption{background:#173628;color:#d7e9d4}.studio-host .studio-toolbar{background:#0c241b;border-color:#6e906155}.studio-toolbar button{border-radius:7px}.ac-login{box-shadow:0 26px 90px #0005}.ac-logo{animation:club-logo-arrive 1s ease-out both}
+/* Race broadcast panel is separate from the camera viewport: no names over faces. */
+.sr-host{border:1px solid #69897066;border-radius:17px;box-shadow:0 22px 60px #0007;background:#0c251c}.sr-host .sr-overlay{background:linear-gradient(#092c3b40,transparent 13%,transparent calc(100% - var(--race-panel,140px)),#09271c calc(100% - var(--race-panel,140px)))}
+.sr-host .sr-broadcast{background:#092a22bc;border:1px solid #7acfaa33;border-radius:7px;padding:6px 9px;backdrop-filter:blur(5px);letter-spacing:.12em}.sr-host .sr-broadcast span{color:#bcf2ce}.sr-host .sr-broadcast b{color:#b6d0c1}
+.sr-host .sr-controls button{background:#184532;color:#e6f5e7;border:1px solid #61937166;border-radius:8px}.sr-host .sr-controls button[data-skip]{background:#25432b}.sr-host .sr-intro small:first-child{color:#95eeb8}.sr-host .sr-intro strong{color:#f0f8ed}.sr-host .sr-meter{background:#3e665244}.sr-host .sr-meter i{background:linear-gradient(90deg,#36cd84,#b9ed98);box-shadow:0 0 10px #7edb8d33}.sr-host .sr-name-tag{box-shadow:0 3px 12px #0003;border-radius:5px}
+.sisal-float{opacity:.035!important}.sisal-atmosphere{filter:none}.decor .orb{opacity:.16;filter:blur(50px)}
+.footer{color:#8eaa98;font-size:11px;line-height:1.6;padding-top:22px}
+@keyframes club-logo-arrive{from{opacity:.3;transform:translateY(5px)}to{opacity:1;transform:none}}
+html.club-page-hidden .sisal-atmosphere *,html.club-page-hidden .decor *,.sisal-ambient-paused .sisal-atmosphere *{animation-play-state:paused!important}
+@media(min-width:901px){.topbar .club-brand img{width:350px}.topbar .club-id{margin-left:14px}.topbar .club-bell{padding:8px 12px}.bottomnav button span{font-size:11px}}
+@media(max-width:650px){
+ .app{padding:7px 11px 105px}.topbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;padding:10px 0 13px}
+ .topbar>div:first-child{grid-column:1/-1;grid-row:1;min-width:0}.topbar .club-brand{min-height:57px}.topbar .club-brand img{max-height:49px;width:min(330px,87vw)}
+ .topbar .club-id{grid-column:1;grid-row:2;justify-self:start;padding:8px;font-size:9px}.topbar .ac-account-button{grid-column:2;grid-row:2;padding:8px 11px}.topbar .club-bell{grid-column:3;grid-row:2;width:44px;padding:8px;justify-content:center}.topbar .club-bell>span{display:none}
+ .status{font-size:10px;max-width:100%;margin-top:4px}.club-arena-cue{font-size:8px;letter-spacing:.16em}
+ .card{padding:15px;border-radius:13px}.stat{border-radius:10px}.bottomnav{width:calc(100% - 14px);bottom:max(7px,env(safe-area-inset-bottom));padding:5px;border-radius:14px;gap:1px}.bottomnav button{padding:6px 12px;min-height:52px;flex:0 0 auto;min-width:64px}.bottomnav button span{font-size:10px}
+ .table-wrap{border-radius:9px}th,td{padding-top:11px;padding-bottom:11px}.section-head h2{font-size:21px}.studio-new-notice{top:165px}
+ #ac-panel{border-radius:12px}.ac-style-field label{font-size:11px}.ac-style-field select{min-height:40px}.ac-options{gap:13px 10px}
+ .sr-host{border-radius:12px}.sr-host .sr-broadcast{font-size:8px;padding:5px 7px}.sr-host .sr-controls{gap:5px}.sr-host .sr-controls button{padding:7px!important}
+}
+@media(max-height:560px) and (orientation:landscape){.topbar{position:relative}.topbar .club-brand img{max-height:40px}.topbar .status{display:none}.bottomnav button{min-height:42px}.bottomnav .sisal-nav-icon{height:17px}.sr-host .sr-broadcast{top:6px}}
+@media(prefers-reduced-motion:reduce){.ac-logo{animation:none}.club-brand,.btn,.ac button,.club-bell{transition:none}.decor .orb{translate:0 0}html{scroll-behavior:auto}.sisal-atmosphere{display:none}}
+@media print{body{background:white;color:black}body:before,.club-arena-cue{display:none}.card{box-shadow:none}.topbar{position:static;backdrop-filter:none}.bottomnav{display:none}}

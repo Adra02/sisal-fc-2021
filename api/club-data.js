@@ -1,7 +1,7 @@
 import {publishPaper} from '../lib/paper-job.js';
 import {requireAccount,errorResponse} from '../lib/accounts.js';
 import { withStoreRequest } from '../lib/shared-store.js';
-import { buildTeam, parseJsonText, normalizePlayersFile, normalizeMatchesFile, detectDataFile, extractHistoricalTotals } from '../lib/data-pipeline.js';
+import { buildTeam, parseJsonText, normalizePlayersFile, normalizeMatchesFile, detectDataFile, extractHistoricalTotals, resolveStoredTotals } from '../lib/data-pipeline.js';
 import { CATEGORIES, ROLES, assertCategory, assertRole, hasStorageConfig, readAllFiles, writeFile, deleteRole, readRoleTotals, writeRoleTotals, readRoleMemory, writeRoleMemory } from '../lib/shared-store.js';
 import { importTrackerTotals, validateTotals, normalizeTrackerUrl } from '../lib/tracker-import.js';
 import { recognizeDataFile } from '../lib/file-ai-recognizer.js';
@@ -21,59 +21,6 @@ function latestUpdatedAt(files) {
     .map(f => f?.uploadedAt)
     .filter(Boolean)
     .sort((a, b) => Date.parse(b) - Date.parse(a))[0] || null;
-}
-
-async function repairMissingClubProfiles(role, files) {
-  const apiKey = String(process.env.GEMINI_API_KEY || '').trim();
-  if (!apiKey) return false;
-
-  const categories = ['totals', 'season'];
-  let repaired = false;
-
-  for (const category of categories) {
-    const fileRecord = files?.[category];
-
-    if (!fileRecord?.raw || fileRecord?.aiRecognition?.profileFields) continue;
-
-    try {
-      const aiRecognition = await recognizeDataFile(apiKey, {
-        fileName: String(fileRecord.fileName || `${category}.json`),
-        raw: fileRecord.raw,
-        knownCategory: category,
-        knownSignature: fileRecord.detected?.signature || null
-      });
-
-      const profileFields = aiRecognition?.profileFields;
-
-      if (
-        !profileFields ||
-        typeof profileFields !== 'object' ||
-        !Object.keys(profileFields).length
-      ) {
-        continue;
-      }
-
-      await writeFile({
-        role,
-        category,
-        payload: {
-          ...fileRecord,
-          aiRecognition: {
-            ...(fileRecord.aiRecognition || {}),
-            ...aiRecognition,
-            category,
-            profileFields
-          }
-        }
-      });
-
-      repaired = true;
-    } catch {
-      // The deterministic parser remains the source of truth when Gemini is unavailable.
-    }
-  }
-
-  return repaired;
 }
 
 /**
@@ -99,27 +46,8 @@ async function loadTeam(role, { fresh = false } = {}) {
     role
   });
 
-  // V32.1.3: if the JSON is present but the club-profile block could not be read,
-  // ask the already integrated Gemini recognizer to recover only explicit source fields.
-  // It runs only once per file because the recovered profileFields are saved back to database.
-  if (await repairMissingClubProfiles(role, files)) {
-    // A file has just been overwritten, therefore this read must bypass the cache.
-    files = await readAllFiles(role, { fresh: true });
-
-    team = buildTeam({
-      fileRecords: files,
-      role
-    });
-  }
-
-  const autoTotals = team.autoTotals?.totals ? team.autoTotals : null;
-  const storedTime = storedTotals?.updatedAt ? Date.parse(storedTotals.updatedAt) : 0;
-  const autoTime = autoTotals?.updatedAt ? Date.parse(autoTotals.updatedAt) : 0;
-
-  const manualTotals =
-    autoTotals && autoTime >= storedTime
-      ? autoTotals
-      : (storedTotals?.totals ? storedTotals : null);
+  // Read-only reconciliation: never consume AI quota or rewrite source files on page open.
+  const manualTotals = resolveStoredTotals(team, storedTotals);
 
   const trackerUrl = storedTotals?.url || null;
 
@@ -635,7 +563,7 @@ async function handlePOST(request, actor) {
       process.env.GEMINI_API_KEY || ''
     ).trim();
 
-    if (geminiKey) {
+    if (geminiKey && detected.confidence!=='exact') {
       try {
         aiRecognition = await recognizeDataFile(
           geminiKey,
@@ -755,8 +683,8 @@ async function handlePOST(request, actor) {
 
     if (category === 'totals') {
       const aiTotals =
-        aiRecognition?.totals ||
         extractHistoricalTotals(raw)?.totals ||
+        aiRecognition?.totals ||
         null;
 
       if (aiTotals) {
@@ -785,28 +713,7 @@ async function handlePOST(request, actor) {
       payload
     });
 
-    if (
-      !requestedCategory &&
-      Array.isArray(detected?.mirrorCategories)
-    ) {
-      for (const mirrorCategory of detected.mirrorCategories) {
-        if (mirrorCategory === category) continue;
 
-        const mirrorPayload = {
-          ...payload,
-          category: mirrorCategory,
-          autoMirror: true,
-          sourceCategory: category,
-          mirroredAt: new Date().toISOString()
-        };
-
-        await writeFile({
-          role,
-          category: mirrorCategory,
-          payload: mirrorPayload
-        });
-      }
-    }
 
     // Uno o più file sono appena stati scritti.
     // Una sola lettura fresh ricostruisce tutta la squadra aggiornata.
