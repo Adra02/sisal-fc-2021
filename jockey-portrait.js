@@ -1,8 +1,8 @@
-import {environmentTexture} from './studio-materials.js?v=studio-7';
+import {environmentTexture} from './studio-materials.js?v=studio-8';
 import * as T from './vendor/three.module.min.js';
-import {createJockey} from './jockey-model.js?v=studio-7';
-import {styleColors,paintSilks,nameKey} from './horse-style.js?v=studio-7';
-import {disposeTree} from './studio-geometry.js?v=studio-7';
+import {createJockey} from './jockey-model.js?v=studio-8';
+import {styleColors,paintSilks,nameKey} from './horse-style.js?v=studio-8';
+import {disposeTree} from './studio-geometry.js?v=studio-8';
 const cache=new Map();
 export function portraitImage(subject,options={}){
  if(!subject||nameKey(subject.name)!==subject.key)return null;

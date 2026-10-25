@@ -4,12 +4,12 @@ export function arenaAudio(){
  async function toggle(){enabled=!enabled;if(enabled){const AC=globalThis.AudioContext||globalThis.webkitAudioContext;if(!AC){enabled=false;return false}ctx ||= new AC();await ctx.resume();}else stop();return enabled}
  function play(type,distance=8){
   if(!enabled||!ctx||ctx.state!=='running')return;
-  const at=ctx.currentTime,gain=ctx.createGain(),vol=Math.min(.12,1/(12+distance*2)),duration=type==='metal'?.55:type==='net'?.14:.08;
+  const at=ctx.currentTime,gain=ctx.createGain(),vol=Math.min(.12,1/(12+distance*2)),duration=type==='metal'?.55:type==='whistle'?.19:type==='net'?.14:.08;
   gain.gain.setValueAtTime(vol,at);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);gain.connect(ctx.destination);
   let source;
-  if(type==='metal'){source=ctx.createOscillator();source.frequency.setValueAtTime(480,at);source.frequency.exponentialRampToValueAtTime(310,at+.3);}
+  if(type==='metal'||type==='whistle'){source=ctx.createOscillator();source.frequency.setValueAtTime(type==='whistle'?2200:480,at);source.frequency.exponentialRampToValueAtTime(type==='whistle'?1900:310,at+duration*.7);}
   else{const buffer=ctx.createBuffer(1,Math.ceil(ctx.sampleRate*duration),ctx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);source=ctx.createBufferSource();source.buffer=buffer;const filter=ctx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=type==='kick'?150:type==='touch'?220:type==='plastic'?1400:800;source.connect(filter);filter.connect(gain);}
-  if(type==='metal')source.connect(gain);nodes.add(source);source.onended=()=>{nodes.delete(source);source.disconnect();gain.disconnect()};source.start(at);source.stop(at+duration+.01);
+  if(type==='metal'||type==='whistle')source.connect(gain);nodes.add(source);source.onended=()=>{nodes.delete(source);source.disconnect();gain.disconnect()};source.start(at);source.stop(at+duration+.01);
  }
  function update(frame,camera,delta){
   if(!enabled||delta>.25)return;

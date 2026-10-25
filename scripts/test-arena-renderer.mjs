@@ -13,7 +13,7 @@ globalThis.__Renderer=class{constructor(){this.domElement=document.createElement
 let source=await fs.readFile('arena-renderer.js','utf8');
 source=source.replace("import * as T from './vendor/three.module.min.js';", "import * as Three from '"+new URL('../vendor/three.module.min.js',import.meta.url).href+"';const T={...Three,WebGLRenderer:globalThis.__Renderer};");
 let forcedScene=null;globalThis.__arenaSample=(s,t)=>sampleArena(s,t,forcedScene);
-source=source.replace("import {sampleArena} from './arena-simulation.js?v=arena-4';","const sampleArena=globalThis.__arenaSample;");
+source=source.replace("import {sampleArena} from './arena-simulation.js?v=arena-5';","const sampleArena=globalThis.__arenaSample;");
 source=source.replace(/from '(\.\/[^']+)'/g,(_,p)=>"from '"+new URL('../'+p.slice(2),import.meta.url).href+"'");
 const {createArenaRenderer}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 const host=document.getElementById('host');let now=1730,caption;const engine=createArenaRenderer(host,{players:Array.from({length:8},(_,i)=>({key:'p'+i,name:'P'+i,appearance:{}})),keeper:null},{clock:()=>now,onFrame:f=>caption=f});

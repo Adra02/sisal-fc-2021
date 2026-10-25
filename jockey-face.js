@@ -1,9 +1,9 @@
 /* Anatomical head topology and shape deltas: MakeHuman CC0, assets/studio/LICENSES.md. */
 import * as T from './vendor/three.module.min.js';
-import {microTexture,irisTexture,skinDetailTexture} from './studio-materials.js?v=studio-7';
-import {buildGroom,beardCoverage} from './jockey-groom.js?v=studio-7';
-import data from './assets/studio/human-head.js?v=studio-7';
-import {geometry,mesh,tube,material,smooth,surface} from './studio-geometry.js?v=studio-7';
+import {microTexture,irisTexture,skinDetailTexture} from './studio-materials.js?v=studio-8';
+import {buildGroom,beardCoverage} from './jockey-groom.js?v=studio-8';
+import data from './assets/studio/human-head.js?v=studio-8';
+import {geometry,mesh,tube,material,smooth,surface} from './studio-geometry.js?v=studio-8';
 const faceTargets={oval:{'head-oval':.35},round:{'head-round':.7,'head-fat-incr':.15},square:{'head-square':.65},heart:{'head-triangular':.35,'chin-triangle':.35},angular:{'head-diamond':.4,'head-fat-decr':.3},narrow:{'head-scale-horiz-decr':.3}};
 const jawTargets={soft:{},defined:{'chin-bones-incr':.4},square:{'chin-width-incr':.5},tapered:{'chin-triangle':.5}};
 const noseTargets={straight:{},button:{'nose-scale-depth-decr':.4,'nose-point-up':.25},aquiline:{'nose-curve-convex':.5},broad:{'nose-scale-horiz-incr':.4,'nose-width1-incr':.2},rounded:{'nose-scale-horiz-incr':.18,'nose-width1-incr':.22},upturned:{'nose-point-up':.4}};

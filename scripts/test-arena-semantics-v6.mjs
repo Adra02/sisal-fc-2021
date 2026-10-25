@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {SCENES} from '../arena-scenes.js';
 import {FIELD,PAVILION,PROPS,ARENA_BOUNDS,STATIONS} from '../arena-layout.js';
-import {sampleArena,inspectArenaScene,SLOT_SECONDS,EPOCH_MS,sceneAt,episodeAt} from '../arena-simulation.js';
+import {sampleArena,inspectArenaScene,SLOT_SECONDS,EPOCH_MS,sceneAt,episodeAt} from '../arena-drills.js';
 import {dialogueFor} from '../arena-dialogue.js';
 const snapshot={players:Array.from({length:12},(_,i)=>({key:'p'+i,name:'Player '+i,appearance:{celebration:i%2?'bow':'arms'}})),keeper:null};
 assert.equal(SCENES.length,67);assert.equal(new Set(SCENES.map(s=>s.id)).size,67);assert.equal(EPOCH_MS/1000%SLOT_SECONDS,0,'snapshots change at an episode boundary');

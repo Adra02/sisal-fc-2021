@@ -1,4 +1,4 @@
-import {placeLabels,leaderLine} from './scene-labels.js?v=studio-7';
+import {placeLabels,leaderLine} from './scene-labels.js?v=studio-8';
 export function createArenaOverlay(stage,players,{selfKey='',onSelect}={}){
  const layer=document.createElement('div');layer.className='arena-overlay';stage.append(layer);
  const tags=new Map();for(const p of players){
@@ -21,7 +21,7 @@ export function createArenaOverlay(stage,players,{selfKey='',onSelect}={}){
   // Reserve the actual head/body region below each projected head anchor.
   const bodies=anchors.filter(a=>a.visible).map(a=>({x:a.x-12,y:a.y-1,w:24,h:43}));
   const placed=placeLabels(items,{width:w,height:h,top:8,bottom:8,gap:5,obstacles:bodies,previous});
-  for(const [key,tag]of tags){const b=placed.get(key),a=byKey.get(key);tag.node.hidden=tag.line.hidden=!b||b.hidden;if(!b||b.hidden)continue;tag.node.classList.toggle('is-selected',!!a.selected);tag.node.style.transform=`translate(${Math.round(b.x)}px,${Math.round(b.y)}px)`;const l=leaderLine(b,a.x,a.y);tag.line.style.cssText=`left:${l.x}px;top:${l.y}px;width:${l.length}px;transform:rotate(${l.angle}rad)`;}
+  for(const [key,tag]of tags){const b=placed.get(key),a=byKey.get(key);tag.node.hidden=tag.line.hidden=!b||b.hidden;if(!b||b.hidden)continue;tag.node.classList.toggle('is-selected',!!a.selected);if(a.team==null)delete tag.node.dataset.team;else tag.node.dataset.team=String(a.team);tag.node.style.transform=`translate(${Math.round(b.x)}px,${Math.round(b.y)}px)`;const l=leaderLine(b,a.x,a.y);tag.line.style.cssText=`left:${l.x}px;top:${l.y}px;width:${l.length}px;transform:rotate(${l.angle}rad)`;}
   const b=placed.get('speech');bubble.hidden=!dialogueText||!anchor?.visible||!b||b.hidden;tail.hidden=bubble.hidden;tail.toggleAttribute('hidden',tail.hidden);
   if(b&&!b.hidden&&dialogueText){bubble.style.transform=`translate(${Math.round(b.x)}px,${Math.round(b.y)}px)`;bubble.dataset.speaker=d.speaker;if(anchor?.visible){const l=leaderLine(b,anchor.x,anchor.y-5);const px=-Math.sin(l.angle)*5,py=Math.cos(l.angle)*5;tail.setAttribute('viewBox',`0 0 ${w} ${h}`);tailPath.setAttribute('d',`M ${l.x+px} ${l.y+py} L ${anchor.x} ${anchor.y-5} L ${l.x-px} ${l.y-py} Z`);}}
   previous=placed;return {bubbleVisible:!bubble.hidden,speakerVisible:!!anchor?.visible};

@@ -1,9 +1,9 @@
 /* Same saved identity and common proportions as the personal jockey. Locomotion
    is driven by distance along the shared path, with a planted-foot stance. */
 import * as T from './vendor/three.module.min.js';
-import {createJockey} from './jockey-model.js?v=studio-7';
-import {styleColors,paintSilks} from './horse-style.js?v=studio-7';
-import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-7';
+import {createJockey} from './jockey-model.js?v=studio-8';
+import {styleColors,paintSilks} from './horse-style.js?v=studio-8';
+import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-8';
 const clamp=T.MathUtils.clamp,TAU=Math.PI*2,scale=.86;
 const ease=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
 const axis=new T.Vector3(),bend=new T.Vector3();
@@ -12,7 +12,7 @@ export function makeAvatar(player,quality=1){
  const s=styleColors(player.appearance),root=new T.Group();root.name='arena-player-'+(player.key||'');
  const c=document.createElement('canvas');c.width=c.height=256;paintSilks(c.getContext('2d'),256,256,s);const tx=new T.CanvasTexture(c);tx.colorSpace=T.SRGBColorSpace;
  const model=createJockey({custom:s,standing:true,detail:quality ? .65 : .30,silk:material('#fff',{map:tx})});
- const {rider,head,skeleton}=model;rider.scale.setScalar(scale);rider.position.y=.94*scale+.055;root.add(rider);
+ const {rider,head,skeleton,body}=model;const baseSilk=body.material[0].color.clone(),teamColors=[new T.Color('#67b888'),new T.Color('#ecc46d')];let currentTeam=null;rider.scale.setScalar(scale);rider.position.y=.94*scale+.055;root.add(rider);
  const rig=rider.userData.arenaRig;let fullDetail=true;const fibres=[];rider.traverse(o=>{if(o.name.includes('fibres'))fibres.push(o)});
  const stainCanvas=document.createElement('canvas');stainCanvas.width=stainCanvas.height=64;const dc=stainCanvas.getContext('2d');for(let i=0;i<55;i++){dc.fillStyle=`rgba(57,85,32,${.12+(i%4)*.06})`;dc.beginPath();dc.ellipse(32+Math.sin(i*19)*21,32+Math.cos(i*13)*20,2+i%6,1+i%4,i,0,TAU);dc.fill();}
  const stainMap=new T.CanvasTexture(stainCanvas);stainMap.colorSpace=T.SRGBColorSpace;
@@ -20,21 +20,27 @@ export function makeAvatar(player,quality=1){
  const wrist=skeleton.bones.find(b=>b.name==='rWrist'),drink=new T.Group();wrist.add(drink);mesh(drink,new T.CylinderGeometry(.028,.033,.14,12),material('#8dbea2',{roughness:.35}),'arena-water-bottle').position.y=.065;mesh(drink,new T.CylinderGeometry(.016,.016,.02,10),material('#e4eae3'),'bottle-cap').position.y=.145;drink.visible=false;
  const targets={pelvis:[0,0,0],chest:[0,.49,0]};for(const side of ['l','r'])for(const bone of ['Hip','Knee','Ankle','Shoulder','Elbow','Wrist'])targets[side+bone]=[0,0,0];
  const hip=new T.Vector3(),foot=new T.Vector3(),knee=new T.Vector3(),shoulder=new T.Vector3(),hand=new T.Vector3(),elbow=new T.Vector3(),poleLeg=new T.Vector3(),poleArm=new T.Vector3(),baseHand=new T.Vector3();
+ const inverseRoot=new T.Quaternion(),effector=new T.Vector3();
+ function localEffector(world,out){return out.set(...world).sub(root.position).applyQuaternion(inverseRoot).sub(new T.Vector3(0,rider.position.y,0)).divideScalar(scale);}
  let previous=null,previousTime=null,lastFaceTick=-1;
  function update(p,time,dt,velocity){
   const delta=time-(previousTime??time),v=p.velocity||velocity||[delta>0&&delta<.5?(p.pos[0]-(previous?.[0]??p.pos[0]))/delta:0,delta>0&&delta<.5?(p.pos[1]-(previous?.[1]??p.pos[1]))/delta:0];
   const speed=Math.min(7,Math.hypot(...v)),moving=speed>.04,heading=p.heading??Math.atan2(p.look[0]-p.pos[0],p.look[1]-p.pos[1]);
-  root.position.set(p.pos[0],0,p.pos[1]);const targetYaw=heading-Math.PI/2,yaw=previousTime!=null&&delta>0&&delta<.25?root.rotation.y+Math.atan2(Math.sin(targetYaw-root.rotation.y),Math.cos(targetYaw-root.rotation.y))*(1-Math.exp(-delta*11)):targetYaw;root.rotation.set(0,yaw,0);
+  root.position.set(p.pos[0],p.elevation||0,p.pos[1]);const targetYaw=heading-Math.PI/2,yaw=!p.preciseMotion&&previousTime!=null&&delta>0&&delta<.25?root.rotation.y+Math.atan2(Math.sin(targetYaw-root.rotation.y),Math.cos(targetYaw-root.rotation.y))*(1-Math.exp(-delta*11)):targetYaw;root.rotation.set(0,yaw,0);
   const actionTime=p.actionTime??time;
-  const g=p.gesture||'idle',ph=clamp(p.phase||0,0,1),seed=((p.personality||0)%997)/997*5.3,cycleBase=p.stepCycle??time*(moving?speed/.98:0),sitting=['sit','seatedTrap'].includes(g);
-  const gestureWeight=Math.min(ease(ph*7),ease((1-ph)*7)),moveWeight=clamp(speed/.55,0,1),runWeight=clamp((speed-1.4)/2.2,0,1),stanceFraction=.62-.22*runWeight;
+  const sourceGesture=p.gesture||'idle',g=({shot:'kick',cross:'kick',save:'dive',tackle:'slide',fall:'stumble',standFromSeat:'sit'})[sourceGesture]||sourceGesture,ph=clamp(p.phase||0,0,1),seed=((p.personality||0)%997)/997*5.3,cycleBase=p.stepCycle??time*(moving?speed/.98:0),sitting=['sit','seatedTrap'].includes(g);
+  const gestureWeight=sourceGesture==='standFromSeat'?1-ease(ph):Math.min(ease(ph*7),ease((1-ph)*7)),moveWeight=clamp(speed/.55,0,1),runWeight=clamp((speed-1.4)/2.2,0,1),stanceFraction=.62-.22*runWeight;
   let lower=.10*moveWeight+.10*runWeight,lean=clamp(speed/6,0,1)*.13;
   if(['bend','collect','inspect','breath','laugh','bow'].includes(g))lean+={bend:.68,collect:.40,inspect:.10,breath:.24,laugh:.16,bow:.65}[g]*gestureWeight;
   if(g==='laces'){lower=.43*gestureWeight;lean=.55*gestureWeight;}
-  if(sitting){lower=.39*gestureWeight;lean=.07;}
+  if(sitting){lower=.36*gestureWeight;lean=.07;}
   if(['slide','getUp'].includes(g)){const f=g==='slide'?ease(ph):1-ease(ph);lower=.58*f;lean=-.36*f;}
-  if(g==='dive'){const f=Math.sin(ph*Math.PI);lower=.42*f;root.rotation.z=f*.65;}
+  if(g==='dive'){const f=Math.sin(ph*Math.PI),low=p.preciseMotion?clamp((1.1-(p.handTarget?.[1]??.8)),0,1):0;lower=(p.preciseMotion?.18+.45*low:.42)*f;if(!p.preciseMotion)root.rotation.z=f*.65;}
   if(g==='stumble')root.rotation.z=Math.sin(ph*Math.PI*4)*.10*gestureWeight;
+  if(p.preciseMotion&&sourceGesture==='save'){const side=p.diveSide||1,roll=side*(Math.sin(yaw)<0?-1:1)*(.45+.40*clamp(1.1-(p.handTarget?.[1]??.8),0,1))*gestureWeight;root.rotation.set(roll,yaw,0,'YXZ');root.position.y=p.elevation||0;}
+  if(p.preciseMotion&&sourceGesture==='fall'){lower=.38*gestureWeight;lean=.42*gestureWeight;root.rotation.set(.55*gestureWeight,yaw,0,'YXZ');}
+  inverseRoot.copy(root.quaternion).invert();
+  if(currentTeam!==p.team){currentTeam=p.team;body.material[0].color.copy(p.team==null?baseSilk:teamColors[p.team]||baseSilk);root.userData.team=p.team??null;}
   // Path distances are metres; the rig is scaled, so compensate in rig space.
   const stride=(p.strideLength||1.1)/scale,bob=moving?Math.sin((cycleBase+seed)*TAU*2)*(.008+.008*clamp(speed/4,0,1)):Math.sin(time*1.6+seed)*.0015;
   targets.pelvis[0]=0;targets.pelvis[1]=-lower+bob;targets.pelvis[2]=Math.sin((cycleBase+seed)*TAU)*.006*moveWeight;
@@ -46,12 +52,14 @@ export function makeAvatar(player,quality=1){
    if(sign>0){
     if(g==='kick'||g==='heel'||g==='volley'){const impact=clamp((p.contact!=null?(actionTime-(p.contact-.65))/1.2:ph),0,1),backswing=Math.sin(impact*Math.PI),snap=impact<.36?-.23*Math.sin(impact/.36*Math.PI/2):impact<.54?-.23+.63*ease((impact-.36)/.18):.40*(1-ease((impact-.54)/.46));foot.x=(g==='heel'?-1:1)*snap;foot.y+=g==='volley'?.48/scale*gestureWeight:.16*backswing;}
     if(g==='trap'){foot.x=.35*gestureWeight;foot.y+=.07*gestureWeight;}
-    if(g==='juggle'){const u=((actionTime-10)/1.25%1+1)%1;foot.x=.30;foot.y+=.04+.15*Math.max(0,Math.sin(u*TAU));}
+    if(p.footTarget&&['kick','heel','volley','trap'].includes(g)){const target=localEffector(p.footTarget,effector);target.x-=.30/scale;target.y-=.04/scale;const contact=p.contact??actionTime,w=Math.min(ease((actionTime-contact+.30)/.24),1-ease((actionTime-contact-.08)/.38));foot.lerp(target,w);}
+    if(g==='juggle'){const u=((actionTime-(p.gestureStart??10))/1.35%1+1)%1;foot.x=.30;foot.y+=.04+.15*Math.max(0,Math.sin(u*TAU));}
     if(g==='sole'||g==='lookBoot'){foot.x=.33;foot.y+=g==='sole'?.15:.30;}
    }
+   if(sign<0&&p.footTarget&&['kick','heel','volley'].includes(g)){const target=localEffector(p.footTarget,effector);target.x-=.27/scale;target.z-=.24/scale;target.y=(.055-root.position.y-rider.position.y)/scale;const contact=p.contact??actionTime,w=Math.min(ease((actionTime-contact+.32)/.26),1-ease((actionTime-contact-.10)/.36));foot.lerp(target,w);}
    if(g==='nutmeg')foot.z=sign*(.13+.19*gestureWeight);
    if(g==='block')foot.z=sign*.075;
-   if(sitting){foot.x=.42;foot.y=-.93;if(sign>0&&g==='seatedTrap')foot.x+=.08*gestureWeight;}
+   if(sitting){foot.x=foot.x*(1-gestureWeight)+.43*gestureWeight;foot.y=foot.y*(1-gestureWeight)-.93*gestureWeight;if(sign>0&&g==='seatedTrap')foot.x+=.08*gestureWeight;}
    if(g==='laces')foot.x=.30;
    if(g==='slide')foot.x=sign>0?.64:.34;
    poleLeg.set(1,0,sign*.10);joint(hip,foot,.43,.47,poleLeg,knee);
@@ -75,7 +83,8 @@ export function makeAvatar(player,quality=1){
    if(g==='chest')hand.set(.08,.25-lower,sign*.40);
    if(g==='dive')hand.set(.42,.73-lower,sign*.26);
    if(sitting)hand.set(.36,-.31-lower,sign*.16);
-   if(g!=='keeper')hand.lerp(baseHand,1-gestureWeight);
+   if(p.handTarget&&sourceGesture==='save'){const target=localEffector(p.handTarget,effector);target.z+=sign*.22/scale;target.x-=.20/scale;const contact=p.contact??actionTime,w=Math.min(ease((actionTime-contact+.4)/.25),1-ease((actionTime-contact-.20)/.45));hand.lerp(target,w);const reach=hand.clone().sub(shoulder);if(reach.length()>.61)hand.copy(shoulder).addScaledVector(reach,.61/reach.length());}
+   if(g!=='keeper'&&!(p.handTarget&&sourceGesture==='save'))hand.lerp(baseHand,1-gestureWeight);
    poleArm.set(-.45,0,sign);joint(shoulder,hand,.31,.30,poleArm,elbow);
    shoulder.toArray(targets[side+'Shoulder']);elbow.toArray(targets[side+'Elbow']);hand.toArray(targets[side+'Wrist']);
   }

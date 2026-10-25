@@ -1,9 +1,9 @@
 import * as T from './vendor/three.module.min.js';
-import {microTexture} from './studio-materials.js?v=studio-7';
-import bodyData from './assets/studio/human-body.js?v=studio-7';
-import {buildFace} from './jockey-face.js?v=studio-7';
-import {styleColors} from './horse-style.js?v=studio-7';
-import {geometry,mesh,tube,material} from './studio-geometry.js?v=studio-7';
+import {microTexture} from './studio-materials.js?v=studio-8';
+import bodyData from './assets/studio/human-body.js?v=studio-8';
+import {buildFace} from './jockey-face.js?v=studio-8';
+import {styleColors} from './horse-style.js?v=studio-8';
+import {geometry,mesh,tube,material} from './studio-geometry.js?v=studio-8';
 // The same body, joint rig and head scale for every account and every view.
 export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,custom,index=0,showHelmet,standing=false,detail=1}){
  custom=custom||styleColors({});showHelmet=showHelmet??custom.helmetVisible!=='off';const rider=new T.Group();rider.name='sisal-jockey';

@@ -26,8 +26,8 @@ globalThis.fetch=async(url,options)=>{calls++;const p=JSON.parse(options.body),n
 await arenaState('adra');assert.equal(calls,1,'one RPC for existing session, no separate auth RPC');
 const rawToken='a'.repeat(43);await db.query("insert into club_sessions(token_hash,account_id) select $1,id from club_accounts where player_key='adra'",[hashToken(rawToken)]);
 const request=(scene,logged=true)=>new Request('https://sisal.test/api/account?action=arena'+(scene?'&scene='+scene:''),{headers:logged?{Cookie:COOKIE+'='+rawToken}:{}});
-calls=0;const current=await GET(request('4'));assert.equal(current.status,200);assert.equal((await current.json()).sceneVersion,4);assert.equal(calls,1,'the current visual version still takes one RPC');assert.match(current.headers.get('cache-control'),/private, no-store/);
-for(const version of ['','1','2','3']){const old=await GET(request(version));assert.equal(old.status,409);assert.equal((await old.json()).code,'ARENA_UPDATE_REQUIRED','old choreography cannot mix with new clients');}
-assert.equal((await GET(request('',false))).status,401);assert.equal((await GET(request('4',false))).status,401,'both visual versions reject anonymous access');
+calls=0;const current=await GET(request('5'));assert.equal(current.status,200);assert.equal((await current.json()).sceneVersion,5);assert.equal(calls,1,'the current visual version still takes one RPC');assert.match(current.headers.get('cache-control'),/private, no-store/);
+for(const version of ['','1','2','3','4']){const old=await GET(request(version));assert.equal(old.status,409);assert.equal((await old.json()).code,'ARENA_UPDATE_REQUIRED','old choreography cannot mix with new clients');}
+assert.equal((await GET(request('',false))).status,401);assert.equal((await GET(request('5',false))).status,401,'both visual versions reject anonymous access');
 console.log('PASS: real SQL + actual API authentication, RLS, immutable concurrent snapshots, admin keeper/validation, suspended member, stale epoch, roster exclusion, visual version gate and single-RPC steady read.');
 await db.close();
