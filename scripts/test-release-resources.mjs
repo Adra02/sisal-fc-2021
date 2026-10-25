@@ -15,6 +15,6 @@ const sw=await fs.readFile('sw.js','utf8'),shell=JSON.parse(sw.match(/const SHEL
 for(const url of shell)await localFile(url);
 assert.deepEqual(missing,[],'all recursive local modules, assets and service-worker shell exist');
 assert.equal(new Set(shell).size,shell.length,'no duplicate shell requests');
-const html=await fs.readFile('index.html','utf8');assert(html.includes('./club-modern.css?v=studio-8'));assert(html.includes('./club-experience.js?v=studio-8'));
+const html=await fs.readFile('index.html','utf8');assert(html.includes('./club-modern.css?v=studio-9'));assert(html.includes('./club-experience.js?v=studio-9'));
 for(const f of ['index.html','sw.js','account.js','studio-viewer.js','race-3d.js','jockey-portrait.js'])assert(!(await fs.readFile(f,'utf8')).includes('studio-4'),f+' has no stale shared model version');
-console.log(`PASS release resource closure: ${seen.size} local resources/imports, ${shell.length} service-worker shell entries, consistent Studio 8 cache/entry points.`);
+console.log(`PASS release resource closure: ${seen.size} local resources/imports, ${shell.length} service-worker shell entries, consistent Studio 9 cache/entry points.`);

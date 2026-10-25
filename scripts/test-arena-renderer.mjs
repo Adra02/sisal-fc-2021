@@ -3,31 +3,28 @@ import fs from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
 import {createCanvas} from '@napi-rs/canvas';
 import * as Three from '../vendor/three.module.min.js';
-import {sampleArena} from '../arena-simulation.js';
-import {SCENES} from '../arena-scenes.js';
+import {createWorld,exportWorld} from '../arena-world.js';
+import {BENCH} from '../arena-layout.js';
 const dom=new JSDOM('<div id="host"></div>',{pretendToBeVisual:true,url:'https://sisal.test'});
 globalThis.document=dom.window.document;globalThis.window=dom.window;globalThis.devicePixelRatio=1;globalThis.matchMedia=()=>({matches:false});
 const contexts=new WeakMap();dom.window.HTMLCanvasElement.prototype.getContext=function(){if(!contexts.has(this))contexts.set(this,createCanvas(this.width||256,this.height||256));return contexts.get(this).getContext('2d')};
-let frames=new Map(),id=0,renderCount=0,lastScene,lastCamera;globalThis.requestAnimationFrame=fn=>{frames.set(++id,fn);return id};globalThis.cancelAnimationFrame=n=>frames.delete(n);globalThis.ResizeObserver=class{constructor(f){this.f=f}observe(){this.f()}disconnect(){}};
-globalThis.__Renderer=class{constructor(){this.domElement=document.createElement('canvas');this.shadowMap={};this.ratio=1}setPixelRatio(v){this.ratio=v}getPixelRatio(){return this.ratio}setSize(){}render(scene,camera){renderCount++;lastScene=scene;lastCamera=camera;scene.updateMatrixWorld();scene.traverse(o=>{assert(o.matrixWorld.elements.every(Number.isFinite))})}dispose(){}forceContextLoss(){}};
-let source=await fs.readFile('arena-renderer.js','utf8');
-source=source.replace("import * as T from './vendor/three.module.min.js';", "import * as Three from '"+new URL('../vendor/three.module.min.js',import.meta.url).href+"';const T={...Three,WebGLRenderer:globalThis.__Renderer};");
-let forcedScene=null;globalThis.__arenaSample=(s,t)=>sampleArena(s,t,forcedScene);
-source=source.replace("import {sampleArena} from './arena-simulation.js?v=arena-5';","const sampleArena=globalThis.__arenaSample;");
-source=source.replace(/from '(\.\/[^']+)'/g,(_,p)=>"from '"+new URL('../'+p.slice(2),import.meta.url).href+"'");
+let frames=new Map(),id=0,renderCount=0,lastScene,lastCamera,failGL=false;globalThis.requestAnimationFrame=fn=>{frames.set(++id,fn);return id};globalThis.cancelAnimationFrame=n=>frames.delete(n);globalThis.ResizeObserver=class{constructor(f){this.f=f}observe(){this.f()}disconnect(){}};
+globalThis.__Renderer=class{constructor(){if(failGL)throw Error('No GPU');this.domElement=document.createElement('canvas');this.shadowMap={};this.ratio=1}setPixelRatio(v){this.ratio=v}getPixelRatio(){return this.ratio}setSize(){}render(scene,camera){renderCount++;lastScene=scene;lastCamera=camera;scene.updateMatrixWorld();scene.traverse(o=>{assert(o.matrixWorld.elements.every(Number.isFinite));if(o.isSkinnedMesh)o.skeleton.update();});}dispose(){}forceContextLoss(){}};
+let source=await fs.readFile('arena-renderer.js','utf8');source=source.replace("import * as T from './vendor/three.module.min.js';", "import * as Three from '"+new URL('../vendor/three.module.min.js',import.meta.url).href+"';const T={...Three,WebGLRenderer:globalThis.__Renderer};");source=source.replace(/from '(\.\/[^']+)'/g,(_,p)=>"from '"+new URL('../'+p.slice(2),import.meta.url).href+"'");
 const {createArenaRenderer}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
-const host=document.getElementById('host');let now=1730,caption;const engine=createArenaRenderer(host,{players:Array.from({length:8},(_,i)=>({key:'p'+i,name:'P'+i,appearance:{}})),keeper:null},{clock:()=>now,onFrame:f=>caption=f});
-for(let i=0;i<400;i++){now+=.05;const copy=[...frames.values()];frames.clear();copy.forEach(f=>f(i*50))}
-assert(renderCount>300);assert(caption.title);engine.follow('p1');engine.zoom(-3);engine.pause();assert.equal(frames.size,0);engine.resume();assert.equal(frames.size,1);engine.dispose();engine.dispose();assert.equal(frames.size,0);assert.equal(host.children.length,0);
-const fixture={players:Array.from({length:8},(_,i)=>({key:'p'+i,name:'P'+i,appearance:{helmetVisible:'off'}})),keeper:null};
-let views=0;
-for(const [id,time]of [['benchSave',17],['break',17],['laces',17],['roof',17],['roof',30]]){
- forcedScene=SCENES.find(s=>s.id===id);now=time;const e=createArenaRenderer(host,fixture,{clock:()=>now,onFrame:f=>caption=f,selfKey:'p0'});for(let i=0;i<4;i++){const copy=[...frames.values()];frames.clear();copy.forEach(f=>f(100000+i*50));}
- assert(lastCamera.position.x<17,'bench and roof viewed from the open field side');
- const props=lastScene.children.filter(o=>o.name.startsWith('bench-seat-')||o.name.startsWith('pavilion-'));for(const prop of props){const bounds=new Three.Box3().setFromObject(prop);assert(bounds.min.x>17,'the entire '+prop.name+' is beyond the touchline');}
- const solid=lastScene.children.filter(o=>['pavilion-roof','pavilion-back-wall'].includes(o.name));let checked=0;
- for(const p of sampleArena(fixture,now,forcedScene).actors.filter(p=>p.active&&p.pos[0]>20)){const head=lastScene.getObjectByName('arena-player-'+p.key).getObjectByName('jockey-neck-pivot'),target=head.getWorldPosition(new Three.Vector3()),distance=lastCamera.position.distanceTo(target),ray=new Three.Raycaster(lastCamera.position,target.clone().sub(lastCamera.position).normalize(),.01,distance-.08);assert.equal(ray.intersectObjects(solid).length,0,'no wall or roof between camera and active player');checked++;}
- if(id!=='roof')assert(checked>0);assert(caption.anchors.every(a=>Number.isFinite(a.x)&&Number.isFinite(a.y)));assert(caption.anchors.some(a=>a.self),'self anchor is transmitted');views++;e.dispose();
-}
-delete globalThis.__arenaSample;
-dom.window.close();console.log(`PASS full Arena renderer lifecycle with real scene/avatar geometry and simulated GPU: finite transforms, multi-scene rendering, camera follow, pause/resume, double-dispose cleanup; ${views} pavilion/roof views, solid prop bounds and camera-to-player occlusion rays.`);
+const players=Array.from({length:8},(_,i)=>({key:'p'+i,name:'P'+i,games:i,appearance:{helmetVisible:'off',hair:'braids'}})),snapshot={players,keeper:null,world:{version:6,startAt:0,start:exportWorld(createWorld(players))}},host=document.getElementById('host');let time=0,caption,ms=0,failure;
+const draw=n=>{for(let i=0;i<n;i++){time+=.05;ms+=50;const f=[...frames.values()];frames.clear();f.forEach(fn=>fn(ms));}};
+let engine=createArenaRenderer(host,snapshot,{clock:()=>time,onFrame:f=>caption=f,onFailure:e=>failure=e,selfKey:'p0'});draw(200);assert(renderCount>195);assert(caption.live&&caption.title);assert.equal(caption.duration,null);assert(caption.anchors.every(a=>Number.isFinite(a.x)&&Number.isFinite(a.y)));const firstScene=lastScene,firstRoot=lastScene.getObjectByName('arena-player-p0');
+engine.follow('p1');engine.zoom(-3);draw(20);engine.setQuality('low');draw(3);assert.equal(lastScene.getObjectByName('arena-player-p2').getObjectByName('arena-body-distant').visible,true,'real distant body geometry replaces the full body');assert.equal(firstRoot.model,undefined);engine.setQuality('high');
+engine.pause();assert.equal(frames.size,0);engine.resume();assert.equal(frames.size,1);draw(2);
+const next={...snapshot,world:{...snapshot.world,start:exportWorld(createWorld(players))}};next.world.start.players[0].x=-4;next.world.startAt=time*1000;engine.replaceSnapshot(next);draw(2);assert.equal(lastScene,firstScene,'same 3D field on checkpoint refresh');assert.equal(lastScene.getObjectByName('arena-player-p0'),firstRoot,'avatar and camera are not respawned every 30 minutes');engine.dispose();engine.dispose();assert.equal(frames.size,0);assert.equal(host.children.length,0);
+// A true seated rig at the sixth chair: water and table have disjoint bounds.
+const benchWorld=createWorld(players),p=benchWorld.players[0];p.x=BENCH.seats[5][0];p.z=BENCH.seats[5][1];p.heading=-Math.PI/2;p.rest={phase:'seated',seat:5,reason:'odd',until:999,at:0,since:0};benchWorld.tick=240;
+const benchSnapshot={players,keeper:null,world:{version:6,startAt:time*1000,start:exportWorld(benchWorld)}};engine=createArenaRenderer(host,benchSnapshot,{clock:()=>time,onFrame:f=>caption=f,selfKey:'p0'});engine.follow('p0');draw(100);
+assert(lastCamera.position.x<19,'bench seen from its open field side');const solids=['pavilion-roof','pavilion-back-wall'].map(n=>lastScene.getObjectByName(n));
+for(const prop of lastScene.children.filter(o=>o.name.startsWith('bench-seat-')||o.name.startsWith('pavilion-'))){const bounds=new Three.Box3().setFromObject(prop);assert(bounds.min.x>17,'prop beyond touchline: '+prop.name);}
+const seat=new Three.Box3().setFromObject(lastScene.getObjectByName('bench-seat-5')),water=new Three.Box3().setFromObject(lastScene.getObjectByName('water-table'));assert(!seat.intersectsBox(water));for(let i=0;i<3;i++)assert(!seat.intersectsBox(new Three.Box3().setFromObject(lastScene.getObjectByName('water-bottle-'+i))));
+const person=lastScene.getObjectByName('arena-player-p0'),head=person.getObjectByName('jockey-neck-pivot'),target=head.getWorldPosition(new Three.Vector3()),distance=lastCamera.position.distanceTo(target),ray=new Three.Raycaster(lastCamera.position,target.clone().sub(lastCamera.position).normalize(),.01,distance-.08);assert.equal(ray.intersectObjects(solids).length,0,'no wall/roof covers the seated head');
+const wrists=[];person.traverse(o=>{if(['lWrist','rWrist'].includes(o.name))wrists.push(o.getWorldPosition(new Three.Vector3()));});assert.equal(wrists.length,2);assert(wrists.every(p=>p.y>.56),'hands above seat and on lap');
+engine.dispose();failGL=true;assert.throws(()=>createArenaRenderer(host,snapshot,{clock:()=>0}),e=>e.code==='ARENA_WEBGL'&&e.message.includes('grafica 3D'),'graphics error distinguished from network');assert.equal(host.children.length,0);dom.window.close();delete globalThis.__Renderer;
+console.log('PASS actual Three scene and avatar rigs with simulated GPU: lifecycle, live frame, stable snapshot swap, full/distant mesh, pause, cleanup, six chairs outside field, table/bottle clearance, hands on lap, unobstructed seated head and WebGL error classification. Not a rendered WebGL/FPS test.');

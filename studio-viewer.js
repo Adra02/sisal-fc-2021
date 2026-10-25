@@ -1,11 +1,11 @@
-import {environmentTexture} from './studio-materials.js?v=studio-8';
+import {environmentTexture} from './studio-materials.js?v=studio-9';
 import * as T from './vendor/three.module.min.js';
 import {Reflector} from './vendor/Reflector.js';
-import {createJockey} from './jockey-model.js?v=studio-8';
-import {createHorse} from './horse-model.js?v=studio-8';
-import {styleColors,paintSilks,validateStyle} from './horse-style.js?v=studio-8';
-import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-8';
-import {signaturePose} from './race-signature.js?v=studio-8';
+import {createJockey} from './jockey-model.js?v=studio-9';
+import {createHorse} from './horse-model.js?v=studio-9';
+import {styleColors,paintSilks,validateStyle} from './horse-style.js?v=studio-9';
+import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-9';
+import {signaturePose} from './race-signature.js?v=studio-9';
 const cameras={horse:{at:[0,1.78,0],height:4.15,width:4.7},face:{at:[.04,.75,0],height:.48,width:.36},hair:{at:[.01,.81,0],height:.51,width:.40},outfit:{at:[0,.02,0],height:2.35,width:1.08},gloves:{at:[.06,-.08,.23],height:.49,width:.46},saddle:{at:[-.25,1.96,0],height:1.7,width:1.9},number:{at:[-.31,1.90,.37],height:1.15,width:1.25},helmet:{at:[.03,.84,0],height:.52,width:.42},signature:{at:[0,.08,0],height:2.52,width:1.5}};
 const isHorse=part=>['horse','saddle','number'].includes(part);
 export function cameraPart(key){if(['skin','face','jaw','cheeks','nose','ears','eyes','eyeShape','brow','browWeight','mouth','lips','expression','beard','beardColor','freckles','wrinkles','scar','beautyMark','goggles'].includes(key))return 'face';if(['hair','hairColor','hairTexture','hairPart'].includes(key))return 'hair';if(['silk','accent','pattern','breeches'].includes(key))return 'outfit';if(['saddle','trim','cloth'].includes(key))return 'saddle';if(['entrance','celebration','nickname'].includes(key))return 'signature';return key==='gloves'?'gloves':key==='number'?'number':['helmet','helmetVisible'].includes(key)?'helmet':'horse';}

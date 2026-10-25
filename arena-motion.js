@@ -1,5 +1,6 @@
 // Fixed-step movement shared by drills and friendly games. Metres and seconds.
 // No renderer, storage, service or per-frame network access in this module.
+import {BENCH} from './arena-layout.js?v=arena-6';
 export const DT=1/24,RADIUS=.34,MIN_DISTANCE=RADIUS*2;
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 export const mix=(a,b,u)=>a+(b-a)*u;
@@ -11,14 +12,14 @@ export function turn(a,b,max){return a+clamp(Math.atan2(Math.sin(b-a),Math.cos(b
 export function footPoint(p,heading=p.heading){return [p.x+Math.sin(heading)*.40,.14,p.z+Math.cos(heading)*.40];}
 export function bodyState(player,pos){return {...player,x:pos[0],z:pos[1],vx:0,vz:0,heading:Math.PI,travel:0,cycle:hash(player.key)%997/997,action:null,elevation:0};}
 const wallBoxes=[{x0:26.75,x1:27.45,z0:1.5,z1:14.5}];
-export const BENCH_SEATS=Array.from({length:6},(_,i)=>[22,3.9+i*1.65]);
+export const BENCH_SEATS=BENCH.seats;
 const poles=[[-3,-26],[3,-26],[-3,26],[3,26],[20.4,2.1],[20.4,13.9]];
 function obstacles(p){
  for(const [x,z]of poles){let dx=p.x-x,dz=p.z-z,d=Math.hypot(dx,dz);if(d<.395){if(d<.0001){dx=1;dz=0;d=1;}p.x=x+dx/d*.395;p.z=z+dz/d*.395;}}
  for(const b of wallBoxes){if(p.x>b.x0-RADIUS&&p.x<b.x1+RADIUS&&p.z>b.z0-RADIUS&&p.z<b.z1+RADIUS){const q=[{d:p.x-(b.x0-RADIUS),axis:'x',v:b.x0-RADIUS},{d:b.x1+RADIUS-p.x,axis:'x',v:b.x1+RADIUS},{d:p.z-(b.z0-RADIUS),axis:'z',v:b.z0-RADIUS},{d:b.z1+RADIUS-p.z,axis:'z',v:b.z1+RADIUS}].sort((a,b)=>a.d-b.d)[0];p[q.axis]=q.v;}}
  // Back rests are solid; the front of an assigned seat remains reachable.
  if(!p.seatedTarget&&p.x>21.32&&p.x<22.76&&p.z>3.0&&p.z<13.04){const exits=[{d:p.x-21.32,key:'x',value:21.32},{d:22.76-p.x,key:'x',value:22.76},{d:p.z-3,key:'z',value:3},{d:13.04-p.z,key:'z',value:13.04}].sort((a,b)=>a.d-b.d);p[exits[0].key]=exits[0].value;}
- p.x=clamp(p.x,-30.8,26.5);p.z=clamp(p.z,-30.8,30.8);
+ p.x=clamp(p.x,-31.2,31.2);p.z=clamp(p.z,-31.2,31.2);
 }
 function pairs(players,fn){
  const cells=new Map();for(let i=0;i<players.length;i++){const p=players[i],cx=Math.floor(p.x),cz=Math.floor(p.z);for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++)for(const j of cells.get(x+':'+z)||[])fn(players[j],p,j,i);const key=cx+':'+cz;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(i);}
@@ -33,6 +34,7 @@ export function movePlayers(players,targets,dt=DT){
  const old=players.map(p=>[p.x,p.z]);
  for(let i=0;i<players.length;i++){
   const p=players[i];let target=targets[i]||[p.x,p.z];const speed=p.maxSpeed??4.1;
+  const crossWall=(p.x<26.4&&target[0]>27.8)||(p.x>27.8&&target[0]<26.4);if(crossWall&&((p.z>1.1&&p.z<14.9)||(target[1]>1.1&&target[1]<14.9))){const edge=p.z<8?1:15,side=p.x<26.4?26.3:27.9;target=Math.abs(p.z-edge)>.25?[side,edge]:[p.x<26.4?27.9:26.3,edge];}
   if(!p.seatedTarget){const crossed=(p.x<21.32&&target[0]>22.76)||(p.x>22.76&&target[0]<21.32),sameBand=p.z>2.7&&p.z<13.35||target[1]>2.7&&target[1]<13.35;if(crossed&&sameBand){const edge=[2.5,13.55].sort((a,b)=>Math.abs(p.z-a)+Math.abs(target[1]-a)-Math.abs(p.z-b)-Math.abs(target[1]-b))[0],side=p.x<21.32?21.0:23.1;if(Math.abs(p.z-edge)>.3)target=[side,edge];else target=[p.x<21.32?23.1:21.0,edge];}}
 
   let vx=(target[0]-p.x)*2.4,vz=(target[1]-p.z)*2.4,d=length(vx,vz);if(d>speed){vx*=speed/d;vz*=speed/d;}
@@ -40,7 +42,7 @@ export function movePlayers(players,targets,dt=DT){
  }
  // Reciprocal side steps before the hard capsule separation, so opponents
  // pass each other rather than repeatedly pushing through the same centre.
- pairs(players,(a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,d=length(dx,dz);if(d<.001||d>1.55)return;const closing=(a.wantX-b.wantX)*dx+(a.wantZ-b.wantZ)*dz;if(closing<=.02)return;const side=(hash(a.key<b.key?a.key+'|'+b.key:b.key+'|'+a.key)%2?1:-1),strength=(1.55-d)*1.7,px=-dz/d*strength*side,pz=dx/d*strength*side;a.avoidX+=px;a.avoidZ+=pz;b.avoidX-=px;b.avoidZ-=pz;});
+ pairs(players,(a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,d=length(dx,dz);if(d<.001||d>1.55)return;const closing=(a.wantX-b.wantX)*dx+(a.wantZ-b.wantZ)*dz;if(closing<=.02)return;const side=(hash(a.key<b.key?a.key+'|'+b.key:b.key+'|'+a.key)%2?1:-1),strength=(1.55-d)*1.7,px=-dz/d*strength*side,pz=dx/d*strength*side,wa=a.priority??1,wb=b.priority??1,total=wa+wb;a.avoidX+=px*wa/total*2;a.avoidZ+=pz*wa/total*2;b.avoidX-=px*wb/total*2;b.avoidZ-=pz*wb/total*2;});
  for(const p of players){let vx=p.wantX+p.avoidX,vz=p.wantZ+p.avoidZ,d=length(vx,vz),top=p.maxSpeed??4.1;if(d>top){vx*=top/d;vz*=top/d;}let ax=vx-p.vx,az=vz-p.vz,acc=length(ax,az),limit=5.4*dt;if(acc>limit){ax*=limit/acc;az*=limit/acc;}p.vx+=ax;p.vz+=az;p.x+=p.vx*dt;p.z+=p.vz*dt;}
  separate(players);
  for(let i=0;i<players.length;i++){const p=players[i],dx=p.x-old[i][0],dz=p.z-old[i][1],distance=length(dx,dz),speed=distance/dt;p.vx=dx/dt;p.vz=dz/dt;p.travel+=distance;p.stride=.99+Math.min(5,speed)*.22;p.cycle+=distance/p.stride;const desired=p.aim??(speed>.13?Math.atan2(dx,dz):p.heading);p.heading=turn(p.heading,desired,dt*(speed>1?4.0:5.8));for(const key of ['x','z','vx','vz','heading','travel','cycle'])p[key]=Math.round(p[key]*100000)/100000;}

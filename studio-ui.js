@@ -3,7 +3,7 @@ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const key=s=>String(s??'').normalize('NFKC').trim().toLowerCase();
 let viewerModule=null,origin=null,oldRows=new Map(),oldNumbers=new Map(),lastTab='',queued=false;
-const loadViewer=()=>viewerModule||(viewerModule=import('./studio-viewer.js?v=studio-8'));
+const loadViewer=()=>viewerModule||(viewerModule=import('./studio-viewer.js?v=studio-9'));
 function animate(node,frames,options={}){if(!reduced&&node?.animate)return node.animate(frames,{duration:360,easing:'cubic-bezier(.22,.65,.3,1)',...options});}
 function rowKey(n){return n.dataset.studioRowKey||'pitch-slot-'+n.dataset.pitchSlot;}
 function tagRows(){const roster=new Map((window.SisalPlayerProfile?.roster?.()||[]).map(p=>[key(p.name),p]));[...document.querySelectorAll('table')].forEach((table,ti)=>{for(const row of table.querySelectorAll('tbody tr')){const b=row.querySelector('[data-player]');if(!b)continue;const identity=JSON.stringify([b.dataset.player||'',b.dataset.playerName||'',b.dataset.playerPlatform||'']);row.dataset.playerRow=identity;row.dataset.studioRowKey='table-'+ti+'-'+identity;const p=roster.get(key(b.dataset.playerName));row.dataset.dep=window.SisalPlayerProfile?.roleGroup?.(p?.position||p?.favoritePosition||b.querySelector('small')?.textContent||'')||'';}});}

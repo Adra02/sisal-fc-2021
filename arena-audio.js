@@ -13,7 +13,7 @@ export function arenaAudio(){
  }
  function update(frame,camera,delta){
   if(!enabled||delta>.25)return;
-  for(const s of frame.sounds){const id=frame.serial+':'+s.at+':'+s.type;if(frame.t>=s.at&&frame.t<s.at+.12&&!played.has(id)){played.add(id);play(s.type,Math.hypot(camera.x-s.pos[0],camera.z-s.pos[2]))}}
+  for(const s of frame.sounds){const id=s.id??(frame.serial+':'+s.at+':'+s.type);if(frame.t>=s.at&&frame.t<s.at+.12&&!played.has(id)){played.add(id);play(s.type,Math.hypot(camera.x-s.pos[0],camera.z-s.pos[2]))}}
   if(played.size>100)played.clear();
   // Footfalls follow the nearest moving actors' distance-driven gait instead
   // of a single metronome shared by the whole squad.

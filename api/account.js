@@ -3,7 +3,7 @@ import {rpc} from '../lib/supabase.js';
 import {timingSafeEqual} from 'node:crypto';
 import {accountRpc,hashPassword,verifyPassword,hashToken,token,cookie,sessionHash,requireAccount,sameOrigin,limit,roster,fail,errorResponse} from '../lib/accounts.js';
 import {validateStyle,nameKey} from '../horse-style.js';
-export const maxDuration=30;
+export const maxDuration=60;
 const ok=(body,session)=>Response.json(body,{headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff',...(session!==undefined?{'Set-Cookie':cookie(session)}:{})}});
 export async function GET(req){try{
  const action=new URL(req.url).searchParams.get('action')||'me';
@@ -12,7 +12,7 @@ export async function GET(req){try{
   const taken=new Set([...d.accounts.map(x=>x.key),...await rpc('sisal_excluded_keys',{})]);
   return ok({ok:true,hasOwner:d.hasOwner,register:r.players.filter(x=>!taken.has(x.key)),login:d.accounts.filter(x=>x.status==='active'),rosterAvailable:r.available});
  }
- if(action==='arena'){if(new URL(req.url).searchParams.get('scene')!=='5'){await requireAccount(req);return Response.json({ok:false,code:'ARENA_UPDATE_REQUIRED',error:'L’Arena è stata aggiornata. Ricarica completamente la web app per entrare nella stessa versione dei compagni.'},{status:409,headers:{'Cache-Control':'private, no-store'}});}return ok(await arenaState(sessionHash(req)));}
+ if(action==='arena'){if(new URL(req.url).searchParams.get('scene')!=='6'){await requireAccount(req);return Response.json({ok:false,code:'ARENA_UPDATE_REQUIRED',error:'L’Arena è stata aggiornata. Ricarica completamente la web app per entrare nella stessa versione dei compagni.'},{status:409,headers:{'Cache-Control':'private, no-store'}});}const state=await arenaState(sessionHash(req));return Response.json(state,{status:state.pending?202:200,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff',...(state.pending?{'Retry-After':'3'}:{})}});}
  const user=await requireAccount(req);
  if(action==='me')return ok({ok:true,user});
  if(action==='appearances')return ok({ok:true,styles:await accountRpc('appearances',{},sessionHash(req)),excluded:await accountRpc('lineup_exclusions',{},sessionHash(req))});

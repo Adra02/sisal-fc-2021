@@ -1,4 +1,4 @@
-import {hash} from './arena-motion.js?v=arena-5';
+import {hash} from './arena-motion.js?v=arena-6';
 // Authored fictional reactions. No inference about a member's real life.
 const lines={
  cross:['Questa viene dalla fascia: per una volta non è un lancio di rifiuti.','Il cross è partito. Ora vediamo se in area ci sono piedi o arredamento.','Bella palla in mezzo: prova a non restituirla al parcheggio.','Hai messo dentro un cross, non un pacco senza destinatario.','Finalmente la fascia serve a qualcosa oltre a prendere aria.','In mezzo c’è spazio: arrivaci prima della tua scusa.','Il pallone passa sopra le teste. Sotto, le idee sono ancora in ritardo.','Questo cross pretende un tiro. La relazione tecnica la fai dopo.'],
@@ -25,6 +25,7 @@ lines.pass.push('Se volevi darla all’altro colore, bastava dirlo prima.','Quel
 lines.cross.push('La palla arriva dall’esterno: in area non metterti a fare il turista.','Hai fatto il cross. Adesso manca qualcuno che abbia letto l’invito.','Quella è per un compagno. Il recinto può restare fuori dalla giocata.','La fascia ha prodotto qualcosa: prendete appunti senza fermarvi.','Buona altezza. Adesso serve un piede che non arrivi domani.','La consegna è in area: per il resto niente servizio clienti.','Al centro non significa al centro della regione.','Giocata larga e palla dentro: il problema adesso è chi ci mette il piede.');
 lines.shot.push('Ha lasciato il piede: ora vediamo se va dove guardavi.','Hai caricato il tiro. Il portiere non è obbligato a collaborare.','La porta non si sposta: è l’unico vantaggio che hai.','Questa almeno era verso la porta. Facciamo progressi.','Un tiro del genere o chiude la giocata o apre una discussione.','Prima il rumore del piede, poi quello delle scuse.','La palla va da sola adesso. Puoi smettere di indicare.','Scegli il tiro prima che il portiere impari anche il tuo codice fiscale.');
 lines.save.push('I guanti hanno deciso diversamente dalla tua esultanza.','Quella la teneva. La bocca però continuava a segnare.','Presa: possiamo andare oltre il racconto di come doveva entrare.','La mano c’è arrivata. Il tuo piano si ferma qui.','Adesso tocca a lui far ripartire, tu intanto abbassa il volume.','Il portiere ha letto la traiettoria prima che finissi di vantarti.');
+export const banterLexicon=lines,creativeInvocations=starts;
 export function banterForClip(clip,serial,previous=[]){
  const people=new Map(clip.players.map(p=>[p.key,p])),result=[],history=[...previous];let next=1.4;
  const input=[{at:1.5,type:clip.lineup?'kickoff':'preparation',actor:clip.players.find(p=>p.active&&!p.goalkeeper)?.key},...clip.events];

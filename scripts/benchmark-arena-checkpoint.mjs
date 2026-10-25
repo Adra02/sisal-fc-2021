@@ -1,0 +1,3 @@
+import {prepareWorldSnapshot} from '../arena-world.js';
+import fs from 'node:fs/promises';
+const n=Number(process.argv[2]||14),players=Array.from({length:n},(_,i)=>({key:'p'+i,name:'Giocatore '+i,games:i<2?0:20,appearance:{}})),begin=performance.now(),payload=prepareWorldSnapshot(players,null,100),ms=performance.now()-begin;const result={players:n,cpuMs:Math.round(ms),payloadBytes:Buffer.byteLength(JSON.stringify(payload)),checkpoints:payload.checkpoints.length,events:payload.end.eventId,completed:payload.end.completed};console.log(JSON.stringify(result));if(process.env.ARENA_METRICS_FILE)await fs.writeFile(process.env.ARENA_METRICS_FILE,JSON.stringify(result));
