@@ -1,6 +1,6 @@
-import {DT,clamp} from './arena-motion.js?v=arena-6';
-import {PAVILION,BALL_RACK} from './arena-layout.js?v=arena-6';
-import {now,actor,handPoint,emit,footPointWorld,rnd,pose} from './arena-world-state.js?v=arena-6';
+import {DT,clamp} from './arena-motion.js?v=arena-7';
+import {PAVILION,BALL_RACK} from './arena-layout.js?v=arena-7';
+import {now,actor,handPoint,emit,footPointWorld,rnd,pose} from './arena-world-state.js?v=arena-7';
 const G=9.81,R=.14;
 const smooth=u=>{u=clamp(u);return u*u*(3-2*u)};
 export function stepBalls(w){

@@ -1,6 +1,6 @@
 // Fixed-step movement shared by drills and friendly games. Metres and seconds.
 // No renderer, storage, service or per-frame network access in this module.
-import {BENCH} from './arena-layout.js?v=arena-6';
+import {BENCH} from './arena-layout.js?v=arena-7';
 export const DT=1/24,RADIUS=.34,MIN_DISTANCE=RADIUS*2;
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 export const mix=(a,b,u)=>a+(b-a)*u;
@@ -21,8 +21,8 @@ function obstacles(p){
  if(!p.seatedTarget&&p.x>21.32&&p.x<22.76&&p.z>3.0&&p.z<13.04){const exits=[{d:p.x-21.32,key:'x',value:21.32},{d:22.76-p.x,key:'x',value:22.76},{d:p.z-3,key:'z',value:3},{d:13.04-p.z,key:'z',value:13.04}].sort((a,b)=>a.d-b.d);p[exits[0].key]=exits[0].value;}
  p.x=clamp(p.x,-31.2,31.2);p.z=clamp(p.z,-31.2,31.2);
 }
-function pairs(players,fn){
- const cells=new Map();for(let i=0;i<players.length;i++){const p=players[i],cx=Math.floor(p.x),cz=Math.floor(p.z);for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++)for(const j of cells.get(x+':'+z)||[])fn(players[j],p,j,i);const key=cx+':'+cz;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(i);}
+function pairs(players,fn,cellSize=1){
+ const cells=new Map();for(let i=0;i<players.length;i++){const p=players[i],cx=Math.floor(p.x/cellSize),cz=Math.floor(p.z/cellSize);for(let x=cx-1;x<=cx+1;x++)for(let z=cz-1;z<=cz+1;z++)for(const j of cells.get(x+':'+z)||[])fn(players[j],p,j,i);const key=cx+':'+cz;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(i);}
 }
 export function separate(players,iterations=6){
  for(let k=0;k<iterations;k++){
@@ -38,11 +38,26 @@ export function movePlayers(players,targets,dt=DT){
   if(!p.seatedTarget){const crossed=(p.x<21.32&&target[0]>22.76)||(p.x>22.76&&target[0]<21.32),sameBand=p.z>2.7&&p.z<13.35||target[1]>2.7&&target[1]<13.35;if(crossed&&sameBand){const edge=[2.5,13.55].sort((a,b)=>Math.abs(p.z-a)+Math.abs(target[1]-a)-Math.abs(p.z-b)-Math.abs(target[1]-b))[0],side=p.x<21.32?21.0:23.1;if(Math.abs(p.z-edge)>.3)target=[side,edge];else target=[p.x<21.32?23.1:21.0,edge];}}
 
   let vx=(target[0]-p.x)*2.4,vz=(target[1]-p.z)*2.4,d=length(vx,vz);if(d>speed){vx*=speed/d;vz*=speed/d;}
-  p.avoidX=0;p.avoidZ=0;p.wantX=vx;p.wantZ=vz;
+  p.avoidX=0;p.avoidZ=0;p.wantX=vx;p.wantZ=vz;p.moveTarget=target;
  }
- // Reciprocal side steps before the hard capsule separation, so opponents
- // pass each other rather than repeatedly pushing through the same centre.
- pairs(players,(a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,d=length(dx,dz);if(d<.001||d>1.55)return;const closing=(a.wantX-b.wantX)*dx+(a.wantZ-b.wantZ)*dz;if(closing<=.02)return;const side=(hash(a.key<b.key?a.key+'|'+b.key:b.key+'|'+a.key)%2?1:-1),strength=(1.55-d)*1.7,px=-dz/d*strength*side,pz=dx/d*strength*side,wa=a.priority??1,wb=b.priority??1,total=wa+wb;a.avoidX+=px*wa/total*2;a.avoidZ+=pz*wa/total*2;b.avoidX-=px*wb/total*2;b.avoidZ-=pz*wb/total*2;});
+ // Yield only when the intended paths actually collide. Mere proximity to a
+ // teammate is not an instruction to circle them. Stop the prediction at each
+ // destination: projecting through a stopping point made a stationary wall
+ // sidestep forever even though its assigned places were safely separated.
+ pairs(players,(a,b)=>{
+  const dx=b.x-a.x,dz=b.z-a.z,d=length(dx,dz);if(d<.001||d>1.65)return;
+  const av=length(a.wantX,a.wantZ),bv=length(b.wantX,b.wantZ),ad=length(a.moveTarget[0]-a.x,a.moveTarget[1]-a.z),bd=length(b.moveTarget[0]-b.x,b.moveTarget[1]-b.z);
+  // A shared/overlapping destination has no passing lane. Let the capsule
+  // solver form a stable cluster instead of circulating around an occupied goal.
+  if(length(a.moveTarget[0]-b.moveTarget[0],a.moveTarget[1]-b.moveTarget[1])<MIN_DISTANCE+.08)return;
+  const vx=a.wantX-b.wantX,vz=a.wantZ-b.wantZ,closing=vx*dx+vz*dz,v2=vx*vx+vz*vz;if(closing<=.02||v2<.001)return;
+  const horizon=clamp(closing/v2,0,.65),at=av?Math.min(horizon,ad/av):0,bt=bv?Math.min(horizon,bd/bv):0;
+  const separation=length(dx+b.wantX*bt-a.wantX*at,dz+b.wantZ*bt-a.wantZ*at);if(separation>=MIN_DISTANCE+.06)return;
+  // Side-step across the intended travel direction, not tangentially around
+  // the other body. A tangent to their changing position creates an orbit.
+  const strength=(1.65-d)*2.0,n=Math.sqrt(v2),px=vz/n*strength,pz=-vx/n*strength,wa=ad<.10?.02:(a.priority??1),wb=bd<.10?.02:(b.priority??1),total=wa+wb;
+  a.avoidX+=px*wa/total*2;a.avoidZ+=pz*wa/total*2;b.avoidX-=px*wb/total*2;b.avoidZ-=pz*wb/total*2;
+ },1.65);
  for(const p of players){let vx=p.wantX+p.avoidX,vz=p.wantZ+p.avoidZ,d=length(vx,vz),top=p.maxSpeed??4.1;if(d>top){vx*=top/d;vz*=top/d;}let ax=vx-p.vx,az=vz-p.vz,acc=length(ax,az),limit=5.4*dt;if(acc>limit){ax*=limit/acc;az*=limit/acc;}p.vx+=ax;p.vz+=az;p.x+=p.vx*dt;p.z+=p.vz*dt;}
  separate(players);
  for(let i=0;i<players.length;i++){const p=players[i],dx=p.x-old[i][0],dz=p.z-old[i][1],distance=length(dx,dz),speed=distance/dt;p.vx=dx/dt;p.vz=dz/dt;p.travel+=distance;p.stride=.99+Math.min(5,speed)*.22;p.cycle+=distance/p.stride;const desired=p.aim??(speed>.13?Math.atan2(dx,dz):p.heading);p.heading=turn(p.heading,desired,dt*(speed>1?4.0:5.8));for(const key of ['x','z','vx','vz','heading','travel','cycle'])p[key]=Math.round(p[key]*100000)/100000;}

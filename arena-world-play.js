@@ -1,10 +1,10 @@
 // Activity decisions react to completed play. There is no scene duration,
 // countdown, camera script or periodic repositioning in this director.
-import {DT,clamp,hash} from './arena-motion.js?v=arena-6';
-import {BALL_RACK,BENCH} from './arena-layout.js?v=arena-6';
-import {friendlyLineup} from './arena-teams.js?v=arena-6';
-import {rnd,integer,choose,shuffled,now,actor,ballById,dist,unit,emit,pose,beginPickup,beginPlace,setRest,updateRest,handPoint} from './arena-world-state.js?v=arena-6';
-import {prepareKick,dribble,releaseBall,putInRack,prepareThrow} from './arena-world-ball.js?v=arena-6';
+import {DT,clamp,hash} from './arena-motion.js?v=arena-7';
+import {BALL_RACK,BENCH} from './arena-layout.js?v=arena-7';
+import {friendlyLineup} from './arena-teams.js?v=arena-7';
+import {rnd,integer,choose,shuffled,now,actor,ballById,dist,unit,emit,pose,beginPickup,beginPlace,setRest,updateRest,handPoint} from './arena-world-state.js?v=arena-7';
+import {prepareKick,dribble,releaseBall,putInRack,prepareThrow} from './arena-world-ball.js?v=arena-7';
 
 const direction=team=>team===0?-1:1;
 const members=w=>w.players.filter(p=>!p.bot);
@@ -30,7 +30,8 @@ function groupPositions(g,p,index){
  const s=g.sign,spot=g.spot,n=g.members.length;
  if(['passes','rondo','duel'].includes(g.kind)){
   if(g.kind==='rondo'&&p.key===g.chaser)return g.stage==='play'?[spot[0],spot[1]]:[spot[0]+1.4,spot[1]+1.4];
-  const a=(index/Math.max(2,n))*Math.PI*2+g.turn*.19,r=Math.max(n>4?4:3,n*.80/(Math.PI*2));return [spot[0]+Math.sin(a)*r,spot[1]+Math.cos(a)*r];
+  g.orientation??=g.turn*.19;
+  const a=(index/Math.max(2,n))*Math.PI*2+g.orientation,r=Math.max(n>4?4:3,n*.80/(Math.PI*2));return [spot[0]+Math.sin(a)*r,spot[1]+Math.cos(a)*r];
  }
  if(p.key===g.holder)return [spot[0],spot[1]-s*.36];
  if(g.kind==='cross'&&p.key===g.receiver)return [clamp(spot[0]*-.15,-2,2),s*20];
@@ -43,7 +44,8 @@ function chooseKind(w,g){
  return kind;
 }
 function configureGroup(w,g,kind){
- g.kind=kind;g.rounds=0;g.turn=integer(w,0,12);g.targetRounds=integer(w,3,7);g.sign=g.index%2?1:-1;
+ g.kind=kind;g.rounds=0;g.turn=integer(w,0,12);g.orientation=g.turn*.19;g.targetRounds=integer(w,3,7);g.sign=g.index%2?1:-1;
+ for(const key of g.members){const p=actor(w,key);if(p){p.group=g.id;p.team=null;}}
  g.spot=g.index<2?[g.index%2?8:-8,g.sign*13]:[-7,4];
  if(kind==='penalty')g.spot=[0,g.sign*15];if(kind==='freeKick')g.spot=[integer(w,-4,4),g.sign*10.5];if(kind==='finishing')g.spot=[integer(w,-6,6),g.sign*16];if(['passes','rondo','duel','juggle'].includes(kind))g.spot=g.index<2?[g.index%2?8:-8,g.sign*8]:[-7,4];
  if(kind==='cross')g.spot=[g.index%2?12:-12,g.sign*13];
@@ -85,7 +87,7 @@ function planGroup(w,g,context){
    else{const type=g.kind==='penalty'?'penalty':g.kind==='freeKick'?'freeKick':g.kind==='cross'&&actor(w,g.receiver)!==holder?'cross':'shot',to=type==='cross'?actor(w,g.receiver):null;prepareKick(w,holder,b,to?[to.x,.62,to.z]:[(rnd(w)-.5)*5.4,.35+rnd(w)*1.15,g.sign*26.5],type,to?.key||null);}
    g.lastDecision=t+1.5;
   }
-  if(g.kind==='rondo'&&g.chaser&&g.chaser!==g.holder){const chaser=actor(w,g.chaser);if(chaser){const n=unit(chaser.x-b.x,chaser.z-b.z);chaser.target=[b.x+n[0]*.45,b.z+n[1]*.45];}}
+  if(g.kind==='rondo'&&g.chaser&&g.chaser!==g.holder){const chaser=actor(w,g.chaser);if(chaser){const n=unit(chaser.x-b.x,chaser.z-b.z),gap=holder.kick?.95:.48;chaser.target=[b.x+n[0]*gap,b.z+n[1]*gap];}}
   const incoming=actor(w,b.flight?.receiver);if(incoming){incoming.target=[clamp(b.x+b.vx*.18,-15,15),clamp(b.z+b.vz*.18,-24,24)];face(incoming,b);}
   if(b.mode==='hand'){g.carrier=b.owner;g.stage=g.members.includes(b.owner)?'recover':'keeperReturn';g.returnKeeper=b.owner;g.since=t;}
   else if(b.onRoof){const spare=w.balls.find(q=>q.mode==='rack'&&!q.group);if(spare){b.group=null;g.ball=spare.id;spare.group=g.id;g.stage='fetch';g.carrier=g.holder;}}
@@ -118,16 +120,26 @@ function startGather(w,context){
 function planMatch(w,context){
  const m=w.match,b=ballById(w,m.ball),t=now(w),carrier=actor(w,m.carrier);if(!b)return;
  const holder=actor(w,b.owner),attacking=holder?.team??b.flight?.team??0;
- const loose=new Map([0,1].map(team=>[team,new Set(w.players.filter(p=>p.team===team&&!p.bot&&!p.rest).sort((a,c)=>dist(a,b)-dist(c,b)).slice(0,2).map(p=>p.key))]));
- const press=holder&&!holder.bot?w.players.filter(p=>p.team===1-holder.team&&!p.bot&&!p.rest).sort((a,c)=>dist(a,holder)-dist(c,holder)).slice(0,2):[];
+ const loose=new Map([0,1].map(team=>[team,new Set(w.players.filter(p=>p.team===team&&!p.bot&&!p.rest).sort((a,c)=>dist(a,b)-dist(c,b)).slice(0,1).map(p=>p.key))]));
+ const press=holder&&!holder.bot?w.players.filter(p=>p.team===1-holder.team&&!p.bot&&!p.rest).sort((a,c)=>dist(a,holder)-dist(c,holder)).slice(0,1):[];
  for(const p of w.players){
   if(p.rest)continue;
+  // A player returning a practice ball must finish that job before the
+  // friendly formation can take over. Two directors used to overwrite their
+  // destination every frame, leaving a carrier stranded on a formation spot.
+  if(m.phase==='gather'&&w.groups.some(g=>g.stage!=='done'&&g.members.includes(p.key)))continue;
   if(p.bot){const sign=p.team===0?1:-1;p.target=p.anticipate&&t-p.anticipate.at<.5?[p.anticipate.point[0],sign*24.8]:[clamp(b.x*.23,-2.35,2.35),sign*24.8];p.aim=sign<0?0:Math.PI;}
   else if(p.team!=null){
    const base=fieldShape(w,p,m),dir=direction(p.team);p.target=[clamp(base[0]+b.x*.20+Math.sin(t*.47+hash(p.key))*.4,-14.3,14.3),clamp(base[1]+b.z*.28,-22,22)];face(p,b);
    if(m.phase==='play'){
-    if(holder===p&&!p.kick){const cutInside=Math.abs(p.x)>8&&m.teams[p.team].length<2,dx=cutInside?-p.x:clamp(p.x+(m.passes%3===2?(p.x>=0?2:-2):p.x>0?-.25:.25),-13,13)-p.x,d=unit(dx,dir*4);p.target=[clamp(b.x+d[0]*.8,-16.5,16.5),clamp(b.z+d[1]*.8,-26.2,26.2)];p.aim=Math.atan2(d[0],d[1]);if(b.owner===p.key)dribble(w,p,b,d);}
-    else if(press.includes(p)&&holder){const n=unit(p.x-b.x,p.z-b.z);p.target=[b.x+n[0]*.42,b.z+n[1]*.42];}
+    if(holder===p&&!p.kick){
+     const cutInside=Math.abs(p.x)>8&&m.teams[p.team].length<2,dx=cutInside?-p.x:clamp(p.x+(m.passes%3===2?(p.x>=0?2:-2):p.x>0?-.25:.25),-13,13)-p.x,d=unit(dx,dir*4),front=(b.x-p.x)*d[0]+(b.z-p.z)*d[1],regain=dist(p,b)>.58||front<.02,lead=regain?-.32:.8;
+     // Recover the actual ball before running on. A point .8 m in front of a
+     // stopped ball can otherwise leave its owner standing ahead of it forever,
+     // outside touching range, while the defender remains beside them.
+     p.target=[clamp(b.x+d[0]*lead,-16.5,16.5),clamp(b.z+d[1]*lead,-26.2,26.2)];p.aim=Math.atan2(d[0],d[1]);if(b.owner===p.key&&front>-.05)dribble(w,p,b,d);
+    }
+    else if(press.includes(p)&&holder){const n=unit(p.x-b.x,p.z-b.z),gap=holder.kick?.95:.5;p.target=[b.x+n[0]*gap,b.z+n[1]*gap];}
     else if(!holder){if(loose.get(p.team)?.has(p.key))p.target=[clamp(b.x+b.vx*.18,-17,17),clamp(b.z+b.vz*.18,-26.2,26.2)];}
     else if(p.team===attacking){p.target[1]=clamp(p.target[1]+dir*3,-22,22);if(m.passes%3===2&&m.teams[p.team].indexOf(p.key)%3!==1)p.target=[base[0]>0?12:-12,clamp(holder.z+dir*5,-22,22)];}
     if(b.flight?.receiver===p.key)p.target=[clamp(b.flight.destination[0],-15,15),clamp(b.flight.destination[2],-24,24)];

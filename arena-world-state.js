@@ -1,7 +1,7 @@
 // Shared, serializable simulation state. No browser, network or account writes.
-import {DT,hash,clamp} from './arena-motion.js?v=arena-6';
-import {BALL_RACK,BENCH} from './arena-layout.js?v=arena-6';
-export const WORLD_VERSION=6,SESSION_SECONDS=1800,HZ=24;
+import {DT,hash,clamp} from './arena-motion.js?v=arena-7';
+import {BALL_RACK,BENCH} from './arena-layout.js?v=arena-7';
+export const WORLD_VERSION=7,SESSION_SECONDS=1800,HZ=24;
 export const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export const unit=(x,z)=>{const n=Math.hypot(x,z)||1;return [x/n,z/n];};
 export const actor=(w,key)=>w.players.find(p=>p.key===key);

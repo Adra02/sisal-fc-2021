@@ -1,7 +1,7 @@
-import {DT,clamp,mix} from './arena-motion.js?v=arena-6';
-import {worldContext,advanceWorld,captureWorld,exportWorld} from './arena-world.js?v=arena-6';
+import {DT,clamp,mix} from './arena-motion.js?v=arena-7';
+import {worldContext,advanceWorld,captureWorld,exportWorld} from './arena-world.js?v=arena-7';
 const caches=new WeakMap();
-function cache(snapshot){let c=caches.get(snapshot);if(!c){if(snapshot.world?.version!==6||!snapshot.world.start)throw Error('ARENA_WORLD_REQUIRED');const state=structuredClone(snapshot.world.start);c={state,context:worldContext(snapshot),previous:null,current:null,checkpoints:[exportWorld(state)]};caches.set(snapshot,c);}return c;}
+function cache(snapshot){let c=caches.get(snapshot);if(!c){if(snapshot.world?.version!==7||!snapshot.world.start)throw Error('ARENA_WORLD_REQUIRED');const state=structuredClone(snapshot.world.start);c={state,context:worldContext(snapshot),previous:null,current:null,checkpoints:[exportWorld(state)]};caches.set(snapshot,c);}return c;}
 function targetTick(snapshot,seconds){return snapshot.world.start.tick+Math.max(0,Math.floor((seconds*1000-snapshot.world.startAt)/1000/DT));}
 function advance(c,target){
  if(target<c.state.tick){const start=[...c.checkpoints].reverse().find(s=>s.tick<=target)||c.checkpoints[0];c.state=structuredClone(start);c.current=c.previous=null;}

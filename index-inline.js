@@ -1,6 +1,6 @@
 (async function(){'use strict';
 await window.sisalAccountReady;
-const APP_VERSION='v32.1.46';
+const APP_VERSION='v32.1.47';
 const FORMATIONS=[
 '4-2-1-3','4-4-1-1','4-2-3-1 Wide','4-3-3 Attack','4-1-2-1-2 Narrow','4-4-2','4-3-1-2','4-3-3 Holding','4-4-2 Holding','4-1-2-1-2 Wide','4-2-3-1','4-1-4-1','4-3-3 Defend','4-3-2-1','4-5-1 Flat','4-2-2-2','4-3-3','4-2-4','4-1-3-2','4-5-1 Attack','3-4-2-1','3-5-2','5-2-1-2','3-4-1-2','5-3-2','5-2-3','5-4-1','3-4-3','3-1-4-2'];
 const FORM_ROWS={

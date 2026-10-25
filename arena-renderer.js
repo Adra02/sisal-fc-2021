@@ -1,9 +1,9 @@
 import * as T from './vendor/three.module.min.js';
 import {environmentTexture} from './studio-materials.js?v=studio-9';
-import {makeAvatar} from './arena-avatar.js?v=arena-6';
-import {sampleContinuous as sampleArena} from './arena-live-cache.js?v=arena-6';
-import {arenaAudio} from './arena-audio.js?v=arena-6';
-import {buildGround} from './arena-environment.js?v=arena-6';
+import {makeAvatar} from './arena-avatar.js?v=arena-7';
+import {sampleContinuous as sampleArena} from './arena-live-cache.js?v=arena-7';
+import {arenaAudio} from './arena-audio.js?v=arena-7';
+import {buildGround} from './arena-environment.js?v=arena-7';
 export function createArenaRenderer(host,initialSnapshot,{clock,onFrame,onFailure,onQuality,selfKey=''}={}){
  const coarse=matchMedia('(pointer:coarse)').matches,reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
  let renderer;try{renderer=new T.WebGLRenderer({antialias:!coarse,powerPreference:'default'});}catch(cause){throw Object.assign(Error('La grafica 3D non è disponibile in questo browser. Prova ad attivare l’accelerazione grafica o ad aprire l’app nel browser aggiornato del telefono.'),{code:'ARENA_WEBGL',cause});}

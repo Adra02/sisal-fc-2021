@@ -4,7 +4,7 @@ import * as T from './vendor/three.module.min.js';
 import {createJockey} from './jockey-model.js?v=studio-9';
 import {styleColors,paintSilks} from './horse-style.js?v=studio-9';
 import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-9';
-import distantBody from './assets/studio/arena-body-lod.js?v=arena-6';
+import distantBody from './assets/studio/arena-body-lod.js?v=arena-7';
 const clamp=T.MathUtils.clamp,TAU=Math.PI*2,scale=.86;
 const ease=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
 const axis=new T.Vector3(),bend=new T.Vector3();
