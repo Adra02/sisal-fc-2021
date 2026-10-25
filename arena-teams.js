@@ -1,4 +1,4 @@
-import {hash,shuffle} from './arena-motion.js?v=arena-7';
+import {hash,shuffle} from './arena-motion.js?v=arena-8';
 // A fair, reproducible rotation. Unknown real appearances are never zero.
 const schedules=new WeakMap();
 const signature=team=>team.map(p=>p.key).sort().join('|');

@@ -10,7 +10,7 @@ for(let tick=0;tick<400*24;tick++){
  stepWorld(w,context);if(tick%3)continue;
  const f=captureWorld(w,context);
  for(const ball of w.balls){const p=w.players.find(p=>p.key===ball.owner),state=f.actors.find(p=>p.key===ball.owner);if(!p||!state||!ball.motion)continue;const age=w.tick/24-ball.motion.at;
-  if(ball.motion.type==='pickup'&&age<.45){maximumGroundDrift=Math.max(maximumGroundDrift,Math.hypot(ball.x-ball.motion.from[0],ball.y-ball.motion.from[1],ball.z-ball.motion.from[2]));continue;}
+  if(ball.motion.type==='pickup'&&age<.25){maximumGroundDrift=Math.max(maximumGroundDrift,Math.hypot(ball.x-ball.motion.from[0],ball.y-ball.motion.from[1],ball.z-ball.motion.from[2]));continue;}
   a.update(state,f.t,.125);a.root.updateMatrixWorld(true);a.model.skeleton.update();const distance=Math.min(...wrists.map(b=>b.getWorldPosition(point).distanceTo(new T.Vector3(ball.x,ball.y,ball.z))));worst=Math.max(worst,distance);assert(distance<.21,'hand reaches the ball surface in '+ball.motion.type+': '+distance);if(ball.motion.type==='pickup')pickupChecks++;else placeChecks++;
  }
 }

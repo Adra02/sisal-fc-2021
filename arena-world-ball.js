@@ -1,8 +1,27 @@
-import {DT,clamp} from './arena-motion.js?v=arena-7';
-import {PAVILION,BALL_RACK} from './arena-layout.js?v=arena-7';
-import {now,actor,handPoint,emit,footPointWorld,rnd,pose} from './arena-world-state.js?v=arena-7';
-const G=9.81,R=.14;
+import {DT,clamp} from './arena-motion.js?v=arena-8';
+import {PAVILION,BALL_RACK,FIELD} from './arena-layout.js?v=arena-8';
+import {now,actor,handPoint,emit,footPointWorld,rnd,pose} from './arena-world-state.js?v=arena-8';
+import {offsideAtRelease} from './arena-laws.js?v=arena-8';
+const G=9.81,R=FIELD.ballRadius,ROLL=1.35;
 const smooth=u=>{u=clamp(u);return u*u*(3-2*u)};
+function circleEntry(x,z,dx,dz,r){const a=dx*dx+dz*dz,c=x*x+z*z-r*r;if(a<1e-12)return null;const b=2*(x*dx+z*dz),d=b*b-4*a*c;if(d<0)return null;const u=c<0?0:(-b-Math.sqrt(d))/(2*a);return u>=0&&u<=1?u:null;}
+function goalFrameContact(w,b){
+ const start=b.previous,delta=[b.x-start[0],b.y-start[1],b.z-start[2]],radius=R+FIELD.postRadius,hits=[];
+ for(const sign of [-1,1]){
+  const z=sign*FIELD.halfLength;
+  for(const x of [-FIELD.goalWidth/2,FIELD.goalWidth/2]){
+   const u=circleEntry(start[0]-x,start[2]-z,delta[0],delta[2],radius);if(u==null)continue;const y=start[1]+delta[1]*u;if(y<0||y>FIELD.goalHeight)continue;
+   const nx=start[0]+delta[0]*u-x,nz=start[2]+delta[2]*u-z,n=Math.hypot(nx,nz)||1;hits.push({u,nx:nx/n,ny:0,nz:nz/n,surface:'post'});
+  }
+  const u=circleEntry(start[1]-FIELD.goalHeight,start[2]-z,delta[1],delta[2],radius);
+  if(u!=null&&Math.abs(start[0]+delta[0]*u)<=FIELD.goalWidth/2){const ny=start[1]+delta[1]*u-FIELD.goalHeight,nz=start[2]+delta[2]*u-z,n=Math.hypot(ny,nz)||1;hits.push({u,nx:0,ny:ny/n,nz:nz/n,surface:'crossbar'});}
+ }
+ const hit=hits.filter(h=>b.vx*h.nx+b.vy*h.ny+b.vz*h.nz<-.02).sort((a,c)=>a.u-c.u)[0];if(!hit)return;
+ const dot=b.vx*hit.nx+b.vy*hit.ny+b.vz*hit.nz,impact=Math.abs(dot),rest=1-hit.u;
+ b.vx-=1.68*dot*hit.nx;b.vy-=1.68*dot*hit.ny;b.vz-=1.68*dot*hit.nz;
+ b.x=start[0]+delta[0]*hit.u+hit.nx*.003+b.vx*DT*rest;b.y=start[1]+delta[1]*hit.u+hit.ny*.003+b.vy*DT*rest;b.z=start[2]+delta[2]*hit.u+hit.nz*.003+b.vz*DT*rest;
+ if(now(w)-(b.frameHitAt??-10)>.08){emit(w,'post',b.flight?.from,null,b,{surface:hit.surface,intensity:clamp(impact/18,.12,1)});b.frameHitAt=now(w);}
+}
 export function stepBalls(w){
  const t=now(w);
  for(const b of w.balls){
@@ -10,7 +29,7 @@ export function stepBalls(w){
   if(b.mode==='rack')continue;
   const p=actor(w,b.owner);
   if(b.motion&&p){
-   const m=b.motion,u=smooth((t-m.at-(m.type==='pickup'?.45:0))/(m.until-m.at-(m.type==='pickup'?.45:0))),hand=handPoint(p),to=m.type==='pickup'?hand:m.to,from=m.type==='pickup'?m.from:hand;
+   const m=b.motion,u=smooth((t-m.at-(m.type==='pickup'?.25:0))/(m.until-m.at-(m.type==='pickup'?.25:0))),hand=handPoint(p),to=m.type==='pickup'?hand:m.to,from=m.type==='pickup'?m.from:hand;
    [b.x,b.y,b.z]=from.map((v,i)=>v+(to[i]-v)*u);b.vx=b.vy=b.vz=0;
    if(p.action)p.action.handTarget=[b.x,b.y,b.z];
    if(t>=m.until){b.motion=null;if(m.type==='pickup'){b.mode='hand';emit(w,'collect',p,null,b);}else{b.mode='free';b.owner=null;b.lastTouch=p.key;emit(w,'place',p,null,b);}}
@@ -29,9 +48,8 @@ export function stepBalls(w){
   if(roof&&oldY>=roofY+R&&b.y<roofY+R&&b.vy<0){b.y=roofY+R;b.vy=-b.vy*.18;b.vx-=G*.045*DT;b.vz*=.995;if(!b.onRoof){b.onRoof=true;emit(w,'roof',b.flight?.from,null,b);}}
   else if(b.onRoof&&roof&&Math.abs(b.y-roofY-R)<.06){b.y=roofY+R;b.vy=0;b.vx-=G*.045*DT;}
   else b.onRoof=false;
-  if(b.y<R){b.y=R;if(b.vy<-.85)b.vy=-b.vy*.34;else b.vy=0;const friction=Math.exp(-1.05*DT);b.vx*=friction;b.vz*=friction;if(Math.hypot(b.vx,b.vz)<.035)b.vx=b.vz=0;}
-  // Physical posts at both ends, including fast shots swept across a post.
-  for(const z of [-26,26])for(const x of [-3,3]){const vx=b.x-b.previous[0],vz=b.z-b.previous[2],l=vx*vx+vz*vz,u=l?clamp(((x-b.previous[0])*vx+(z-b.previous[2])*vz)/l):0,px=b.previous[0]+vx*u,pz=b.previous[2]+vz*u;if(b.y<2.5&&Math.hypot(px-x,pz-z)<.19){const dx=px-x,dz=pz-z,d=Math.hypot(dx,dz)||1,nx=dx/d,nz=dz/d,dot=b.vx*nx+b.vz*nz;b.x=x+nx*.195;b.z=z+nz*.195;b.vx-=1.65*dot*nx;b.vz-=1.65*dot*nz;emit(w,'post',b.flight?.from,null,b);}}
+  if(b.y<R){const impact=-b.vy;b.y=R;if(b.vy<-1.1){b.vy=-b.vy*.26;b.vx*=.94;b.vz*=.94;if(impact>1.8)emit(w,'bounce',b.lastTouch,null,b,{intensity:clamp(impact/9,.1,.8)});}else b.vy=0;const v=Math.hypot(b.vx,b.vz),next=Math.max(0,v-ROLL*DT);if(v){b.vx*=next/v;b.vz*=next/v;}}
+  goalFrameContact(w,b);
   if(b.x<-31.5||b.x>30.8){b.x=clamp(b.x,-31.5,30.8);b.vx*=-.24;}
   if(Math.abs(b.z)>31){b.z=Math.sign(b.z)*31;b.vz*=-.24;}
   b.spinX+=b.vz*DT/R;b.spinZ-=b.vx*DT/R;b.spinY+=(b.flight?.curve||0)*DT;
@@ -39,12 +57,14 @@ export function stepBalls(w){
  }
 }
 export function releaseBall(w,p,b,target,type='pass',receiver=null){
- const distance=Math.hypot(target[0]-b.x,target[2]-b.z),high=['cross','corner','throw','throwIn'].includes(type),shot=['shot','penalty','freeKick','volley','header'].includes(type),speed=shot?15+rnd(w)*4:high?9:7.4+rnd(w)*2,duration=high?clamp(distance/12,1.15,2.1):clamp(distance/speed,.22,2.5);
- b.vx=(target[0]-b.x)/duration;b.vz=(target[2]-b.z)/duration;b.vy=high||shot?(target[1]-b.y+.5*G*duration*duration)/duration:0;
+ const distance=Math.hypot(target[0]-b.x,target[2]-b.z),high=['cross','corner','throw','throwIn'].includes(type),shot=['shot','penalty','freeKick','volley','header'].includes(type),speed=shot?19+rnd(w)*5:high?13:10.5+rnd(w)*1.6,duration=high?clamp(distance/15,.80,1.8):clamp(distance/speed,.18,2.5),initial=high||shot?distance/duration:distance/duration+.5*ROLL*duration,factor=distance?initial/distance:0;
+ b.vx=(target[0]-b.x)*factor;b.vz=(target[2]-b.z)*factor;b.vy=high||shot?(target[1]-b.y+.5*G*duration*duration)/duration:0;
  if(type==='freeKick')b.vy+=.8;
- b.mode='free';b.owner=null;b.motion=null;b.lastTouch=p.key;b.net=null;b.flight={from:p.key,team:p.team,type,at:now(w),receiver,destination:[...target],curve:type==='freeKick'?(rnd(w)-.5)*.65:0};
+ b.mode='free';b.owner=null;b.motion=null;b.lastTouch=p.key;b.net=null;b.flight={from:p.key,team:p.team,type,at:now(w),receiver,destination:[...target],curve:type==='freeKick'?(rnd(w)-.5)*.65:0,offside:offsideAtRelease(w,p,b,type),shotBy:shot?p.key:null};
+ if(w.match?.ball===b.id&&['kickoff','goalKick','corner','freeKick','indirect','penalty','throwIn'].includes(type))b.restartGuard={type,kicker:p.key,team:p.team};
+ if(w.match?.ball===b.id&&type==='throw'&&p.bot)b.restartGuard={type:'keeperThrow',kicker:p.key,team:p.team};
  if(p.action){p.action.contact=now(w);p.action.footTarget=[b.x,b.y,b.z];}
- emit(w,type,p,receiver,b,{team:p.team});
+ emit(w,type,p,receiver,b,{team:p.team,intensity:clamp(initial/24,.20,1)});
 }
 export function prepareKick(w,p,b,target,type='pass',receiver=null){
  if(p.kick||b.mode==='hand'||b.motion||(b.owner&&b.owner!==p.key)||b.flight)return false;b.owner=p.key;
@@ -54,9 +74,10 @@ export function stepKick(w,p,b){
  const k=p.kick,t=now(w);if(!k||!b)return;
  if(b.owner!==p.key||b.mode==='hand'||b.motion){p.kick=null;return;}
  const h=Math.atan2(k.target[0]-b.x,k.target[2]-b.z),plant=[b.x-Math.sin(h)*.36,b.z-Math.cos(h)*.36];p.aim=h;p.target=plant;
- if(k.stage==='plant'&&Math.hypot(p.x-plant[0],p.z-plant[1])<.11&&Math.hypot(p.vx,p.vz)<.8&&Math.abs(Math.atan2(Math.sin(h-p.heading),Math.cos(h-p.heading)))<.3){k.stage='swing';k.release=t+.28;pose(w,p,k.type==='header'?'header':k.type==='volley'?'volley':k.type==='cross'||k.type==='corner'?'cross':'shot',.85,{contact:k.release,footTarget:[b.x,b.y,b.z]});}
+ if(k.stage==='plant'&&Math.hypot(p.x-b.x,p.z-b.z)<.65){b.vx*=Math.exp(-8*DT);b.vz*=Math.exp(-8*DT);}
+ if(k.stage==='plant'&&Math.hypot(p.x-plant[0],p.z-plant[1])<.15&&Math.hypot(p.vx,p.vz)<1.15&&Math.abs(Math.atan2(Math.sin(h-p.heading),Math.cos(h-p.heading)))<.35){k.stage='swing';const short=['pass','kickoff','indirect','goalKick'].includes(k.type);k.release=t+(short?.17:.23);pose(w,p,k.type==='header'?'header':k.type==='volley'?'volley':k.type==='cross'||k.type==='corner'?'cross':short?'pass':'shot',short?.50:.70,{contact:k.release,footTarget:[b.x,b.y,b.z],strength:short?.45:1});}
  if(k.stage==='swing'){p.target=[p.x,p.z];p.maxSpeed=0;if(t>=k.release){if(Math.hypot(p.x-b.x,p.z-b.z)<.62){releaseBall(w,p,b,k.target,k.type,k.receiver);}p.kick=null;}}
- if(t-k.started>5.5){p.kick=null;}
+ if(t-k.started>3.0){p.kick=null;}
 }
 export function dribble(w,p,b,direction){
  if(b.motion||b.mode==='hand'||p.kick)return;
@@ -65,7 +86,7 @@ export function dribble(w,p,b,direction){
   const [dx,dz]=direction||[Math.sin(p.heading),Math.cos(p.heading)];
   // A real impulse and free rolling interval replace the old glued foot point.
   b.vx=dx*(1.55+speed*.72)+p.vx*.28;b.vz=dz*(1.55+speed*.72)+p.vz*.28;b.vy=0;b.mode='free';b.owner=p.key;b.lastTouch=p.key;b.flight=null;
-  p.nextTouch=t+clamp(.48-speed*.025,.30,.48);pose(w,p,'dribble',.34,{contact:t,footTarget:[b.x,b.y,b.z]});emit(w,'touch',p,null,b);
+  p.nextTouch=t+clamp(.40-speed*.025,.24,.40);pose(w,p,'dribble',.28,{contact:t,footTarget:[b.x,b.y,b.z]});emit(w,'touch',p,null,b,{intensity:.22+Math.min(.18,speed*.04)});
  }
  if(distance>1.10)b.owner=null;
 }

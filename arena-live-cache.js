@@ -1,7 +1,7 @@
-import {DT,clamp,mix} from './arena-motion.js?v=arena-7';
-import {worldContext,advanceWorld,captureWorld,exportWorld} from './arena-world.js?v=arena-7';
+import {DT,clamp,mix} from './arena-motion.js?v=arena-8';
+import {worldContext,advanceWorld,captureWorld,exportWorld} from './arena-world.js?v=arena-8';
 const caches=new WeakMap();
-function cache(snapshot){let c=caches.get(snapshot);if(!c){if(snapshot.world?.version!==7||!snapshot.world.start)throw Error('ARENA_WORLD_REQUIRED');const state=structuredClone(snapshot.world.start);c={state,context:worldContext(snapshot),previous:null,current:null,checkpoints:[exportWorld(state)]};caches.set(snapshot,c);}return c;}
+function cache(snapshot){let c=caches.get(snapshot);if(!c){if(snapshot.world?.version!==8||!snapshot.world.start)throw Error('ARENA_WORLD_REQUIRED');const state=structuredClone(snapshot.world.start);c={state,context:worldContext(snapshot),previous:null,current:null,checkpoints:[exportWorld(state)]};caches.set(snapshot,c);}return c;}
 function targetTick(snapshot,seconds){return snapshot.world.start.tick+Math.max(0,Math.floor((seconds*1000-snapshot.world.startAt)/1000/DT));}
 function advance(c,target){
  if(target<c.state.tick){const start=[...c.checkpoints].reverse().find(s=>s.tick<=target)||c.checkpoints[0];c.state=structuredClone(start);c.current=c.previous=null;}
@@ -15,7 +15,8 @@ export function sampleContinuous(snapshot,seconds){
  const liveTick=snapshot.world.start.tick+(seconds*1000-snapshot.world.startAt)/1000/DT,u=clamp(liveTick-Math.floor(liveTick));
  // One fixed step of visual latency permits interpolation without guessing
  // future contacts, scores or winners. Events remain those of the current step.
- return {...b,actors:b.actors.map(p=>{const q=a.actors.find(q=>q.key===p.key)||p;return {...p,pos:p.pos.map((v,i)=>mix(q.pos[i],v,u)),velocity:p.velocity.map((v,i)=>mix(q.velocity[i],v,u)),heading:q.heading+Math.atan2(Math.sin(p.heading-q.heading),Math.cos(p.heading-q.heading))*u,stepCycle:mix(q.stepCycle,p.stepCycle,u),elevation:mix(q.elevation,p.elevation,u)};}),balls:b.balls.map(p=>{const q=a.balls.find(q=>q.id===p.id)||p;return {...p,pos:p.pos.map((v,i)=>mix(q.pos[i],v,u)),spin:p.spin.map((v,i)=>mix(q.spin[i],v,u))};})};
+ const interpolatePoint=(x,y)=>x&&y?y.map((v,i)=>mix(x[i],v,u)):y;
+ return {...b,actors:b.actors.map(p=>{const q=a.actors.find(q=>q.key===p.key)||p,same=q.gesture===p.gesture&&q.gestureStart===p.gestureStart;return {...p,pos:p.pos.map((v,i)=>mix(q.pos[i],v,u)),velocity:p.velocity.map((v,i)=>mix(q.velocity[i],v,u)),heading:q.heading+Math.atan2(Math.sin(p.heading-q.heading),Math.cos(p.heading-q.heading))*u,stepCycle:mix(q.stepCycle,p.stepCycle,u),elevation:mix(q.elevation,p.elevation,u),phase:same?mix(q.phase,p.phase,u):p.phase,actionTime:mix(q.actionTime,p.actionTime,u),handTarget:same?interpolatePoint(q.handTarget,p.handTarget):p.handTarget,footTarget:same?interpolatePoint(q.footTarget,p.footTarget):p.footTarget};}),balls:b.balls.map(p=>{const q=a.balls.find(q=>q.id===p.id)||p;return {...p,pos:p.pos.map((v,i)=>mix(q.pos[i],v,u)),spin:p.spin.map((v,i)=>mix(q.spin[i],v,u))};}),props:{...b.props,cones:(b.props.cones||[]).map(p=>{const q=a.props.cones?.find(q=>q.id===p.id);return q&&p.mode===q.mode?{...p,x:mix(q.x,p.x,u),y:mix(q.y,p.y,u),z:mix(q.z,p.z,u)}:p;})}};
 }
 export async function prewarmContinuous(snapshot,seconds,{signal,onProgress}={}){
  const c=cache(snapshot),target=targetTick(snapshot,seconds),start=c.state.tick;if(target<start){advance(c,target);onProgress?.(1);return;}

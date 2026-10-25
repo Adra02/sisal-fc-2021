@@ -1,6 +1,6 @@
 // Fixed-step movement shared by drills and friendly games. Metres and seconds.
 // No renderer, storage, service or per-frame network access in this module.
-import {BENCH} from './arena-layout.js?v=arena-7';
+import {BENCH} from './arena-layout.js?v=arena-8';
 export const DT=1/24,RADIUS=.34,MIN_DISTANCE=RADIUS*2;
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 export const mix=(a,b,u)=>a+(b-a)*u;
@@ -34,10 +34,10 @@ export function movePlayers(players,targets,dt=DT){
  const old=players.map(p=>[p.x,p.z]);
  for(let i=0;i<players.length;i++){
   const p=players[i];let target=targets[i]||[p.x,p.z];const speed=p.maxSpeed??4.1;
-  const crossWall=(p.x<26.4&&target[0]>27.8)||(p.x>27.8&&target[0]<26.4);if(crossWall&&((p.z>1.1&&p.z<14.9)||(target[1]>1.1&&target[1]<14.9))){const edge=p.z<8?1:15,side=p.x<26.4?26.3:27.9;target=Math.abs(p.z-edge)>.25?[side,edge]:[p.x<26.4?27.9:26.3,edge];}
+  const crossWall=(p.x<26.43&&target[0]>27.76)||(p.x>27.76&&target[0]<26.43);if(crossWall&&((p.z>1.1&&p.z<14.9)||(target[1]>1.1&&target[1]<14.9))){const edge=p.z<8?1:15,side=p.x<26.43?26.25:27.95;target=Math.abs(p.z-edge)>.20?[side,edge]:[p.x<26.43?27.95:26.25,edge];}
   if(!p.seatedTarget){const crossed=(p.x<21.32&&target[0]>22.76)||(p.x>22.76&&target[0]<21.32),sameBand=p.z>2.7&&p.z<13.35||target[1]>2.7&&target[1]<13.35;if(crossed&&sameBand){const edge=[2.5,13.55].sort((a,b)=>Math.abs(p.z-a)+Math.abs(target[1]-a)-Math.abs(p.z-b)-Math.abs(target[1]-b))[0],side=p.x<21.32?21.0:23.1;if(Math.abs(p.z-edge)>.3)target=[side,edge];else target=[p.x<21.32?23.1:21.0,edge];}}
 
-  let vx=(target[0]-p.x)*2.4,vz=(target[1]-p.z)*2.4,d=length(vx,vz);if(d>speed){vx*=speed/d;vz*=speed/d;}
+  let vx=(target[0]-p.x)*3.6,vz=(target[1]-p.z)*3.6,d=length(vx,vz);if(d>speed){vx*=speed/d;vz*=speed/d;}
   p.avoidX=0;p.avoidZ=0;p.wantX=vx;p.wantZ=vz;p.moveTarget=target;
  }
  // Yield only when the intended paths actually collide. Mere proximity to a
@@ -58,8 +58,8 @@ export function movePlayers(players,targets,dt=DT){
   const strength=(1.65-d)*2.0,n=Math.sqrt(v2),px=vz/n*strength,pz=-vx/n*strength,wa=ad<.10?.02:(a.priority??1),wb=bd<.10?.02:(b.priority??1),total=wa+wb;
   a.avoidX+=px*wa/total*2;a.avoidZ+=pz*wa/total*2;b.avoidX-=px*wb/total*2;b.avoidZ-=pz*wb/total*2;
  },1.65);
- for(const p of players){let vx=p.wantX+p.avoidX,vz=p.wantZ+p.avoidZ,d=length(vx,vz),top=p.maxSpeed??4.1;if(d>top){vx*=top/d;vz*=top/d;}let ax=vx-p.vx,az=vz-p.vz,acc=length(ax,az),limit=5.4*dt;if(acc>limit){ax*=limit/acc;az*=limit/acc;}p.vx+=ax;p.vz+=az;p.x+=p.vx*dt;p.z+=p.vz*dt;}
+ for(const p of players){let vx=p.wantX+p.avoidX,vz=p.wantZ+p.avoidZ,d=length(vx,vz),top=p.maxSpeed??4.1;if(d>top){vx*=top/d;vz*=top/d;}let ax=vx-p.vx,az=vz-p.vz,acc=length(ax,az),limit=(p.faceLock?7.4:8.2)*dt;if(acc>limit){ax*=limit/acc;az*=limit/acc;}p.vx+=ax;p.vz+=az;p.x+=p.vx*dt;p.z+=p.vz*dt;}
  separate(players);
- for(let i=0;i<players.length;i++){const p=players[i],dx=p.x-old[i][0],dz=p.z-old[i][1],distance=length(dx,dz),speed=distance/dt;p.vx=dx/dt;p.vz=dz/dt;p.travel+=distance;p.stride=.99+Math.min(5,speed)*.22;p.cycle+=distance/p.stride;const desired=p.aim??(speed>.13?Math.atan2(dx,dz):p.heading);p.heading=turn(p.heading,desired,dt*(speed>1?4.0:5.8));for(const key of ['x','z','vx','vz','heading','travel','cycle'])p[key]=Math.round(p[key]*100000)/100000;}
+ for(let i=0;i<players.length;i++){const p=players[i],dx=p.x-old[i][0],dz=p.z-old[i][1],distance=length(dx,dz),speed=distance/dt;p.vx=dx/dt;p.vz=dz/dt;p.travel+=distance;p.stride=1.08+Math.min(6,speed)*.21;p.cycle+=distance/p.stride;const travelling=speed>.85&&!p.faceLock&&!p.seatedTarget,desired=travelling?Math.atan2(dx,dz):p.aim??(speed>.13?Math.atan2(dx,dz):p.heading);p.heading=turn(p.heading,desired,dt*(p.faceLock?7.5:speed>1?5.8:6.4));for(const key of ['x','z','vx','vz','heading','travel','cycle'])p[key]=Math.round(p[key]*100000)/100000;}
 }
 export function sampleTrack(actor,t){const keys=actor.track||[];if(!keys.length)return [...actor.home];if(t<=keys[0].at)return [...keys[0].p];for(let i=1;i<keys.length;i++)if(t<=keys[i].at){const a=keys[i-1],b=keys[i],v=clamp((t-a.at)/(b.at-a.at)),u=v*v*(3-2*v);return [mix(a.p[0],b.p[0],u),mix(a.p[1],b.p[1],u)];}return [...keys.at(-1).p];}
