@@ -1,4 +1,4 @@
-import {hash} from './arena-motion.js?v=arena-8';
+import {hash} from './arena-motion.js?v=arena-9';
 // Authored fictional reactions. No inference about a member's real life.
 const lines={
  cross:['Questa viene dalla fascia: per una volta non è un lancio di rifiuti.','Il cross è partito. Ora vediamo se in area ci sono piedi o arredamento.','Bella palla in mezzo: prova a non restituirla al parcheggio.','Hai messo dentro un cross, non un pacco senza destinatario.','Finalmente la fascia serve a qualcosa oltre a prendere aria.','In mezzo c’è spazio: arrivaci prima della tua scusa.','Il pallone passa sopra le teste. Sotto, le idee sono ancora in ritardo.','Questo cross pretende un tiro. La relazione tecnica la fai dopo.'],

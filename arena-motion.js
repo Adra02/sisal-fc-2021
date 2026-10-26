@@ -1,6 +1,6 @@
 // Fixed-step movement shared by drills and friendly games. Metres and seconds.
 // No renderer, storage, service or per-frame network access in this module.
-import {BENCH} from './arena-layout.js?v=arena-8';
+import {BENCH} from './arena-layout.js?v=arena-9';
 export const DT=1/24,RADIUS=.34,MIN_DISTANCE=RADIUS*2;
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 export const mix=(a,b,u)=>a+(b-a)*u;
@@ -35,7 +35,7 @@ export function movePlayers(players,targets,dt=DT){
  for(let i=0;i<players.length;i++){
   const p=players[i];let target=targets[i]||[p.x,p.z];const speed=p.maxSpeed??4.1;
   const crossWall=(p.x<26.43&&target[0]>27.76)||(p.x>27.76&&target[0]<26.43);if(crossWall&&((p.z>1.1&&p.z<14.9)||(target[1]>1.1&&target[1]<14.9))){const edge=p.z<8?1:15,side=p.x<26.43?26.25:27.95;target=Math.abs(p.z-edge)>.20?[side,edge]:[p.x<26.43?27.95:26.25,edge];}
-  if(!p.seatedTarget){const crossed=(p.x<21.32&&target[0]>22.76)||(p.x>22.76&&target[0]<21.32),sameBand=p.z>2.7&&p.z<13.35||target[1]>2.7&&target[1]<13.35;if(crossed&&sameBand){const edge=[2.5,13.55].sort((a,b)=>Math.abs(p.z-a)+Math.abs(target[1]-a)-Math.abs(p.z-b)-Math.abs(target[1]-b))[0],side=p.x<21.32?21.0:23.1;if(Math.abs(p.z-edge)>.3)target=[side,edge];else target=[p.x<21.32?23.1:21.0,edge];}}
+  if(!p.seatedTarget){const crossed=(p.x<21.33&&target[0]>22.75)||(p.x>22.75&&target[0]<21.33),sameBand=p.z>2.7&&p.z<13.35||target[1]>2.7&&target[1]<13.35;if(crossed&&sameBand){const edge=[2.5,13.55].sort((a,b)=>Math.abs(p.z-a)+Math.abs(target[1]-a)-Math.abs(p.z-b)-Math.abs(target[1]-b))[0],side=p.x<21.33?21.0:23.1;if(Math.abs(p.z-edge)>.3)target=[side,edge];else target=[p.x<21.33?23.1:21.0,edge];}}
 
   let vx=(target[0]-p.x)*3.6,vz=(target[1]-p.z)*3.6,d=length(vx,vz);if(d>speed){vx*=speed/d;vz*=speed/d;}
   p.avoidX=0;p.avoidZ=0;p.wantX=vx;p.wantZ=vz;p.moveTarget=target;

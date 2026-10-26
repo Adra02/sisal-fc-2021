@@ -1,4 +1,4 @@
-import {DT,clamp,mix} from './arena-motion.js?v=arena-8';
+import {DT,clamp,mix} from './arena-motion.js?v=arena-9';
 export const CHANNELS=9;
 export function allocateClip(players,duration){return {players,duration,frames:Math.ceil(duration/DT)+1,motion:new Float32Array((Math.ceil(duration/DT)+1)*players.length*CHANNELS),events:[],actions:new Map(players.map(p=>[p.key,[]])),balls:[],score:null};}
 export function record(clip,states,i){for(let j=0;j<states.length;j++){const p=states[j],o=(i*states.length+j)*CHANNELS;clip.motion.set([p.x,p.z,p.vx,p.vz,p.heading,p.travel,p.cycle,p.stride||1,p.elevation||0],o);}}

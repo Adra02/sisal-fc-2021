@@ -1,10 +1,11 @@
 import * as T from './vendor/three.module.min.js';
 import {environmentTexture} from './studio-materials.js?v=studio-9';
-import {makeAvatar} from './arena-avatar.js?v=arena-8';
-import {sampleContinuous as sampleArena} from './arena-live-cache.js?v=arena-8';
-import {arenaAudio} from './arena-audio.js?v=arena-8';
-import {buildGround} from './arena-environment.js?v=arena-8';
-import {FIELD} from './arena-layout.js?v=arena-8';
+import {makeAvatar} from './arena-avatar.js?v=arena-9';
+import {sampleContinuous as sampleArena} from './arena-live-cache.js?v=arena-9';
+import {arenaAudio} from './arena-audio.js?v=arena-9';
+import {buildGround} from './arena-environment.js?v=arena-9';
+import {FIELD} from './arena-layout.js?v=arena-9';
+import {contactEffects} from './arena-effects.js?v=arena-9';
 export function createArenaRenderer(host,initialSnapshot,{clock,onFrame,onFailure,onQuality,selfKey='',volume=.65}={}){
  const coarse=matchMedia('(pointer:coarse)').matches,reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
  let renderer;try{renderer=new T.WebGLRenderer({antialias:!coarse,powerPreference:'default'});}catch(cause){throw Object.assign(Error('La grafica 3D non è disponibile in questo browser. Prova ad attivare l’accelerazione grafica o ad aprire l’app nel browser aggiornato del telefono.'),{code:'ARENA_WEBGL',cause});}
@@ -12,7 +13,7 @@ export function createArenaRenderer(host,initialSnapshot,{clock,onFrame,onFailur
  renderer.setPixelRatio(Math.min(devicePixelRatio||1,coarse?1.45:1.8));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.04;
  renderer.domElement.setAttribute('aria-label','SISAL ARENA in diretta. Trascina per ruotare; usa due dita per avvicinare.');host.append(renderer.domElement);
  scene.environment=own(environmentTexture({studio:false}));scene.environmentIntensity=.50;scene.background=new T.Color('#9fc9df');scene.fog=new T.Fog('#b7d3d6',62,140);
- const ground=buildGround(scene,{own,renderer,coarse}),sphere=own(new T.SphereGeometry(FIELD.ballRadius,coarse?24:32,coarse?16:24));
+ const ground=buildGround(scene,{own,renderer,coarse}),effects=contactEffects(scene,own),sphere=own(new T.SphereGeometry(FIELD.ballRadius,coarse?24:32,coarse?16:24));
  const ballTexture=ground.texture((c,w,h)=>{c.fillStyle='#eeeede';c.fillRect(0,0,w,h);for(let row=0;row<4;row++)for(let j=0;j<8;j++){const x=(j+(row%2)*.5)*w/8,y=row*h/3;c.fillStyle='#123c2e';c.strokeStyle='#8e9d8e';c.lineWidth=1;c.beginPath();for(let i=0;i<5;i++){const a=i*Math.PI*2/5-.7;c.lineTo(x+Math.cos(a)*9,y+Math.sin(a)*9);}c.closePath();c.fill();c.stroke();}},384,192),ballMat=own(new T.MeshStandardMaterial({color:'#fff',map:ballTexture,roughness:.47})),balls=new Map(),avatars=new Map();
  const shadowMap=ground.texture((c,w,h)=>{const g=c.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);g.addColorStop(0,'rgba(11,30,17,.36)');g.addColorStop(.35,'rgba(11,30,17,.21)');g.addColorStop(1,'rgba(11,30,17,0)');c.fillStyle=g;c.fillRect(0,0,w,h);},64,64);
  const contacts=new T.InstancedMesh(own(new T.PlaneGeometry(.9,.9)),own(new T.MeshBasicMaterial({map:shadowMap,transparent:true,depthWrite:false})),130);contacts.count=0;contacts.frustumCulled=false;scene.add(contacts);const dummy=new T.Object3D();
@@ -33,7 +34,8 @@ export function createArenaRenderer(host,initialSnapshot,{clock,onFrame,onFailur
   if(chosen){desiredCenter.set(chosen.pos[0],.85,chosen.pos[1]);fit=radius;}
   else if(view==='field'){desiredCenter.set(0,.7,0);fit=49*Math.max(1,.88/camera.aspect);}
   else{let points=f.focus||[[0,0]];if(dialogue&&!f.playing){const speaker=f.actors.find(p=>p.key===dialogue.speaker);if(speaker&&Math.hypot(speaker.pos[0]-points[0][0],speaker.pos[1]-points[0][1])<9)points=[speaker.pos,...points.slice(0,2)];}const xs=points.map(p=>p[0]),zs=points.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),z0=Math.min(...zs),z1=Math.max(...zs);desiredCenter.set((x0+x1)/2,Math.max(.8,Math.min(1.4,f.ballHeight*.3)),(z0+z1)/2);fit=Math.max(8,Math.max(x1-x0+5,(z1-z0+5)*.8)/(2*Math.tan(T.MathUtils.degToRad(21.5))*Math.min(1.2,camera.aspect)));}
-  if(!chosen&&view!=='field'&&f.playing&&f.ballVelocity){desiredCenter.x+=T.MathUtils.clamp(f.ballVelocity[0]*.14,-1.4,1.4);desiredCenter.z+=T.MathUtils.clamp(f.ballVelocity[2]*.14,-1.4,1.4);}
+  if(!chosen&&view!=='field'&&!manual&&f.technique&&!reduced){desiredCenter.set(f.technique.position[0],.9,f.technique.position[1]);fit=Math.max(5.8,5.4/camera.aspect);}
+  if(!chosen&&view!=='field'&&!f.technique&&f.playing&&f.ballVelocity){desiredCenter.x+=T.MathUtils.clamp(f.ballVelocity[0]*.14,-1.4,1.4);desiredCenter.z+=T.MathUtils.clamp(f.ballVelocity[2]*.14,-1.4,1.4);}
   if(first)center.copy(desiredCenter);else center.lerp(desiredCenter,1-Math.exp(-elapsed*(reduced?1.4:2.5)));
   if(manual)fit=radius;lastFit=T.MathUtils.clamp(fit,3.5,76);const pavilion=center.x>18.5,az=!manual&&pavilion?-1.24:azimuth,po=!manual&&pavilion?1.30:polar;
   desiredCamera.set(center.x+lastFit*Math.sin(po)*Math.sin(az),center.y+lastFit*Math.cos(po),center.z+lastFit*Math.sin(po)*Math.cos(az));
@@ -41,10 +43,10 @@ export function createArenaRenderer(host,initialSnapshot,{clock,onFrame,onFailur
   const self=f.actors.find(p=>p.key===selfKey);ring.visible=!!self;if(self)ring.position.set(self.pos[0],.02,self.pos[1]);
   f.actors.forEach((p,i)=>{const a=avatars.get(p.key);if(!a)return;a.setDetail((level>0&&camera.position.distanceTo(a.root.position)<(quality==='high'?25:coarse?13:17))||selected===p.key||selfKey===p.key);a.update({...p,speaking:dialogue?.speaker===p.key},time,elapsed,p.velocity);dummy.position.set(p.pos[0],.016,p.pos[1]);dummy.rotation.set(-Math.PI/2,0,0);const opacityScale=1/(1+(p.elevation||0));dummy.scale.set(.8*opacityScale,opacityScale,1);dummy.updateMatrix();contacts.setMatrixAt(i,dummy.matrix);});contacts.count=f.actors.length;contacts.instanceMatrix.needsUpdate=true;
   for(const info of f.balls){const b=balls.get(info.id);if(b){b.visible=info.visible!==false;b.position.set(...info.pos);b.rotation.set(...(info.spin||[0,0,0]));}}
-  ground.update(f,camera,level);camera.updateMatrixWorld();cameraRight.setFromMatrixColumn(camera.matrixWorld,0);audio.update(f,{x:camera.position.x,y:camera.position.y,z:camera.position.z,rightX:cameraRight.x,rightZ:cameraRight.z},elapsed);renderer.render(scene,camera);scene.updateMatrixWorld();
+  ground.update(f,camera,level);camera.updateMatrixWorld();effects.update(f,camera,level);cameraRight.setFromMatrixColumn(camera.matrixWorld,0);audio.update(f,{x:camera.position.x,y:camera.position.y,z:camera.position.z,rightX:cameraRight.x,rightZ:cameraRight.z},elapsed);renderer.render(scene,camera);scene.updateMatrixWorld();
   const anchors=f.actors.map(p=>{const a=avatars.get(p.key);a.head.getWorldPosition(headPoint);headPoint.y+=.36;screenPoint.copy(headPoint).project(camera);let visible=screenPoint.z>-1&&screenPoint.z<1&&Math.abs(screenPoint.x)<1.08&&Math.abs(screenPoint.y)<1.08;if(visible&&p.pos[0]>20){const distance=camera.position.distanceTo(headPoint);raycaster.set(camera.position,headPoint.clone().sub(camera.position).normalize());raycaster.far=distance-.05;visible=!raycaster.intersectObjects(ground.solids,false).length;}return {key:p.key,name:p.name,x:(screenPoint.x*.5+.5)*width,y:(-.5*screenPoint.y+.5)*height,visible,active:p.active,team:p.team,self:p.key===selfKey,selected:p.key===selected};});
   const names=new Map(f.actors.map(p=>[p.key,p.appearance?.nickname||p.name])),decorate=d=>d?{...d,name:names.get(d.speaker)||'Sisal'}:null;
-  onFrame?.({title:f.scene.title,scene:f.scene.id,serial:0,time:f.elapsed,duration:null,dialogue:decorate(dialogue),recentDialogue:decorate(recent),people:f.actors.length,activePeople:f.actors.filter(p=>p.active&&!p.bot).length,match:f.match,anchors,width,height,live:true,audioEnabled:audio.enabled});
+  onFrame?.({title:f.scene.title,scene:f.scene.id,serial:0,time:f.elapsed,duration:null,dialogue:decorate(dialogue),recentDialogue:decorate(recent),people:f.actors.length,activePeople:f.actors.filter(p=>p.active&&!p.bot).length,match:f.match,technique:f.technique,anchors,width,height,live:true,audioEnabled:audio.enabled});
   measured+=performance.now()-begin;wallSamples+=elapsed*1000;frameSamples++;
   if(quality==='auto'&&frameSamples>=120){const average=measured/frameSamples,wallAverage=wallSamples/frameSamples;if((average>23||wallAverage>drawInterval*1.4)&&ms-lastDowngrade>8000){const ratio=Math.max(.85,renderer.getPixelRatio()-.20);renderer.setPixelRatio(ratio);resize();level=ratio>1?1:0;if(average>33||wallAverage>45)drawInterval=1000/30;lastDowngrade=ms;onQuality?.({mode:'auto',level});}measured=0;wallSamples=0;frameSamples=0;}first=false;raf=requestAnimationFrame(draw);
  }
@@ -59,6 +61,6 @@ export function createArenaRenderer(host,initialSnapshot,{clock,onFrame,onFailur
  const handlers={pointerdown:down,pointermove:move,pointerup:up,pointercancel:up,wheel,webglcontextlost:lost};for(const [name,fn]of Object.entries(handlers))canvas.addEventListener(name,fn,name==='wheel'?{passive:false}:undefined);
  resume();return {follow(key){selected=key||'';view=key?'follow':'director';radius=key?4.6:16;manual=false;},view(mode){view=mode;selected='';manual=false;},zoom(d){if(!manual)radius=lastFit;manual=true;radius=T.MathUtils.clamp(radius+d,3.5,76);},setQuality,
  replaceSnapshot(next){snapshot=next;populate(sampleArena(snapshot,clock()));},toggleAudio:()=>audio.toggle(),setVolume:v=>audio.setVolume(v),pause,resume,
- dispose(){if(disposed)return;disposed=true;pause();audio.dispose();observer.disconnect();for(const [name,fn]of Object.entries(handlers))canvas.removeEventListener(name,fn);for(const a of avatars.values())a.dispose();contacts.dispose();ground.dispose();resources.forEach(r=>r.dispose?.());renderer.dispose();renderer.forceContextLoss();canvas.remove();}
+ dispose(){if(disposed)return;disposed=true;pause();audio.dispose();observer.disconnect();for(const [name,fn]of Object.entries(handlers))canvas.removeEventListener(name,fn);for(const a of avatars.values())a.dispose();contacts.dispose();effects.dispose();ground.dispose();resources.forEach(r=>r.dispose?.());renderer.dispose();renderer.forceContextLoss();canvas.remove();}
  };
 }

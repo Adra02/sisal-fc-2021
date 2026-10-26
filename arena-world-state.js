@@ -1,7 +1,7 @@
 // Shared, serializable simulation state. No browser, network or account writes.
-import {DT,hash,clamp} from './arena-motion.js?v=arena-8';
-import {BALL_RACK,BENCH,TRAINING_CONES,FIELD} from './arena-layout.js?v=arena-8';
-export const WORLD_VERSION=8,SESSION_SECONDS=1800,HZ=24;
+import {DT,hash,clamp} from './arena-motion.js?v=arena-9';
+import {BALL_RACK,BENCH,TRAINING_CONES,FIELD} from './arena-layout.js?v=arena-9';
+export const WORLD_VERSION=9,SESSION_SECONDS=1800,HZ=24;
 export const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export const unit=(x,z)=>{const n=Math.hypot(x,z)||1;return [x/n,z/n];};
 export const actor=(w,key)=>w.players.find(p=>p.key===key);
@@ -18,7 +18,7 @@ export function emit(w,type,p,target,b,extra={}){
 export function pose(w,p,kind,duration,extra={}){if(!p)return;const t=now(w);p.action={kind,start:t,end:t+duration,...extra};}
 export function person(key,index,bot=false){return {key,bot,personality:hash(key),x:bot?0:-12+(index%5)*5.6,z:bot?(index===0?-24.8:24.8):2+Math.floor(index/5)*3,vx:0,vz:0,heading:Math.PI,travel:0,cycle:hash(key)%997/997,stride:1,elevation:0,energy:0,team:null,group:null,action:null,rest:null,seatedTarget:false,priority:1};}
 export function createWorld(players,seed=328794){
- const roster=[...players].sort((a,b)=>a.key<b.key?-1:a.key>b.key?1:0),w={version:WORLD_VERSION,tick:0,seed:seed>>>0,rng:(hash('sisal-live:'+seed)||1),eventId:0,mode:'training',players:roster.map((p,i)=>person(p.key,i)),balls:[],groups:[],groupId:0,completed:0,nextMatchAt:24,matchIndex:0,match:null,events:[],newEvents:[],dialogue:[],speechMemory:{recent:[],mistakes:{},lastAt:-20,lastSpeaker:null},environment:{wind:.3},equipment:{cones:TRAINING_CONES.map(([x,z],i)=>({id:'cone-'+i,x,z,y:0,mode:'field',owner:null,tilt:0}))},lastActivity:null};
+ const roster=[...players].sort((a,b)=>a.key<b.key?-1:a.key>b.key?1:0),w={version:WORLD_VERSION,tick:0,seed:seed>>>0,rng:(hash('sisal-live:'+seed)||1),eventId:0,mode:'training',players:roster.map((p,i)=>person(p.key,i)),balls:[],groups:[],groupId:0,completed:0,nextMatchAt:24,matchIndex:0,match:null,events:[],newEvents:[],dialogue:[],speechMemory:{recent:[],mistakes:{},lastAt:-20,lastSpeaker:null},environment:{wind:.3},equipment:{cones:TRAINING_CONES.map(([x,z],i)=>({id:'cone-'+i,x,z,y:0,mode:'field',owner:null,tilt:0}))},lastActivity:null,trainingShots:{}};
  if(roster.length>25){const columns=Math.ceil(roster.length/12);w.players.forEach((p,i)=>{p.x=((i%columns)-(columns-1)/2)*Math.min(3,28/Math.max(1,columns-1));p.z=-18+Math.floor(i/columns)*3;});}
  w.players.push(person('__keeper_bot',0,true),person('__keeper_away_bot',1,true));
  for(let i=0;i<Math.min(8,Math.max(4,Math.ceil(roster.length/4)+2));i++)w.balls.push({id:'ball-'+i,x:BALL_RACK.x+(i%2)*.35,y:.14,z:BALL_RACK.z+Math.floor(i/2)*.34,vx:0,vy:0,vz:0,spinX:0,spinY:0,spinZ:0,mode:'rack',owner:null,group:null,lastTouch:null,flight:null,motion:null,net:null});
@@ -37,15 +37,15 @@ export function reconcileWorld(previous,players){
  w.newEvents=[];return w;
 }
 export function resetActivities(w){
- w.mode='training';w.groups=[];w.match=null;for(const p of w.players){p.group=null;p.team=null;p.kick=null;p.throw=null;p.equipmentJob=null;if(p.rest?.reason==='odd'){p.rest.phase='rise';p.rest.riseAt=now(w);}}
+ w.mode='training';w.groups=[];w.match=null;for(const p of w.players){p.group=null;p.team=null;p.kick=null;p.throw=null;p.equipmentJob=null;p.aerial=null;p.skill=null;if(p.rest?.reason==='odd'){p.rest.phase='rise';p.rest.riseAt=now(w);}}
  for(const b of w.balls){b.group=null;b.flight=null;b.net=null;if(b.owner||b.motion){b.owner=null;b.motion=null;b.mode='free';b.vy=0;}}
  for(const c of w.equipment?.cones||[]){c.claim=null;if(c.owner){c.owner=null;c.mode='field';c.y=0;}}
 }
 export function exportWorld(w){const copy=structuredClone(w);copy.newEvents=[];return copy;}
 export function handPoint(p,side=1){const h=p.heading,s=Math.sin(h),c=Math.cos(h);return [p.x+s*.29+c*.13*side,.97+(p.elevation||0)+Math.sin(p.cycle*Math.PI*2)*.012,p.z+c*.29-s*.13*side];}
 export function footPointWorld(p,d=.36){return [p.x+Math.sin(p.heading)*d,FIELD.ballRadius,p.z+Math.cos(p.heading)*d];}
-export function beginPickup(w,p,b){
- if(b.motion||(b.owner&&b.owner!==p.key)||b.y>.55||Math.hypot(p.x-b.x,p.z-b.z)>.64)return false;
+export function beginPickup(w,p,b,reach=.64){
+ if(b.motion||(b.owner&&b.owner!==p.key)||b.y>.55||Math.hypot(p.x-b.x,p.z-b.z)>Math.min(.76,reach))return false;
  b.owner=p.key;b.mode='pickup';b.flight=null;b.net=null;b.vx=b.vy=b.vz=0;b.motion={type:'pickup',at:now(w),until:now(w)+.85,from:[b.x,b.y,b.z]};
  pose(w,p,'collect',1.0,{contact:now(w)+.28,handTarget:[b.x,b.y,b.z]});return true;
 }

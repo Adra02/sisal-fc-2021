@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.min.js';
-import {FIELD,PAVILION,BENCH,BALL_RACK,TRAINING_CONES} from './arena-layout.js?v=arena-8';
+import {FIELD,PAVILION,BENCH,BALL_RACK,TRAINING_CONES} from './arena-layout.js?v=arena-9';
 // Static shared training ground. Created once; no scenery swaps during play.
 export function buildGround(scene,{own,renderer,coarse=false}){
  const mat=(color,extra={})=>own(new T.MeshStandardMaterial({color,roughness:.8,...extra})),unit=own(new T.BoxGeometry(1,1,1));

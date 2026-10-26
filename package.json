@@ -1,6 +1,6 @@
 {
   "name": "sisal-fc-2021-fc27-command-center",
-  "version": "32.1.48",
+  "version": "32.1.49",
   "private": true,
   "type": "module",
   "engines": {
@@ -37,7 +37,8 @@
     "test:upgrade": "node scripts/test-historical-recovery.mjs && node scripts/test-data-matrix-v5.mjs && node scripts/test-data-flow-v5.mjs && node scripts/test-eyes-helmet.mjs && node scripts/test-portrait-v5.mjs && node scripts/test-face-emotes-v6.mjs && node scripts/test-arena-simulation.mjs && node scripts/test-arena-football-v8.mjs && node scripts/test-arena-contact-v8.mjs && node scripts/test-arena-contact-clock-v7.mjs && node scripts/test-arena-avatar.mjs && node scripts/test-arena-gait-v6.mjs && node scripts/test-label-layout-v6.mjs && node scripts/test-arena-overlays-v6.mjs && node scripts/test-club-workspace-v6.mjs && node scripts/test-arena-ui.mjs && node scripts/test-arena-renderer.mjs && node scripts/test-arena-sql.mjs && node scripts/test-accounts.mjs && node scripts/test-account-ui.mjs && node scripts/test-release-resources.mjs",
     "test:arena-movement": "node scripts/test-arena-movement.mjs && node scripts/test-arena-movement-sql.mjs && node scripts/test-arena-movement-variety.mjs",
     "test:arena-live": "node scripts/test-arena-movement.mjs && node scripts/test-arena-movement-sql.mjs && node scripts/test-arena-movement-variety.mjs && node scripts/test-arena-live-world.mjs && node scripts/test-arena-live-contact.mjs && node scripts/test-arena-live-restarts.mjs && node scripts/test-arena-sql.mjs && node scripts/test-arena-ui.mjs && node scripts/test-arena-renderer.mjs",
-    "test:arena-football": "node scripts/test-arena-football-laws.mjs && node scripts/test-arena-football-sql.mjs && node scripts/test-arena-audio.mjs && npm run test:arena-live"
+    "test:arena-football": "node scripts/test-arena-football-laws.mjs && node scripts/test-arena-football-sql.mjs && node scripts/test-arena-audio.mjs && npm run test:arena-live",
+    "test:arena-skills": "node scripts/test-arena-skills.mjs && node scripts/test-arena-skills-sql.mjs && node scripts/test-arena-football-laws.mjs && npm run test:arena-live"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.9",

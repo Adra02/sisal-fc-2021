@@ -1,6 +1,6 @@
-import {hash} from './arena-motion.js?v=arena-8';
-import {banterLexicon,creativeInvocations} from './arena-banter.js?v=arena-8';
-import {now,actor} from './arena-world-state.js?v=arena-8';
+import {hash} from './arena-motion.js?v=arena-9';
+import {banterLexicon,creativeInvocations} from './arena-banter.js?v=arena-9';
+import {now,actor} from './arena-world-state.js?v=arena-9';
 const extra={
  touch:['Piano coi tocchi, che la palla non ha chiesto il divorzio.','Portala avanti coi piedi: la spiegazione arriva già da sola.','Un controllo alla volta, cazzo. Non stai svuotando il garage.','Sei tu che guidi lei, almeno sulla carta.'],
  deflect:['Respinta: il portiere ha detto no senza aprire una riunione.','Non l’ha tenuta, ma intanto ti ha rovinato la festa.','Seconda palla: muoviti, che quella buona non ti aspetta.','Guanti sul pallone. Il tuo autografo sulla rete può aspettare.'],
