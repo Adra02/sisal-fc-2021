@@ -1,9 +1,10 @@
 // Procedural skills are selected from the actual ball/space, never from a timer-only scene.
-import {FIELD} from './arena-layout.js?v=arena-9';
-import {clamp,hash} from './arena-motion.js?v=arena-9';
-import {now,actor,dist,unit,rnd,pose,emit} from './arena-world-state.js?v=arena-9';
-import {releaseBall} from './arena-world-ball.js?v=arena-9';
-import {TECHNIQUES} from './arena-technique-data.js?v=arena-9';
+import {FIELD} from './arena-layout.js?v=arena-10';
+import {clamp,hash} from './arena-motion.js?v=arena-10';
+import {now,actor,dist,unit,rnd,pose,emit} from './arena-world-state.js?v=arena-10';
+import {releaseBall} from './arena-world-ball.js?v=arena-10';
+import {TECHNIQUES} from './arena-technique-data.js?v=arena-10';
+import {predictBall} from './arena-ball-flight.js?v=arena-10';
 const angle=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 export function receiveHeading(p,b,d){const toBall=Math.atan2(b.x-p.x,b.z-p.z),toGoal=d<0?Math.PI:0;return toBall+angle(toGoal,toBall)*.35;}
 export function chooseGroundTechnique(w,p,b,target,normal){
@@ -16,8 +17,11 @@ export function chooseGroundTechnique(w,p,b,target,normal){
 }
 export function startDribbleSkill(w,p,b,opponent){
  const t=now(w);if(p.skill||p.kick||b.owner!==p.key||b.y>.25||dist(p,b)>.61||dist(p,opponent)<1.1||dist(p,opponent)>2.7||t-(p.lastSkill??-20)<8||rnd(w)>.07)return false;
- const kinds=['stepover','bodyFeint','soleRoll'],kind=kinds[(p.skillIndex||0)%kinds.length],spec=TECHNIQUES[kind],d=w.match?(p.team===0?-1:1):Math.sign(b.vz)||1;
- p.skillIndex=(p.skillIndex||0)+1;p.lastSkill=t;p.skill={kind,ball:b.id,at:t,until:t+spec.duration,dir:[Math.sin(p.heading),Math.cos(p.heading)],side:p.skillIndex%2?1:-1,touches:0};pose(w,p,kind,spec.duration,{contact:t+spec.wind,footTarget:[b.x,b.y,b.z],side:p.skill.side});return true;
+ const lateral=(opponent.x-p.x)*Math.cos(p.heading)-(opponent.z-p.z)*Math.sin(p.heading),speed=Math.hypot(p.vx,p.vz),recent=p.recentSkills||[];
+ const weighted=[{kind:'stepover',weight:speed>2.1?3:1},{kind:'bodyFeint',weight:Math.abs(lateral)>.45?3:2},{kind:'soleRoll',weight:speed<2.1?3:1}].map(x=>({...x,weight:x.weight*(recent.at(-1)===x.kind?.16:recent.includes(x.kind)?.6:1)}));
+ let ticket=rnd(w)*weighted.reduce((sum,x)=>sum+x.weight,0),kind=weighted.at(-1).kind;for(const x of weighted){ticket-=x.weight;if(ticket<=0){kind=x.kind;break;}}
+ p.recentSkills=[...recent.slice(-2),kind];const spec=TECHNIQUES[kind],d=w.match?(p.team===0?-1:1):Math.sign(b.vz)||1;
+ p.skillIndex=(p.skillIndex||0)+1;p.lastSkill=t;p.skill={kind,ball:b.id,at:t,until:t+spec.duration,dir:[Math.sin(p.heading),Math.cos(p.heading)],side:lateral>0?-1:1,touches:0};pose(w,p,kind,spec.duration,{ball:b.id,contact:t+spec.wind,footTarget:[b.x,b.y,b.z],side:p.skill.side});return true;
 }
 export function planTechnique(w,p){
  const t=now(w);if(p.aerial){const a=p.aerial,spec=TECHNIQUES[a.kind],age=t-a.at;p.target=[...a.origin];p.maxSpeed=0;p.faceLock=true;p.aim=a.heading;
@@ -25,7 +29,6 @@ export function planTechnique(w,p){
   if(age>=spec.duration)p.aerial=null;
  }else if(p.skill){const s=p.skill;p.target=[p.x+s.dir[0]*.18,p.z+s.dir[1]*.18];p.maxSpeed=1.4;p.faceLock=true;p.aim=Math.atan2(s.dir[0],s.dir[1]);}
 }
-function predict(b,delay){return [b.x+b.vx*delay+.5*(b.flight?.curve||0)*delay*delay,Math.max(FIELD.ballRadius,b.y+b.vy*delay-4.905*delay*delay-4.905/24*delay),b.z+b.vz*delay];}
 export function tryAerial(w,b,m,g){
  if(b.pendingFinish)return true;
  const f=b.flight,t=now(w);if(!f||!['cross','corner'].includes(f.type)||t-f.at<.20||b.y<.4||b.y>4||b.vy>1.5)return false;
@@ -36,11 +39,11 @@ export function tryAerial(w,b,m,g){
   const allowAcro=clear&&(!!f.finishPreference||hash(p.key+':'+f.from+':'+f.at)%100<55),options=allowAcro?[...acro,'volley','header']:['volley','header'];
   if(f.finishPreference&&options.includes(f.finishPreference))options.sort((a,b)=>(a===f.finishPreference?-1:0)-(b===f.finishPreference?-1:0));
   for(const kind of options){
-   const spec=TECHNIQUES[kind],point=predict(b,spec.wind),range=kind==='header'?.31:.82,low=kind==='header'?1.42:kind==='volley'?.3:1.05,high=kind==='header'?1.75:kind==='volley'?1.12:1.95;
+   const spec=TECHNIQUES[kind],point=predictBall(b,spec.wind),range=kind==='header'?.31:.82,low=kind==='header'?1.42:kind==='volley'?.3:1.05,high=kind==='header'?1.75:kind==='volley'?1.12:1.95;
    if(Math.hypot(point[0]-p.x,point[2]-p.z)>range||point[1]<low||point[1]>high)continue;
    const heading=Math.atan2(-p.x*.12,d)+(kind==='bicycle'?Math.PI:0);if(Math.abs(angle(heading,p.heading))>spec.wind*7.5+.3)continue;
    p.aerial={kind,ball:b.id,at:t,contact:t+spec.wind,origin:[p.x,p.z],point,heading,from:f.from,flightAt:f.at};p.lastAerial=t;p.lastAerialKind=kind;
-   b.pendingFinish={key:p.key,contact:t+spec.wind};pose(w,p,kind,spec.duration,{contact:t+spec.wind,footTarget:kind==='header'?undefined:point,headTarget:kind==='header'?point:undefined,side:p.personality%2?1:-1,jumpHeight:.12});emit(w,'techniqueSetup',p,null,b,{technique:kind});return true;
+   b.pendingFinish={key:p.key,contact:t+spec.wind};pose(w,p,kind,spec.duration,{ball:b.id,foot:1,contact:t+spec.wind,footTarget:kind==='header'?undefined:point,headTarget:kind==='header'?point:undefined,side:p.personality%2?1:-1,jumpHeight:.12});emit(w,'techniqueSetup',p,null,b,{technique:kind});return true;
   }
  }
  return false;

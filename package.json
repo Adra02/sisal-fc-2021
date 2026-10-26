@@ -1,6 +1,6 @@
 {
   "name": "sisal-fc-2021-fc27-command-center",
-  "version": "32.1.49",
+  "version": "32.1.50",
   "private": true,
   "type": "module",
   "engines": {
@@ -38,7 +38,8 @@
     "test:arena-movement": "node scripts/test-arena-movement.mjs && node scripts/test-arena-movement-sql.mjs && node scripts/test-arena-movement-variety.mjs",
     "test:arena-live": "node scripts/test-arena-movement.mjs && node scripts/test-arena-movement-sql.mjs && node scripts/test-arena-movement-variety.mjs && node scripts/test-arena-live-world.mjs && node scripts/test-arena-live-contact.mjs && node scripts/test-arena-live-restarts.mjs && node scripts/test-arena-sql.mjs && node scripts/test-arena-ui.mjs && node scripts/test-arena-renderer.mjs",
     "test:arena-football": "node scripts/test-arena-football-laws.mjs && node scripts/test-arena-football-sql.mjs && node scripts/test-arena-audio.mjs && npm run test:arena-live",
-    "test:arena-skills": "node scripts/test-arena-skills.mjs && node scripts/test-arena-skills-sql.mjs && node scripts/test-arena-football-laws.mjs && npm run test:arena-live"
+    "test:arena-skills": "node scripts/test-arena-skills.mjs && node scripts/test-arena-skills-sql.mjs && node scripts/test-arena-football-laws.mjs && npm run test:arena-live",
+    "test:arena-completa": "node scripts/test-arena-athlete.mjs && node scripts/test-arena-complete.mjs && node scripts/test-arena-complete-sql.mjs && node scripts/test-arena-football-laws.mjs && node scripts/test-arena-skills.mjs && node scripts/test-arena-live-world.mjs && node scripts/test-arena-live-contact.mjs && node scripts/test-arena-live-restarts.mjs && node scripts/test-arena-gait-v6.mjs && node scripts/test-arena-ui.mjs && node scripts/test-arena-renderer.mjs && node scripts/test-arena-overlays-v6.mjs && node scripts/test-arena-audio.mjs && node scripts/test-arena-sql.mjs && node scripts/test-release-resources.mjs && node scripts/test-arena-cache.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.9",

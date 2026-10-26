@@ -1,9 +1,15 @@
-import {hash,shuffle} from './arena-motion.js?v=arena-9';
+import {hash,shuffle} from './arena-motion.js?v=arena-10';
 // A fair, reproducible rotation. Unknown real appearances are never zero.
 const schedules=new WeakMap();
 const signature=team=>team.map(p=>p.key).sort().join('|');
 export function friendlyLineup(snapshot,index){
- let schedule=schedules.get(snapshot);if(!schedule){
+ if(snapshot.keeper&&snapshot.players.some(p=>p.key===snapshot.keeper)){
+  // One human keeper replaces one BOT; balance total players, not outfield alone.
+  let cached=schedules.get(snapshot);if(!cached?.human||cached.keeper!==snapshot.keeper){const field=snapshot.players.filter(p=>p.key!==snapshot.keeper),base={players:field,keeper:null};cached={human:true,keeper:snapshot.keeper,base};schedules.set(snapshot,cached);}
+  const result=friendlyLineup(cached.base,index),team=index%2,keepers=team===0?[snapshot.keeper,'__keeper_away_bot']:['__keeper_bot',snapshot.keeper];
+  return {...result,keepers,humanKeeper:snapshot.keeper};
+ }
+ let schedule=schedules.get(snapshot);if(!Array.isArray(schedule))schedule=null;if(!schedule){
   const roster=[...(snapshot.players||[])].sort((a,b)=>a.key<b.key?-1:a.key>b.key?1:0),zero=roster.filter(p=>p.games===0),eligible=zero.length?zero:roster,seed=hash('teams5:'+roster.map(p=>p.key).join('|')),odd=roster.length%2;
   const candidates=shuffle(eligible,seed),count=odd?Math.max(24,Math.ceil(24/Math.max(1,candidates.length))*candidates.length):24,list=[];
   for(let i=0;i<count;i++){
@@ -20,5 +26,5 @@ export function friendlyLineup(snapshot,index){
   }
   schedule=list;schedules.set(snapshot,schedule);
  }
- const x=schedule[((index%schedule.length)+schedule.length)%schedule.length];return {...x,index,teams:[x.a.map(p=>p.key),x.b.map(p=>p.key)],benchKey:x.bench?.key||null,canVary:Math.min(x.a.length,x.b.length)>=2};
+ const x=schedule[((index%schedule.length)+schedule.length)%schedule.length];return {...x,index,teams:[x.a.map(p=>p.key),x.b.map(p=>p.key)],keepers:['__keeper_bot','__keeper_away_bot'],benchKey:x.bench?.key||null,canVary:Math.min(x.a.length,x.b.length)>=2};
 }

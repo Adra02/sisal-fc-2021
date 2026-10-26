@@ -1,0 +1,225 @@
+<!doctype html><html lang="it"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sisal Arena 32.1.50 · Guida</title><style>*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#071f18;color:#e8f1e5;font:16px/1.65 system-ui,-apple-system,Segoe UI,sans-serif}header{padding:45px max(22px,calc((100vw - 1000px)/2));background:linear-gradient(120deg,#205f40,#0a3025);border-bottom:1px solid #588865}header small{text-transform:uppercase;letter-spacing:.2em;color:#cedb9c}header h1{font-size:clamp(27px,5vw,43px);line-height:1.15;margin:10px 0}header p{max-width:780px;margin:12px 0;color:#d2e2cc}.badge{display:inline-block;background:#e8d79f;color:#163b27;border-radius:5px;padding:3px 10px;font-size:13px;font-weight:700}nav{display:flex;flex-wrap:wrap;gap:9px;margin-top:22px}nav a{padding:8px 13px;background:#092b20;border:1px solid #678c6a;border-radius:7px;text-decoration:none;color:#eef0cd}main{max-width:1044px;margin:auto;padding:20px 22px 65px}section{padding:14px 0 30px;border-bottom:1px solid #355640}h1,h2,h3{line-height:1.3;color:#f2e3b0}h1{font-size:28px}h2{font-size:22px;margin-top:35px}h3{font-size:18px}p{max-width:1000px}a{color:#bce9b5;text-underline-offset:3px;overflow-wrap:anywhere}strong{color:#f0e0ae}code{font-size:.87em;background:#133c2b;padding:2px 5px;border:1px solid #345c40;border-radius:4px;overflow-wrap:anywhere}.table-wrap{overflow:auto;border:1px solid #44654a;border-radius:7px;margin:18px 0}table{width:100%;border-collapse:collapse;text-align:left;font-size:14px}th{background:#214e36;color:#f2e4b3}th,td{padding:12px 14px;vertical-align:top;border-bottom:1px solid #35513c}td:first-child{white-space:nowrap}tr:last-child td{border:0}tr:nth-child(even){background:#103023}li{margin:9px 0}ol,ul{padding-left:25px}.note{border-left:4px solid #e6ce8a;background:#173b2a;padding:16px 20px;margin:20px 0}.note p{margin:0}footer{padding:25px 22px;text-align:center;font-size:13px;color:#b9cfb2}@media print{body{background:white;color:#12251a}header{background:#e5eddf;color:#152d20;padding:20px}main{max-width:none;padding:0}section{break-before:page}section:first-child{break-before:auto}h1,h2,h3,strong{color:#183c25}a{color:#174b2a}code,th,tr:nth-child(even),.note{background:#edf1e7;color:#13321e}nav{display:none}.table-wrap{overflow:visible}footer{color:#21412b}}</style><header><small>SISAL FC 2021 · FC27 COMMAND CENTER</small><h1>La nuova Sisal Arena</h1><span class="badge">Aggiornamento 32.1.50</span><p>File completi, cartelle corrette, SQL e ripristino. Nessuna modifica pubblicata automaticamente.</p><nav><a href="#installa">Guida di installazione</a><a href="#modifiche">29 interventi</a><a href="#file">Elenco file</a><a href="#prove">Prove e limiti</a></nav></header><main><div class="note"><p><strong>Ordine:</strong> SQL 18 su Supabase → un solo caricamento su GitHub main → Vercel Ready/Production → ricarica e verifica. Termux non va aggiornato.</p></div><section id="installa"><h1>Installa SISAL ARENA 32.1.50</h1>
+<p>Non devi scrivere codice, usare PowerShell o aggiornare Termux. Servono il pacchetto estratto, GitHub, Supabase e Vercel. L&#x27;ordine è: <strong>SQL → file su main in un solo caricamento → deployment → verifica</strong>.</p>
+<h2>1. Scarica ed estrai</h2>
+<p>Scarica <code>SISAL_ARENA_32_1_50.zip</code>. Su Windows clicca con il tasto destro sullo ZIP → <strong>Estrai tutto</strong>. Lavora nella cartella estratta, non dentro lo ZIP.</p>
+<p>Troverai:</p>
+<ul>
+<li><code>01_FILE_DA_CARICARE_SU_GITHUB</code>: i file completi già nei percorsi corretti;</li>
+<li><code>02_DATABASE</code>: il file SQL da eseguire una volta;</li>
+<li><code>03_RIPRISTINO_32_1_49</code>: i vecchi file per tornare indietro;</li>
+<li><code>04_VERIFICHE</code>: resoconto e prove;</li>
+<li><code>LEGGIMI.html</code>: questa guida apribile con un doppio clic;</li>
+<li><code>MANIFEST_FILE.json</code>: elenco preciso, azione aggiungi/sostituisci e impronte dei file.</li>
+</ul>
+<h2>2. Controlla il punto di partenza</h2>
+<p>Apri <a href="https://github.com/Adra02/sisal-fc-2021/tree/main" target="_blank" rel="noopener noreferrer">GitHub · main</a>. Questo aggiornamento è costruito sul commit <code>940d88c6fe1cde4d13a623d13482f19e07be6719</code>, versione 32.1.49, verificato il 26 ottobre 2026.</p>
+<p>Non creare un branch di prova. Se dopo questa consegna hai caricato altre modifiche su main, va confrontata la nuova base prima di sostituire file: il pacchetto contiene copie complete dei file interessati.</p>
+<p>Lascia aperta anche la pagina <a href="https://vercel.com/adras-projects-eb2ae959/sisal-fc-2021/deployments" target="_blank" rel="noopener noreferrer">Vercel · deployment del progetto</a>. Individua l&#x27;attuale deployment Production/Ready: sarà il punto di ripristino. Non modificare impostazioni o variabili.</p>
+<h2>3. Esegui SQL 18 su Supabase</h2>
+<ol>
+<li>Apri <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer">Supabase Dashboard</a> e scegli il progetto già collegato alla Sisal.</li>
+<li>Entra in <strong>SQL Editor</strong> e crea una nuova query.</li>
+<li>Sul PC apri <code>02_DATABASE/18-arena-completa.sql</code> con Blocco note. Seleziona tutto e copia.</li>
+<li>Incolla tutto nella nuova query e premi <strong>Run</strong>.</li>
+<li>Attendi il messaggio di successo. Non caricare ancora i file se compare un errore.</li>
+</ol>
+<p>Lo script presuppone l&#x27;Arena 9 già funzionante e lo SQL <code>17-arena-skills.sql</code> già installato. Se segnala «Esegui prima setup/17-arena-skills.sql», fermati e inviami il testo dell&#x27;errore. Non rieseguire tutti i vecchi script alla cieca.</p>
+<p>Se Supabase mostra un avviso sulle operazioni di rimozione, lo script 18 elimina soltanto vecchi snapshot tecnici della nuova Arena 10. Non cancella account, foto, tabelle EA, comunicati o personalizzazioni. La nuova tabella ha già RLS abilitata; se la finestra offre <strong>Run and enable RLS</strong>, è compatibile con questo script.</p>
+<p>Il vecchio sito può continuare a usare Arena 9 durante questo passaggio. Puoi rieseguire lo stesso SQL 18 se necessario: l&#x27;installazione è stata provata due volte sullo stesso database locale.</p>
+<h2>4. Carica tutti i file su GitHub in una sola volta</h2>
+<ol>
+<li>Torna a <a href="https://github.com/Adra02/sisal-fc-2021/tree/main" target="_blank" rel="noopener noreferrer">GitHub · main</a>, nella radice del repository, dove vedi <code>index.html</code>, <code>api</code>, <code>lib</code> e <code>setup</code>.</li>
+<li>Controlla che il selettore del branch mostri <strong>main</strong>.</li>
+<li>Scegli <strong>Add file → Upload files</strong>.</li>
+<li>Sul PC apri la cartella <code>01_FILE_DA_CARICARE_SU_GITHUB</code>.</li>
+<li><strong>Seleziona tutto ciò che c&#x27;è dentro quella cartella</strong>, comprese <code>api</code>, <code>lib</code>, <code>scripts</code>, <code>setup</code> e <code>docs</code>, e trascinalo nell&#x27;area di caricamento GitHub. Non trascinare la cartella contenitore <code>01_FILE_DA_CARICARE_SU_GITHUB</code> e non caricare lo ZIP.</li>
+<li>Attendi che tutti i file siano caricati. GitHub mantiene i percorsi delle cartelle trascinate.</li>
+<li>Scrivi come messaggio <code>Aggiorna Sisal Arena 32.1.50</code> e premi <strong>Commit changes</strong>, direttamente su <strong>main</strong>.</li>
+</ol>
+<p>Non creare manualmente file duplicati, non rinominare cartelle e non caricare separatamente i file una volta per volta. I percorsi corretti sono ad esempio <code>api/account.js</code>, <code>lib/arena.js</code>, <code>setup/18-arena-completa.sql</code>, mentre <code>arena-ui.js</code> e <code>arena-renderer.js</code> vanno nella radice.</p>
+<p>Il pacchetto ripristino, il database separato e i resoconti esterni non vanno caricati nella radice del repository. La copia SQL in <code>setup</code> viene invece caricata insieme al codice per conservare la migrazione nel progetto; Vercel non la esegue automaticamente sul database.</p>
+<h2>5. Attendi Vercel</h2>
+<p>Apri <a href="https://vercel.com/adras-projects-eb2ae959/sisal-fc-2021/deployments" target="_blank" rel="noopener noreferrer">Vercel · Deployments</a>. Con l&#x27;integrazione Git già attiva e main come branch di produzione, il commit avvia il deployment. Attendi che <strong>quel nuovo commit</strong> sia <strong>Ready</strong> e <strong>Production</strong>.</p>
+<p>Se non compare, controlla che il commit sia realmente su main e che il collegamento Git del progetto sia ancora attivo. Non basta vedere Ready su un deployment precedente. Se il build fallisce, apri i log e mandami l&#x27;errore; non eliminare dati e non cambiare variabili.</p>
+<p>Non servono nuove variabili d&#x27;ambiente, chiavi Supabase o modifiche Termux.</p>
+<h2>6. Apri e controlla</h2>
+<p>Apri <a href="https://sisal-fc-2021.vercel.app/" target="_blank" rel="noopener noreferrer">la web app</a>. Sul PC ricarica con <strong>Ctrl + Maiusc + R</strong>. Sul telefono chiudi e riapri la scheda o l&#x27;app installata, poi ricarica. Invita i compagni a ricaricare prima di confrontare la scena. Il footer deve mostrare <strong>v32.1.50</strong>.</p>
+<p>Apri la SISAL ARENA dallo stemma. Alla prima apertura la preparazione condivisa può richiedere più tempo; vedrai uno stato di avanzamento. Se compare una richiesta SQL 18, controlla il passaggio 3. Se il campo non parte, usa <strong>Riprova</strong> e conserva il messaggio esatto.</p>
+<p>Prova questi controlli:</p>
+<ol>
+<li><strong>Identità e visuale:</strong> il tuo giocatore ha il badge TU; Il mio lo segue. Trascina la camera e controlla che non venga spostata subito dalla regia.</li>
+<li><strong>Solo campo e telefono:</strong> il pulsante ⛶ amplia il campo; Opzioni contiene filtro nomi, qualità, volume, rosa e azioni. Ruota il telefono e controlla che comandi e fumetti rimangano leggibili.</li>
+<li><strong>Giocate:</strong> osserva entrambe le porte; i tiratori devono variare. Controlla piedi di appoggio, ricezioni e curva dell&#x27;esterno sui due lati. Le skill sono contestuali: non devono comparire a ogni azione.</li>
+<li><strong>Partitella:</strong> l&#x27;attrezzatura va raccolta; dopo il gol si riparte. Il portiere assegnato occupa un ruolo vero e il conteggio delle squadre include i portieri.</li>
+<li><strong>Replay:</strong> dopo un gol, una parata o una skill osservati, premi Replay. È silenzioso. Premi Diretta oppure attendi la fine. In Opzioni → Azioni puoi rivedere un evento ancora nel buffer. Un replay non è disponibile appena apri il campo o dopo che l&#x27;azione è uscita dai 12 secondi conservati.</li>
+<li><strong>Audio:</strong> tocca Audio, regola il volume e ascolta palla/palo/rete. Prova Pausa e Chiudi: niente suoni in coda. Alla riapertura l&#x27;audio può richiedere di nuovo un tocco del browser.</li>
+<li><strong>Due dispositivi:</strong> confronta la diretta nello stesso momento, fuori da pausa/replay. Cambiare camera o qualità su uno non deve cambiare l&#x27;altro. Una rete lenta e la stima dell&#x27;orologio possono produrre piccoli scarti temporali.</li>
+<li><strong>Persistenza:</strong> cambia visuale e nomi, chiudi e riapri l&#x27;Arena sullo stesso dispositivo e account. Queste preferenze non si trasferiscono automaticamente su un altro telefono.</li>
+<li><strong>Dati esistenti:</strong> controlla login, foto, una tabella storica, Top 3, Gazzetta e un invio abituale da Termux. Non devono richiedere una nuova configurazione.</li>
+</ol>
+<p>Per controllare un nuovo aspetto o un nuovo portiere nella scena condivisa, attendi il cambio della finestra di 30 minuti. Non è necessario ricaricare più volte in continuazione.</p>
+<h2>Se qualcosa non va: ripristino</h2>
+<p><strong>Sito:</strong> in <a href="https://vercel.com/adras-projects-eb2ae959/sisal-fc-2021/deployments" target="_blank" rel="noopener noreferrer">Vercel Deployments</a> usa il rollback al precedente deployment di produzione funzionante. Nel piano Hobby l&#x27;Instant Rollback riguarda il deployment di produzione immediatamente precedente. Dopo un rollback Vercel sospende l&#x27;assegnazione automatica dei nuovi deployment alla produzione finché non usi Undo Rollback.</p>
+<p><strong>Codice su GitHub:</strong> il rollback di Vercel non cambia main. Per riallineare il repository, torna a main → Add file → Upload files e carica <strong>il contenuto</strong> di <code>03_RIPRISTINO_32_1_49/FILE_DA_CARICARE_SU_GITHUB</code> in un solo commit. Sono le copie complete dei 43 file preesistenti modificati. I moduli nuovi possono restare inutilizzati: non occorre eliminarli per tornare alla vecchia Arena. Usa <code>NUOVI_FILE.txt</code> solo come elenco informativo.</p>
+<p><strong>Database:</strong> non eseguire SQL inversi e non cancellare tabelle, account o Storage. SQL 18 mantiene anche l&#x27;Arena 9: il vecchio codice può usare il vecchio mondo. Non rieseguire SQL 17 dopo SQL 18, perché sostituirebbe il router compatibile.</p>
+<p>Se hai già caricato altre modifiche dopo questo aggiornamento, non caricare il ripristino alla cieca: contattami con il commit corrente per evitare di sovrascriverle.</p>
+<h2>Documentazione ufficiale</h2>
+<ul>
+<li><a href="https://supabase.com/docs/guides/database/overview" target="_blank" rel="noopener noreferrer">Supabase · SQL Editor e database</a></li>
+<li><a href="https://vercel.com/docs/git" target="_blank" rel="noopener noreferrer">Vercel · integrazione Git</a></li>
+<li><a href="https://vercel.com/docs/instant-rollback" target="_blank" rel="noopener noreferrer">Vercel · Instant Rollback</a></li>
+</ul>
+<p>I risultati delle prove e i limiti della verifica grafica sono in <code>04_VERIFICHE/VERIFICHE.md</code>. L&#x27;elenco esatto dei file è in <code>ELENCO_FILE.md</code> e <code>MANIFEST_FILE.json</code>.</p></section><section id="modifiche"><h1>SISAL ARENA · aggiornamento 32.1.50</h1>
+<p>Preparato sul <code>main</code> verificato il 26 ottobre 2026: <code>940d88c6fe1cde4d13a623d13482f19e07be6719</code> (32.1.49). Motore condiviso Arena 10. Nessuna pubblicazione eseguita: l&#x27;installazione resta a te.</p>
+<h2>Copertura in 29 interventi</h2>
+<div class="table-wrap"><table><thead><tr><th>N.</th><th>Intervento</th><th>Risultato e file principali</th></tr></thead><tbody>
+<tr><td>1</td><td>Personalizzazioni aggiornate</td><td>Il cambio di aspetto ricostruisce soltanto il personaggio interessato al prossimo snapshot condiviso, conservando campo e visuale. Cambiare soprannome non ricostruisce il modello. <code>arena-renderer.js</code>.</td></tr>
+<tr><td>2</td><td>Effetto dei colpi di esterno</td><td>La curva segue la direzione del pallone anche sul lato opposto del campo; intercettazione e traiettoria usano la stessa formula. <code>arena-ball-flight.js</code>, <code>arena-world-ball.js</code>, <code>arena-techniques.js</code>.</td></tr>
+<tr><td>3</td><td>Rosa assente e riprova</td><td>Una rosa inizialmente vuota può recuperare senza perdere i nuovi comandi. Una risposta HTML del server diventa un messaggio leggibile. <code>arena-ui.js</code>.</td></tr>
+<tr><td>4</td><td>Appoggi, accelerazione e cambi di direzione</td><td>Abbassamento del bacino entro la portata delle gambe, piedi di sostegno e inclinazione nei cambi di direzione. <code>arena-avatar.js</code>, <code>arena-motion.js</code>.</td></tr>
+<tr><td>5</td><td>Tocchi e controlli distinti</td><td>Piede destro/sinistro coerente con il colpo, conduzione a impulsi, controllo basso, coscia e petto in base all&#x27;altezza; i controlli difficili possono scappare. <code>arena-world-ball.js</code>, <code>arena-world-play.js</code>, <code>arena-avatar.js</code>.</td></tr>
+<tr><td>6</td><td>Volo e contatto del pallone</td><td>Previsione condivisa del volo, resistenza dell&#x27;aria e preparazione delle traiettorie curve. Le skill mantengono un momento di contatto misurabile. <code>arena-ball-flight.js</code>, <code>arena-world-ball.js</code>.</td></tr>
+<tr><td>7</td><td>Reazioni ai contrasti</td><td>I contatti ravvicinati producono una breve reazione del corpo, senza trasformare ogni contatto in fallo. <code>arena-motion.js</code>, <code>arena-avatar.js</code>.</td></tr>
+<tr><td>8</td><td>Portiere più leggibile</td><td>Anticipo, tuffo e recupero coordinati con la palla; un portiere umano mantiene il ruolo nelle rimesse e nella partitella. <code>arena-avatar.js</code>, <code>arena-roles.js</code>, <code>arena-world-play.js</code>, <code>arena-laws.js</code>.</td></tr>
+<tr><td>9</td><td>Finalizzazione negli esercizi</td><td>Scelta del tiro e del piede nel contesto, con rotazione dei partecipanti già presente preservata e verificata su entrambe le porte. <code>arena-world-ball.js</code>, <code>arena-techniques.js</code>.</td></tr>
+<tr><td>10</td><td>Skill meno meccaniche</td><td>Le giocate dipendono da posizione, velocità e azioni recenti, anziché da una sequenza fissa di tre mosse. Rovesciata, sforbiciata, tacco, esterno e pallonetto rimangono distinguibili nel modello. <code>arena-techniques.js</code>, <code>arena-avatar.js</code>.</td></tr>
+<tr><td>11</td><td>Corse senza palla e fuorigioco</td><td>Obiettivi di corsa entro una linea di fuorigioco prevista, con margine; posizionamento meno ammassato. Non elimina per regola tutti i fuorigioco. <code>arena-tactics.js</code>.</td></tr>
+<tr><td>12</td><td>Scelte con il pallone</td><td>Valutazione di passaggio, conduzione, tiro e cross; penalizzati i passaggi all&#x27;indietro che bloccavano l&#x27;attacco. <code>arena-tactics.js</code>, <code>arena-match.js</code>.</td></tr>
+<tr><td>13</td><td>Sostegno e triangoli</td><td>Compagni in appoggio, ampiezza e prosecuzione dopo un passaggio per offrire l&#x27;uno-due. <code>arena-tactics.js</code>.</td></tr>
+<tr><td>14</td><td>Marcature e linee di passaggio</td><td>Difesa dal lato della propria porta, ostacoli sulle linee di passaggio e intercettazioni coerenti con il volo. <code>arena-tactics.js</code>, <code>arena-world-play.js</code>.</td></tr>
+<tr><td>15</td><td>Ripartenze e attrezzatura</td><td>Conservati e ricontrollati raccolta dei cinesini, rimesse, corner, rigori e punizioni; titoli coerenti con la ripartenza effettiva. <code>arena-equipment.js</code>, <code>arena-laws.js</code>, <code>arena-world.js</code>.</td></tr>
+<tr><td>16</td><td>Squadre, panchina e portiere</td><td>Il portiere assegnato sostituisce un BOT anche nella partitella. Squadre bilanciate contando i portieri; rotazione dei giocatori di movimento con zero presenze EA note, altrimenti degli altri. Un dato assente non vale zero. <code>arena-teams.js</code>, <code>arena-roles.js</code>.</td></tr>
+<tr><td>17</td><td>Modello da calciatore</td><td>Nell&#x27;Arena maniche corte, avambracci della carnagione scelta e finiture sportive. I guanti del portiere hanno un materiale distinto dalla pelle. <code>arena-athlete.js</code>, <code>arena-avatar.js</code>.</td></tr>
+<tr><td>18</td><td>Viso, capelli, barba e materiali</td><td>Modello completo da vicino e geometria semplificata da lontano; materiali di pelle, tessuti e capelli differenziati. Si riutilizzano le personalizzazioni salvate. <code>arena-athlete.js</code>, <code>arena-renderer.js</code>.</td></tr>
+<tr><td>19</td><td>Terreno, luci e dettagli</td><td>Rilievo separato del manto erboso, finiture del campo, ombre di contatto, bandiere e rete che reagisce al gol anche dopo un replay. Panchina e tavolo restano fuori dal rettangolo. <code>arena-environment.js</code>, <code>arena-renderer.js</code>.</td></tr>
+<tr><td>20</td><td>Regia e inquadrature</td><td>La regia segue l&#x27;azione del pallone principale, includendo corpo e palla nelle skill; una visuale manuale non viene sottratta da un&#x27;azione automatica. <code>arena-renderer.js</code>, <code>arena-world.js</code>.</td></tr>
+<tr><td>21</td><td>Telefono e leggibilità</td><td>Comandi compatti, Solo campo, filtro dei nomi, fumetti ricalcolati dopo il ridimensionamento. I nomi restano sopra il giocatore, senza righe di collegamento. <code>arena-ui.js</code>, <code>arena-overlays.js</code>, <code>arena.css</code>.</td></tr>
+<tr><td>22</td><td>Carico grafico e ciclo di vita</td><td>Qualità automatica che riduce e recupera dettaglio, geometria a distanza, pausa quando la pagina è nascosta, rilascio delle risorse alla chiusura e rispetto delle animazioni ridotte. <code>arena-renderer.js</code>, <code>arena-athlete.js</code>, <code>arena-ui.js</code>.</td></tr>
+<tr><td>23</td><td>Audio dei contatti</td><td>Profili distinti per passaggio, tiro, testa, tessuto ed erba, oltre a palo, rimbalzo, rete e fischio. Volume, distanza, limite alle voci simultanee e arresto alla chiusura. <code>arena-audio.js</code>.</td></tr>
+<tr><td>24</td><td>Dialoghi contestuali</td><td>Priorità a gol, errori e parate reali del campo; memoria recente delle frasi e tempi meno invadenti durante un gesto tecnico. Non usa Gemini. <code>arena-dialogue-context.js</code>, <code>arena-conversation.js</code>.</td></tr>
+<tr><td>25</td><td>Battute con richiamo</td><td>Un successo successivo può rispondere a un errore precedente del giocatore. Le battute restano satiriche ed esplicite; non viene inventata una ricezione riuscita al semplice rilascio del passaggio. <code>arena-conversation.js</code>.</td></tr>
+<tr><td>26</td><td>Replay locale</td><td>Buffer degli ultimi 12 secondi già osservati, riproduzione silenziosa e ritorno automatico o immediato in diretta. Non cambia il mondo condiviso. <code>arena-timeline.js</code>, <code>arena-renderer.js</code>, <code>arena-ui.js</code>.</td></tr>
+<tr><td>27</td><td>Visuale ricordata</td><td>Inquadratura, giocatore seguito, nomi e Solo campo ricordati per account su quel dispositivo; qualità, volume e fumetti restano preferenze del dispositivo. <code>arena-renderer.js</code>, <code>arena-ui.js</code>.</td></tr>
+<tr><td>28</td><td>Registro delle azioni</td><td>Fino a 24 eventi recenti con nome corretto anche dopo cambi di rosa. Se l&#x27;azione è ancora nel buffer si rivede; altrimenti si segue il protagonista in diretta. <code>arena-timeline.js</code>, <code>arena-ui.js</code>.</td></tr>
+<tr><td>29</td><td>Sincronizzazione e aggiornamento</td><td>Snapshot deterministici condivisi, un&#x27;unica lettura RPC a regime, passaggio Arena 9/10 compatibile per installazione e ripristino, controlli account sul server e cache separata. <code>lib/arena.js</code>, <code>api/account.js</code>, <code>setup/18-arena-completa.sql</code>, <code>sw.js</code>.</td></tr>
+</tbody></table></div>
+<h2>Dati, consumi e compatibilità</h2>
+<p>Termux, pulsanti IL MIO CLUB/AVVERSARIO, statistiche EA, risultati e criteri Top 3 restano quelli del main di partenza. Non sono stati modificati il modello condiviso delle corse, l&#x27;editor personale o la Gazzetta. Le foto conservano i controlli di proprietà esistenti. Nessuna nuova dipendenza, chiave, servizio a pagamento o Vercel Blob.</p>
+<p>La simulazione avanza sul dispositivo. Lo snapshot viene preparato una volta per finestra di 30 minuti e conservato su Supabase, con tentativi temporanei limitati se un altro processo lo sta preparando. Non vengono scritte posizioni per fotogramma, né richieste generazioni IA per le battute. Il replay e il registro non fanno richieste al database. Aprire l&#x27;Arena, tornare dopo una lunga assenza o raggiungere la finestra successiva richiede comunque traffico: il piano gratuito non è illimitato.</p>
+<p>Aspetto, rosa e portiere seguono il prossimo snapshot condiviso, fino a circa 30 minuti. Non è un salvataggio istantaneo per tutti. I compagni con la stessa versione condividono azioni e stato del campo, ma possono avere camera, qualità, audio e replay diversi. Dopo il deployment tutti devono ricaricare: il server invita i vecchi client ad aggiornarsi.</p>
+<h2>Limiti concreti</h2>
+<p>È una simulazione procedurale nel browser, con il modello esistente migliorato: non asset fotorealistici, motion capture o grafica da produzione AAA. Viso, capelli e barba conservano lo stile e i limiti della geometria di partenza. Le animazioni dei contrasti non sono una simulazione completa di corpi articolati.</p>
+<p>Il campo è ridotto (34 × 52 m), con partitelle a obiettivo gol, non un simulatore completo di calcio a undici. VAR, cartellini e tutte le eccezioni regolamentari non sono implementati. Le frasi hanno un repertorio finito: la memoria recente riduce le ripetizioni, non garantisce dialoghi infiniti.</p>
+<p>La resa 3D finale, gli FPS, il calore e l&#x27;audio su un telefono fisico devono essere provati sul dispositivo. Il browser di verifica disponibile aveva WebGL disabilitato; non è stata aggirata questa limitazione. Vedi <code>VERIFICHE.md</code> per le prove eseguite e quelle ancora manuali.</p></section><section id="file"><h1>Elenco esatto dei file · 32.1.50</h1>
+<p>Percorsi relativi alla radice di <code>Adra02/sisal-fc-2021</code>. Caricare il contenuto di <code>01_FILE_DA_CARICARE_SU_GITHUB</code> in un solo commit su main.</p>
+<div class="table-wrap"><table><thead><tr><th>Azione</th><th>Percorso</th></tr></thead><tbody>
+<tr><td>Sostituire</td><td><code>api/account.js</code></td></tr>
+<tr><td>Aggiungere</td><td><code>arena-athlete.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-audio.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-avatar.js</code></td></tr>
+<tr><td>Aggiungere</td><td><code>arena-ball-flight.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-banter.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-clip.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-conversation.js</code></td></tr>
+<tr><td>Aggiungere</td><td><code>arena-dialogue-context.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-dialogue.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-drills.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-environment.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-equipment.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-football.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-laws.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-live-cache.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-match.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-motion.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-overlays.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-program-compat.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-renderer.js</code></td></tr>
+<tr><td>Aggiungere</td><td><code>arena-roles.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-setpieces.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-simulation.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-tactics.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-teams.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-techniques.js</code></td></tr>
+<tr><td>Aggiungere</td><td><code>arena-timeline.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-training.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-ui.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-world-ball.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-world-play.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-world-state.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena-world.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>arena.css</code></td></tr>
+<tr><td>Sostituire</td><td><code>club-experience.js</code></td></tr>
+<tr><td>Aggiungere</td><td><code>docs/arena-32.1.50/ELENCO_FILE.md</code></td></tr>
+<tr><td>Aggiungere</td><td><code>docs/arena-32.1.50/INSTALLAZIONE.md</code></td></tr>
+<tr><td>Aggiungere</td><td><code>docs/arena-32.1.50/LEGGIMI.html</code></td></tr>
+<tr><td>Aggiungere</td><td><code>docs/arena-32.1.50/MODIFICHE.md</code></td></tr>
+<tr><td>Aggiungere</td><td><code>docs/arena-32.1.50/VERIFICHE.md</code></td></tr>
+<tr><td>Sostituire</td><td><code>index-inline.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>index.html</code></td></tr>
+<tr><td>Sostituire</td><td><code>lib/arena.js</code></td></tr>
+<tr><td>Sostituire</td><td><code>package-lock.json</code></td></tr>
+<tr><td>Sostituire</td><td><code>package.json</code></td></tr>
+<tr><td>Aggiungere</td><td><code>scripts/test-arena-athlete.mjs</code></td></tr>
+<tr><td>Aggiungere</td><td><code>scripts/test-arena-cache.mjs</code></td></tr>
+<tr><td>Aggiungere</td><td><code>scripts/test-arena-complete-sql.mjs</code></td></tr>
+<tr><td>Aggiungere</td><td><code>scripts/test-arena-complete.mjs</code></td></tr>
+<tr><td>Sostituire</td><td><code>scripts/test-arena-live-world.mjs</code></td></tr>
+<tr><td>Sostituire</td><td><code>scripts/test-arena-renderer.mjs</code></td></tr>
+<tr><td>Sostituire</td><td><code>scripts/test-arena-sql.mjs</code></td></tr>
+<tr><td>Sostituire</td><td><code>scripts/test-arena-ui.mjs</code></td></tr>
+<tr><td>Sostituire</td><td><code>scripts/test-release-resources.mjs</code></td></tr>
+<tr><td>Sostituire</td><td><code>scripts/verify-project.mjs</code></td></tr>
+<tr><td>Aggiungere</td><td><code>setup/18-arena-completa.sql</code></td></tr>
+<tr><td>Sostituire</td><td><code>sw.js</code></td></tr>
+</tbody></table></div>
+<p>Totale: 58 file; 43 sostituzioni e 15 aggiunte. Nessun file da eliminare per installare l’aggiornamento.</p>
+<p>I file <code>.js</code>, <code>.html</code>, <code>.css</code> e <code>.mjs</code> sono completi: non contengono istruzioni da integrare manualmente. Le cartelle <code>scripts</code> e <code>docs</code> conservano prove e documentazione; non sono da eseguire per usare il sito. La migrazione SQL va invece eseguita separatamente come spiegato nella guida.</p></section><section id="prove"><h1>Prove eseguite · 32.1.50</h1>
+<p>Data: 26 ottobre 2026. Base verificata: <code>940d88c6fe1cde4d13a623d13482f19e07be6719</code>. Le prove non hanno scritto nel sito, nel database Supabase di produzione o su GitHub.</p>
+<h2>Esecuzioni reali in ambiente locale</h2>
+<p>La simulazione è procedurale: «reale» qui significa che è stato eseguito il codice effettivo del progetto con dati sintetici e scenari controllati, non che sono state osservate partite EA o persone fisiche.</p>
+<div class="table-wrap"><table><thead><tr><th>Area</th><th>Evidenza</th></tr></thead><tbody>
+<tr><td>Suite completa Arena</td><td><code>npm run test:arena-completa</code> terminato con codice 0; include motore, SQL, UI, renderer, audio, cache e risorse.</td></tr>
+<tr><td>Nuove funzioni</td><td>775 controlli nella suite Arena completa: curva ruotata, portiere umano, bilanciamento, replay, preferenze e simulazioni.</td></tr>
+<tr><td>Mondo continuo</td><td>194.400 passi e 1.548.000 confronti di distanza, con 1/2/3/7/14/24 membri. Confronto fra client indipendenti, continuità snapshot, equivalenza con personalizzazioni diverse, sostituzione rosa, squadre e panchina.</td></tr>
+<tr><td>Geometria degli appoggi</td><td>4.000 confronti a velocità 1–6,8 m/s, tre lunghezze di falcata; scarto orizzontale numerico massimo 1,78 × 10⁻¹⁵ m nel riferimento delle ossa. Non equivale a una misura visiva della scivolosità sullo schermo.</td></tr>
+<tr><td>Mani e pallone</td><td>Raccolta e posa collegate alle articolazioni Three effettive; nell&#x27;ultima suite 175 confronti raccolta, 150 posa, distanza massima mano-centro palla circa 0,110 m, nessuno spostamento a terra prima del contatto previsto.</td></tr>
+<tr><td>Regole e attrezzatura</td><td>41 controlli delle leggi/attrezzatura; casi controllati di rimessa laterale, corner, rigore e punizione; raccolta cinesini prima della partita. Campo ridotto, non copertura completa del regolamento a undici.</td></tr>
+<tr><td>Skill e tiratori</td><td>11 pose; contatti di tacco, esterno, pallonetto, rovesciata, sforbiciata e volée. In 900 secondi di esercizi, 4 tiratori distinti per ciascun lato e gol/parate/cross reali della simulazione.</td></tr>
+<tr><td>Modello e materiali</td><td>Mesh Three e materiali effettivi, tre carnagioni/varianti con e senza casco. Viso completo 8.494 triangoli, variante lontana 3.502; avambracci separati dai guanti. Nessuna immagine GPU generata da questa prova.</td></tr>
+<tr><td>Database</td><td>PostgreSQL locale PGlite: SQL 18 eseguito due volte, conservazione dati preesistenti, coesistenza 9/10, contesa sulle pubblicazioni, snapshot immutabili, accessi anonimo/membro/admin/in attesa/sospeso, nessun checkpoint futuro nel dato restituito.</td></tr>
+<tr><td>API</td><td>Handler effettivo con SQL locale: autenticazione, validazione amministratore/portiere, esclusioni di rosa, client vecchio invitato ad aggiornarsi e una sola RPC per lettura a regime. Trasporto Supabase simulato verso il database locale.</td></tr>
+<tr><td>Account esistenti</td><td>65 controlli account/SQL/API e scrypt Node reale; login, registrazione, password, sessione ricordata, permessi e salvataggio editor. UI in JSDOM, non accesso all&#x27;account di produzione.</td></tr>
+<tr><td>Compatibilità avatar e corse</td><td>13.400 pose e 138 varianti di personalizzazione; ciclo corsa con pari merito, salto e animazioni ridotte in modello DOM/renderer simulato. Verifiche occhi/casco con 16 intersezioni dei raggi sulle iridi reali. I file della corsa condivisa non sono modificati.</td></tr>
+<tr><td>Risorse e cache</td><td>81 risorse/import locali, 79 voci del service worker; nessun riferimento mancante o duplicato. Worker effettivo in contesto isolato: nessuna cache API privata, pulizia limitata alle cache dell&#x27;app e nessun HTML restituito come JavaScript quando manca una risorsa.</td></tr>
+<tr><td>Codice</td><td>Controllo sintattico Node sui file JS/MJS modificati/nuovi, <code>npm run verify</code>, <code>git diff --check</code>.</td></tr>
+</tbody></table></div>
+<h3>Scenari con portiere umano</h3>
+<p>Tre esecuzioni da 1.200 secondi, usando il motore effettivo:</p>
+<div class="table-wrap"><table><thead><tr><th>Membri</th><th>Distanza minima tra i corpi</th><th>Tiri registrati</th><th>Parate registrate</th><th>Fine partitella osservata</th></tr></thead><tbody>
+<tr><td>3</td><td>circa 0,680 m</td><td>16</td><td>24</td><td>1</td></tr>
+<tr><td>7</td><td>circa 0,680 m</td><td>10</td><td>12</td><td>0</td></tr>
+<tr><td>14</td><td>circa 0,680 m</td><td>18</td><td>20</td><td>1</td></tr>
+</tbody></table></div>
+<p>I conteggi includono esercizi e tipologie di tiro diverse, non soltanto i tiri della partitella. In questi scenari non sono stati registrati fuorigioco: non significa che il motore li abbia rimossi o che non possano più verificarsi. La fine dipende dai gol, non da un cambio scena obbligato dopo un numero fisso di secondi.</p>
+<p>Uno snapshot di 30 minuti con 14 membri ha prodotto circa 206 kB; la preparazione locale è stata misurata in circa 4–11 secondi in esecuzioni separate. Sono misure di questo ambiente, non stime garantite del tempo Vercel, del consumo Supabase o degli FPS.</p>
+<h2>Prove simulate o con componenti sostituiti</h2>
+<ul>
+<li>UI effettiva in JSDOM: permessi membro/admin, identità, nomi con caratteri speciali, recupero da rosa vuota, risposta server non JSON, chiusura durante una richiesta, replay e pulizia.</li>
+<li>Renderer con scena, avatar, geometrie e logica Three reali, ma GPU sostituita: aggiornamento dell&#x27;aspetto, camera conservata, replay di un tiro effettivo, pausa, risorse rilasciate, panchina e tavolo non intersecati, testa non ostruita. Non è una prova di resa WebGL.</li>
+<li>Audio PCM effettivamente generato e numericamente analizzato; ciclo AudioContext simulato, massimo 12 voci, nessuna coda dopo stop. Non prova volume percepito, latenza o timbro di un altoparlante reale.</li>
+<li>Concorrenza SQL provata con pubblicazioni in contesa, lease e risultati immutabili sul database locale. Non è un test di carico distribuito Supabase.</li>
+</ul>
+<h2>Layout osservato nel browser</h2>
+<p>Interfaccia Arena e CSS effettivi con dati di prova e renderer sostituito da una scena esplicitamente etichettata «Dati simulati · scena 3D non renderizzata». Verificati viewport 320 e 390 pixel verticali, 844 × 390 orizzontale e 1.100 × 730 desktop. Nessuno scorrimento orizzontale rilevato. Controllati pannello opzioni, filtro nomi, Solo campo, replay/diretta, rosa assente e messaggio di errore HTML.</p>
+<p>Durante il controllo è stato corretto il ricalcolo delle dimensioni dei fumetti al ridimensionamento. Il browser disponibile aveva WebGL disabilitato: nessuna promessa di FPS o di qualità finale del rendering deriva da questi screenshot.</p>
+<h2>Controllo del pacchetto</h2>
+<p>Il risultato dell&#x27;estrazione e dell&#x27;installazione sopra una copia pulita del main è riportato in <code>PACCHETTO_VERIFICATO.txt</code>, insieme alle impronte SHA-256 in <code>MANIFEST_FILE.json</code>. Nel pacchetto non sono incluse credenziali, file ambiente, node_modules o la pagina di prova con renderer sostituito.</p>
+<h2>Da verificare su telefono e sito dopo l&#x27;installazione</h2>
+<ol>
+<li>Rendering 3D reale: capelli, barba, pelle, ombre, panchina, appoggi e colpi di palla visti da più angolazioni.</li>
+<li>Fluidità, temperatura e consumo batteria; confrontare Automatica e Risparmio. Nessun FPS minimo è stato misurato su telefono fisico.</li>
+<li>Audio dopo un tocco volontario, cambio scheda, pausa, ripresa e chiusura.</li>
+<li>Due dispositivi reali nella stessa diretta, anche al cambio della finestra condivisa e dopo perdita della rete; camera e replay personali indipendenti.</li>
+<li>Accessi di produzione, foto personali, corse Top 3, statistiche, Gazzetta e invio Termux abituale. Il trasporto e i permessi del database locale sono stati provati; non è stata usata la tua password o mutata la produzione.</li>
+</ol>
+<p>Il test pipeline che richiede un file EA esterno in <code>/mnt/data/matches.json</code> non è stato eseguito: quel fixture non era disponibile. Non sono stati modificati gli algoritmi delle statistiche. Non sono state eseguite generazioni Gemini né test di quota/costi IA, perché questo aggiornamento Arena non cambia quelle funzioni.</p></section></main><footer>Sisal Arena 32.1.50 · 26 ottobre 2026 · Base main 940d88c6fe1cde4d13a623d13482f19e07be6719</footer></html>

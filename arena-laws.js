@@ -1,6 +1,7 @@
 // Geometric playing rules for the existing reduced-size club pitch.
 // No scores, identities, account data or EA statistics are inferred here.
-import {FIELD as F} from './arena-layout.js?v=arena-9';
+import {FIELD as F} from './arena-layout.js?v=arena-10';
+import {isKeeper} from './arena-roles.js?v=arena-10';
 export const attackDirection=team=>team===0?-1:1;
 export const ownGoalSign=team=>-attackDirection(team);
 export const pointDistance=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
@@ -30,7 +31,7 @@ export function legalRestartPosition(point,p,m,{margin=0}={}){
  if(type==='throwIn')return !opponent||pointDistance(point,spot)>=2+margin;
  if(type==='goalKick')return !opponent||!inPenaltyArea(x,z,m.deadTeam,margin);
  if(type==='penalty'){
-  if(p.bot&&opponent)return Math.abs(z-d*F.halfLength)<.12&&Math.abs(x)<F.goalWidth/2-.2;
+  if(isKeeper(p)&&opponent)return Math.abs(z-d*F.halfLength)<.12&&Math.abs(x)<F.goalWidth/2-.2;
   return pointDistance(point,spot)>=9.15+margin&&d*(z-spot[1])<=-.15&&!inPenaltyArea(x,z,1-m.deadTeam,margin);
  }
  if(opponent&&['freeKick','indirect','corner'].includes(type))return pointDistance(point,spot)>=9.15+margin;
@@ -40,7 +41,7 @@ export function restartPosition(p,m,base){
  const spot=m.spot||[0,0],type=m.restart||'kickoff',d=attackDirection(m.deadTeam??0),index=Math.max(0,m.teams[p.team]?.indexOf(p.key)??0);
  if(p.key===(m.taker||m.holder))return type==='throwIn'?[Math.sign(spot[0])*(F.halfWidth+.28),spot[1]]:[spot[0],spot[1]-attackDirection(p.team)*.36];
  if(type==='kickoff')return kickoffPosition(p,m,base);
- if(type==='penalty'&&p.bot&&p.team!==m.deadTeam)return [clamp(spot[0],-1.4,1.4),d*F.halfLength];
+ if(type==='penalty'&&isKeeper(p)&&p.team!==m.deadTeam)return [clamp(spot[0],-1.4,1.4),d*F.halfLength];
  if(legalRestartPosition(base,p,m,{margin:.7}))return [...base];
  const candidates=[];
  for(const x of [-14,-10,-6,-2,2,6,10,14])for(const z of [-23,-19,-14,-9,-4,4,9,14,19,23]){
@@ -51,8 +52,8 @@ export function restartPosition(p,m,base){
 export function restartLayout(w,m,shape){
  const people=w.players.filter(p=>p.team!=null&&!p.rest).sort((a,b)=>(a.key===m.taker?-2:a.bot?-1:0)-(b.key===m.taker?-2:b.bot?-1:0)||(a.key<b.key?-1:1)),result=new Map(),occupied=[];
  for(const p of people){
-  const base=p.bot?[0,ownGoalSign(p.team)*24.8]:shape(p,m);let point=restartPosition(p,m,base);
-  if(p.key!==m.taker&&!p.bot&&occupied.some(q=>pointDistance(q,point)<1.15)){
+  const base=isKeeper(p)?[0,ownGoalSign(p.team)*24.8]:shape(p,m);let point=restartPosition(p,m,base);
+  if(p.key!==m.taker&&!isKeeper(p)&&occupied.some(q=>pointDistance(q,point)<1.15)){
    let candidate=null;
    for(const radius of [1.3,2.6,3.9]){for(let i=0;i<12;i++){const a=i*Math.PI/6,q=[point[0]+Math.cos(a)*radius,point[1]+Math.sin(a)*radius];if(Math.abs(q[0])>16||Math.abs(q[1])>24||!legalRestartPosition(q,p,m,{margin:.5})||occupied.some(r=>pointDistance(q,r)<1.15))continue;candidate=q;break;}if(candidate)break;}
    if(candidate)point=candidate;
@@ -66,7 +67,7 @@ export function readyToRestart(w,m,b){
  if(pointDistance([b.x,b.z],m.spot||[0,0])>.12)return false;
  for(const p of w.players){if(p.rest||p.team==null)continue;
   if(!legalRestartPosition([p.x,p.z],p,m))return false;
-  if((m.restart==='kickoff'||m.phase==='gather')&&!p.bot&&p.key!==(m.taker||m.holder)&&p.target&&pointDistance([p.x,p.z],p.target)>1.5)return false;
+  if((m.restart==='kickoff'||m.phase==='gather')&&!isKeeper(p)&&p.key!==(m.taker||m.holder)&&p.target&&pointDistance([p.x,p.z],p.target)>1.5)return false;
  }
  return true;
 }

@@ -1,7 +1,7 @@
 // Shared, serializable simulation state. No browser, network or account writes.
-import {DT,hash,clamp} from './arena-motion.js?v=arena-9';
-import {BALL_RACK,BENCH,TRAINING_CONES,FIELD} from './arena-layout.js?v=arena-9';
-export const WORLD_VERSION=9,SESSION_SECONDS=1800,HZ=24;
+import {DT,hash,clamp} from './arena-motion.js?v=arena-10';
+import {BALL_RACK,BENCH,TRAINING_CONES,FIELD} from './arena-layout.js?v=arena-10';
+export const WORLD_VERSION=10,SESSION_SECONDS=1800,HZ=24;
 export const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export const unit=(x,z)=>{const n=Math.hypot(x,z)||1;return [x/n,z/n];};
 export const actor=(w,key)=>w.players.find(p=>p.key===key);
@@ -37,7 +37,7 @@ export function reconcileWorld(previous,players){
  w.newEvents=[];return w;
 }
 export function resetActivities(w){
- w.mode='training';w.groups=[];w.match=null;for(const p of w.players){p.group=null;p.team=null;p.kick=null;p.throw=null;p.equipmentJob=null;p.aerial=null;p.skill=null;if(p.rest?.reason==='odd'){p.rest.phase='rise';p.rest.riseAt=now(w);}}
+ w.mode='training';w.groups=[];w.match=null;for(const p of w.players){p.group=null;p.team=null;p.keeperRole=false;p.reserveKeeper=false;p.kick=null;p.throw=null;p.equipmentJob=null;p.aerial=null;p.skill=null;if(p.rest?.reason==='odd'){p.rest.phase='rise';p.rest.riseAt=now(w);}}
  for(const b of w.balls){b.group=null;b.flight=null;b.net=null;if(b.owner||b.motion){b.owner=null;b.motion=null;b.mode='free';b.vy=0;}}
  for(const c of w.equipment?.cones||[]){c.claim=null;if(c.owner){c.owner=null;c.mode='field';c.y=0;}}
 }

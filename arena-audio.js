@@ -2,12 +2,16 @@
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const hash=s=>{let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 export function impactPCM(type,sampleRate=22050,seed=1){
- const duration=type==='metal'?.65:type==='whistle'?.23:type==='net'?.22:type==='save'?.20:type==='kick'?.18:.12,data=new Float32Array(Math.ceil(duration*sampleRate));let rng=seed||1,low=0,mean=0,peak=0;
+ const duration=type==='metal'?.65:type==='whistle'?.23:type==='net'?.30:type==='save'?.20:['kick','strike'].includes(type)?.18:type==='grass'?.19:.12,data=new Float32Array(Math.ceil(duration*sampleRate)),pitch=.92+((seed>>>4)%997)/997*.16;let rng=seed||1,low=0,mean=0,peak=0;
  for(let i=0;i<data.length;i++){
   rng^=rng<<13;rng^=rng>>>17;rng^=rng<<5;const noise=(rng>>>0)/2147483648-1,t=i/sampleRate,attack=Math.min(1,t/.0025);low+=(noise-low)*.13;let v;
-  if(type==='metal')v=(Math.sin(t*2*Math.PI*510)*Math.exp(-t*9)+Math.sin(t*2*Math.PI*843)*Math.exp(-t*12)*.6+Math.sin(t*2*Math.PI*1379)*Math.exp(-t*18)*.35+noise*Math.exp(-t*100)*.4)*.35;
+  if(type==='metal')v=(Math.sin(t*2*Math.PI*510*pitch)*Math.exp(-t*9)+Math.sin(t*2*Math.PI*843*pitch)*Math.exp(-t*12)*.6+Math.sin(t*2*Math.PI*1379*pitch)*Math.exp(-t*18)*.35+noise*Math.exp(-t*100)*.4)*.35;
   else if(type==='whistle')v=(Math.sin(t*2*Math.PI*2240+Math.sin(t*2*Math.PI*38)*.9)+.18*Math.sin(t*2*Math.PI*4480))*Math.sin(Math.PI*t/duration)**.6*.28;
-  else if(type==='kick')v=Math.sin(2*Math.PI*(135*t-90*t*t))*Math.exp(-t*30)*.65+low*Math.exp(-t*45)*.75+noise*Math.exp(-t*280)*.23;
+  else if(type==='kick'||type==='strike')v=Math.sin(2*Math.PI*(135*t-90*t*t)*pitch)*Math.exp(-t*30)*.65+low*Math.exp(-t*45)*.75+noise*Math.exp(-t*280)*.23;
+  else if(type==='pass')v=Math.sin(2*Math.PI*157*pitch*t)*Math.exp(-t*49)*.38+low*Math.exp(-t*59)*.40+noise*Math.exp(-t*240)*.10;
+  else if(type==='header')v=Math.sin(2*Math.PI*77*pitch*t)*Math.exp(-t*54)*.30+low*Math.exp(-t*72)*.29;
+  else if(type==='cloth')v=low*Math.exp(-t*38)*.30+(noise-low)*Math.exp(-t*95)*.12;
+  else if(type==='grass')v=(noise-low)*Math.exp(-t*24)*.25+low*Math.exp(-t*44)*.22;
   else if(type==='touch')v=Math.sin(t*2*Math.PI*108)*Math.exp(-t*43)*.30+low*Math.exp(-t*65)*.60;
   else if(type==='bounce')v=Math.sin(t*2*Math.PI*87)*Math.exp(-t*37)*.32+low*Math.exp(-t*55)*.40;
   else if(type==='save')v=Math.sin(t*2*Math.PI*82)*Math.exp(-t*30)*.35+noise*Math.exp(-t*72)*.45+low*Math.exp(-t*34)*.25;
@@ -40,7 +44,7 @@ export function arenaAudio({volume=.65}={}){
  function update(frame,camera,delta){
   const time=frame.t,jump=lastTime!=null&&(time-lastTime>.40||time<lastTime);if(jump){clearVoices();played.clear();feet.clear();}lastTime=time;
   if(!enabled||jump||delta>.35)return;
-  for(const s of frame.sounds||[]){const id=s.id??frame.serial+':'+s.at+':'+s.type;if(time>=s.at&&time-s.at<.18&&!played.has(id)){played.set(id,time);play(s.type,s.pos,camera,s.intensity??.55,hash(id+':'+(s.surface||'')));}}
+  for(const s of frame.sounds||[]){const id=s.id??frame.serial+':'+s.at+':'+s.type;if(time>=s.at&&time-s.at<.18&&!played.has(id)){played.set(id,time);play(s.profile||s.type,s.pos,camera,s.intensity??.55,hash(id+':'+(s.surface||'')));}}
   for(const [id,at]of played)if(time-at>2)played.delete(id);
   const moving=(frame.actors||[]).filter(p=>Math.hypot(...p.velocity)>.6&&!p.seated).map(p=>({p,d:Math.hypot(camera.x-p.pos[0],camera.z-p.pos[1])})).filter(x=>x.d<18).sort((a,b)=>a.d-b.d).slice(0,2);
   for(const {p}of moving){const beat=Math.floor(p.stepCycle*2),old=feet.get(p.key);feet.set(p.key,beat);if(old!=null&&beat!==old&&time-lastFoot>.11){play('step',[p.pos[0],0,p.pos[1]],camera,.35,hash(p.key+beat));lastFoot=time;}}

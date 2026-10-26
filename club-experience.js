@@ -6,7 +6,7 @@ if(logo){
  const cue=document.createElement('span');cue.className='club-arena-cue';cue.innerHTML='<i aria-hidden="true"></i> SISAL ARENA <span aria-hidden="true">↗</span>';logo.append(cue);
  const launch=async()=>{
   if(opening)return;opening=true;logo.setAttribute('aria-busy','true');
-  try{const {openArena}=await import('./arena-ui.js?v=arena-9');await openArena();}
+  try{const {openArena}=await import('./arena-ui.js?v=arena-10');await openArena();}
   catch{cue.textContent='Arena non caricata · tocca per riprovare';}
   finally{opening=false;logo.removeAttribute('aria-busy');}
  };

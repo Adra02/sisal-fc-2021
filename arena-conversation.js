@@ -1,6 +1,7 @@
-import {hash} from './arena-motion.js?v=arena-9';
-import {banterLexicon,creativeInvocations} from './arena-banter.js?v=arena-9';
-import {now,actor} from './arena-world-state.js?v=arena-9';
+import {hash} from './arena-motion.js?v=arena-10';
+import {banterLexicon,creativeInvocations} from './arena-banter.js?v=arena-10';
+import {now,actor} from './arena-world-state.js?v=arena-10';
+import {contextualLines,replies,shortClosings} from './arena-dialogue-context.js?v=arena-10';
 const extra={
  touch:['Piano coi tocchi, che la palla non ha chiesto il divorzio.','Portala avanti coi piedi: la spiegazione arriva già da sola.','Un controllo alla volta, cazzo. Non stai svuotando il garage.','Sei tu che guidi lei, almeno sulla carta.'],
  deflect:['Respinta: il portiere ha detto no senza aprire una riunione.','Non l’ha tenuta, ma intanto ti ha rovinato la festa.','Seconda palla: muoviti, che quella buona non ti aspetta.','Guanti sul pallone. Il tuo autografo sulla rete può aspettare.'],
@@ -23,20 +24,36 @@ const comeback={
  save:['Adesso i guanti rispondono. Il tuo commento può sedersi.','Questa l’ho presa. Il prossimo sfottò almeno tiralo meglio.','Tieni la battuta: il pallone me lo tengo io.'],
  receive:['Controllata. Tu intanto controlla quanto parli.','È rimasta qui. La battuta di prima la trovi nel cestino.','Piede acceso. La tua bocca può riposare due minuti.']
 };
-const mistakes=new Set(['out','post','foul','badControl','roof']),successes=new Set(['goal','pass','receive','save']);
+const mistakes=new Set(['out','post','foul','badControl','roof']),successes=new Set(['goal','receive','save']);
 function pick(list,seed,recent,kind){let i=hash(seed)%list.length;for(let n=0;n<list.length-1&&recent.includes(kind+':'+i);n++)i=(i+1)%list.length;return {text:list[i],id:kind+':'+i};}
 export function converse(w,context){
  const t=now(w),memory=w.speechMemory,people=context.meta,real=w.players.filter(p=>!p.bot&&!p.rest);
- for(const e of w.newEvents){
+ memory.phrases||=[];
+ const priority={goal:100,save:90,roof:85,post:84,bicycle:80,scissor:80,volley:75,header:70,foul:65,badControl:60,interception:55};
+ const events=[...w.newEvents].sort((a,b)=>(priority[b.type]||0)-(priority[a.type]||0));
+ const pending=memory.reply;
+ if(pending&&t>pending.expires)delete memory.reply;
+ if(pending&&t>=pending.at&&t<=pending.expires&&!events.some(e=>(priority[e.type]||0)>=60)&&t-memory.lastAt>6.8){
+  const speaker=actor(w,pending.speaker),incoming=w.balls.some(b=>b.flight?.receiver===pending.speaker);
+  if(speaker&&!speaker.rest&&!speaker.kick&&!speaker.aerial&&!incoming&&Math.hypot(speaker.vx,speaker.vz)<4.5){
+   const until=t+Math.min(4.8,Math.max(3.1,pending.text.length/25));w.dialogue.push({id:'reply-'+pending.id,at:t,until,speaker:speaker.key,name:people.get(speaker.key)?.appearance?.nickname||people.get(speaker.key)?.name||speaker.key,text:pending.text,event:'answer'});if(w.dialogue.length>8)w.dialogue.shift();memory.lastAt=t;memory.lastSpeaker=speaker.key;delete memory.reply;
+  }
+ }
+ for(const e of events){
   if(mistakes.has(e.type)&&e.actor){const witness=real.filter(p=>p.key!==e.actor).sort((a,b)=>Math.hypot(a.x-e.pos[0],a.z-e.pos[2])-Math.hypot(b.x-e.pos[0],b.z-e.pos[2]))[0];if(witness)memory.mistakes[e.actor]={type:e.type,witness:witness.key,event:e.id};}
   const recall=successes.has(e.type)&&memory.mistakes[e.actor],eligible=recall&&e.id-recall.event<42&&actor(w,recall.witness)&&comeback[e.type];
   let kind=eligible?'reply-'+e.type:e.type==='save'&&e.saveType==='deflect'?'deflect':e.type==='penaltyAwarded'?'penalty':e.type==='freeKickAwarded'?'freeKick':e.type==='cornerAwarded'?'corner':e.type==='interception'?'interception':e.type;
-  const list=eligible?comeback[e.type]:extra[kind]||banterLexicon[kind];if(!list||t-memory.lastAt<7.0||!real.length)continue;
+  const base=extra[kind]||banterLexicon[kind],list=eligible?comeback[e.type]:base?[...base,...(contextualLines[kind]||[])]:contextualLines[kind];if(!list||t-memory.lastAt<7.0||!real.length)continue;
   const subject=actor(w,e.actor),receiver=actor(w,e.target);
   const speaker=eligible&&subject&&!subject.bot?subject:receiver&&!receiver.bot&&!receiver.rest?receiver:real.filter(p=>p.key!==e.actor&&p.key!==memory.lastSpeaker).sort((a,b)=>Math.hypot(a.x-e.pos[0],a.z-e.pos[2])-Math.hypot(b.x-e.pos[0],b.z-e.pos[2]))[0]||real[0];
-  const chosen=pick(list,w.seed+':'+e.id+':'+kind,memory.recent.slice(-12),kind),called=eligible?people.get(recall.witness):subject?people.get(subject.key):null;
+  if(speaker.kick||speaker.aerial)continue;
+  let chosen=pick(list,w.seed+':'+e.id+':'+kind,memory.recent.slice(-24),kind);const called=eligible?people.get(recall.witness):subject?people.get(subject.key):null;
+  for(let attempt=0;attempt<list.length&&memory.phrases.includes(hash(chosen.text));attempt++)chosen=pick(list,w.seed+':'+e.id+':'+kind+':'+attempt,memory.recent.slice(-24),kind);
+  memory.phrases.push(hash(chosen.text));if(memory.phrases.length>48)memory.phrases.shift();
   const opening=eligible&&called?(called.appearance?.nickname||called.name)+', ':hash('invocation:'+w.seed+':'+e.id)%5===0?creativeInvocations[hash('exotic:'+w.seed+':'+e.id)%creativeInvocations.length]+', ':'';
-  const text=opening+chosen.text.charAt(0).toLowerCase()+chosen.text.slice(1),at=t+.20+(hash('reaction:'+e.id)%5)*.08,until=at+Math.min(6.2,Math.max(3.3,text.length/22));
+  const tail=chosen.text.length<80&&hash('tail:'+w.seed+':'+e.id)%4===0?' '+shortClosings[hash('ending:'+e.id)%shortClosings.length]:'';
+  const text=opening+chosen.text.charAt(0).toLowerCase()+chosen.text.slice(1)+tail,at=t+.20+(hash('reaction:'+e.id)%5)*.08,until=at+Math.min(6.2,Math.max(3.3,text.length/22));
+  if(!eligible&&replies[e.type]&&subject&&!subject.bot&&!subject.rest&&subject.key!==speaker.key)memory.reply={id:e.id,speaker:subject.key,at:Math.max(until+.5,t+7.0),expires:t+12.5,text:replies[e.type][hash('reply:'+w.seed+':'+e.id)%replies[e.type].length]};
   w.dialogue.push({id:e.id,at,until,speaker:speaker.key,name:people.get(speaker.key)?.appearance?.nickname||people.get(speaker.key)?.name||speaker.key,text,event:kind});if(w.dialogue.length>8)w.dialogue.shift();
   memory.lastAt=t;memory.lastSpeaker=speaker.key;memory.recent.push(chosen.id);if(memory.recent.length>30)memory.recent.shift();if(eligible)delete memory.mistakes[e.actor];
  }
