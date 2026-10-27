@@ -13,8 +13,8 @@ globalThis.__factory=(host,snapshot,opts)=>{rendered++;lastFrame=opts.onFrame;qu
 globalThis.__overlay=createArenaOverlay;globalThis.__nameKey=nameKey;
 let deferred=null;
 globalThis.fetch=async(url)=>{assert.match(url,/action=arena&scene=11$/);fetches++;if(deferred)await deferred;return Response.json({ok:true,version:3,sceneVersion:11,epoch:Math.floor(Date.now()/1800000),serverNow:Date.now(),snapshot:{players:[{key:'p1',name:'<img src=x onerror=alert(1)>',registered:true,appearance:{}}],keeper:null,world:{version:11,startAt:Date.now(),start:{}}}})};
-let source=await fs.readFile('arena-ui.js','utf8');source=source.replace(/^import .*;\n/gm,'').replace("await import('./arena-renderer.js?v=arena-11')","({createArenaRenderer:globalThis.__factory})");
-source=source.replaceAll("await import('./arena-live-cache.js?v=arena-11')","({prewarmContinuous:async()=>{}})");
+let source=await fs.readFile('arena-ui.js','utf8');source=source.replace(/^import .*;\n/gm,'').replace("await import('./arena-renderer.js?v=arena-12')","({createArenaRenderer:globalThis.__factory})");
+source=source.replaceAll("await import('./arena-live-cache.js?v=arena-12')","({prewarmContinuous:async()=>{}})");
 source='const createArenaOverlay=globalThis.__overlay,nameKey=globalThis.__nameKey;\n'+source;
 const {openArena}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 await openArena();await openArena();await Promise.resolve();lastFrame(frame);

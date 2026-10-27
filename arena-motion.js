@@ -1,6 +1,6 @@
 // Fixed-step movement shared by drills and friendly games. Metres and seconds.
 // No renderer, storage, service or per-frame network access in this module.
-import {BENCH} from './arena-layout.js?v=arena-11';
+import {BENCH} from './arena-layout.js?v=arena-12';
 export const DT=1/24,RADIUS=.34,MIN_DISTANCE=RADIUS*2;
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 export const mix=(a,b,u)=>a+(b-a)*u;

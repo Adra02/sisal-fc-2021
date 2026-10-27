@@ -1,4 +1,4 @@
-import {hash} from './arena-simulation.js?v=arena-11';
+import {hash} from './arena-simulation.js?v=arena-12';
 // Procedural fictional banter from the recovered catalogue; finite, not endlessly unique.
 const openings={
 nutmeg:['Chiudi il casello, è passata pure la ricevuta.','Cambio al centro: ti hanno aperto un sottopasso.','Ti è passato il pallone fra le idee.'],

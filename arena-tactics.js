@@ -1,7 +1,7 @@
-import {attackDirection} from './arena-laws.js?v=arena-11';
-import {now,rnd,dist} from './arena-world-state.js?v=arena-11';
-import {isKeeper} from './arena-roles.js?v=arena-11';
-import {predictBall} from './arena-ball-flight.js?v=arena-11';
+import {attackDirection} from './arena-laws.js?v=arena-12';
+import {now,rnd,dist} from './arena-world-state.js?v=arena-12';
+import {isKeeper} from './arena-roles.js?v=arena-12';
+import {predictBall} from './arena-ball-flight.js?v=arena-12';
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export function matchIntent(w,team){
  const m=w.match,difference=(m?.score?.[team]||0)-(m?.score?.[1-team]||0);

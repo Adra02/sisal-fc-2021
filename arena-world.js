@@ -1,11 +1,11 @@
-import {DT,clamp,movePlayers} from './arena-motion.js?v=arena-11';
-import {createWorld,reconcileWorld,resetActivities,exportWorld,now,actor,restWeight,handPoint,WORLD_VERSION,SESSION_SECONDS} from './arena-world-state.js?v=arena-11';
-import {stepBalls,stepKick,stepThrow} from './arena-world-ball.js?v=arena-11';
-import {planWorld,reactToBalls,afterWorld} from './arena-world-play.js?v=arena-11';
-import {converse} from './arena-conversation.js?v=arena-11';
-import {stepTechniques} from './arena-techniques.js?v=arena-11';
-import {TECHNIQUES,techniqueLabel} from './arena-technique-data.js?v=arena-11';
-import {isKeeper} from './arena-roles.js?v=arena-11';
+import {DT,clamp,movePlayers} from './arena-motion.js?v=arena-12';
+import {createWorld,reconcileWorld,resetActivities,exportWorld,now,actor,restWeight,handPoint,WORLD_VERSION,SESSION_SECONDS} from './arena-world-state.js?v=arena-12';
+import {stepBalls,stepKick,stepThrow} from './arena-world-ball.js?v=arena-12';
+import {planWorld,reactToBalls,afterWorld} from './arena-world-play.js?v=arena-12';
+import {converse} from './arena-conversation.js?v=arena-12';
+import {stepTechniques} from './arena-techniques.js?v=arena-12';
+import {TECHNIQUES,techniqueLabel} from './arena-technique-data.js?v=arena-12';
+import {isKeeper} from './arena-roles.js?v=arena-12';
 export {createWorld,reconcileWorld,exportWorld,WORLD_VERSION,SESSION_SECONDS};
 export function worldContext(snapshot){return {snapshot,keeper:snapshot.keeper||null,meta:new Map([...snapshot.players.map(p=>[p.key,p]),['__keeper_bot',{key:'__keeper_bot',name:'BOT · Porta A',appearance:{silk:'gold',number:'1'}}],['__keeper_away_bot',{key:'__keeper_away_bot',name:'BOT · Porta B',appearance:{silk:'navy',number:'12'}}]])};}
 export function stepWorld(w,context){

@@ -1,5 +1,21 @@
 import * as T from './vendor/three.module.min.js';
 
+// One GPU morph, built once. The wrist/forearm remain fixed; only the distal
+// fingers curl into a relaxed running hand instead of staying splayed flat.
+export function relaxedHands(g,skeleton){
+ const p=g.attributes.position,skin=g.attributes.skinIndex,weight=g.attributes.skinWeight,bent=new Float32Array(p.array),v=new T.Vector3(),axis=new T.Vector3(),normal=new T.Vector3();
+ for(const [index,side]of [[4,-1],[10,1]]){
+  const wrist=new T.Vector3().setFromMatrixPosition(skeleton.boneInverses[index].clone().invert());axis.set(.08,-.025,side*.07).normalize();normal.set(-axis.y,axis.x,0).normalize();
+  for(let i=0;i<p.count;i++){
+   let influence=0;for(let k=0;k<4;k++)if(skin.array[i*4+k]===index)influence+=weight.array[i*4+k];if(influence<.65)continue;
+   v.fromBufferAttribute(p,i).sub(wrist);const u=v.dot(axis),dist=Math.max(0,u-.065),angle=Math.min(2.1,dist/.045);if(!dist)continue;
+   v.addScaledVector(axis,.065+Math.sin(angle)*.045-u).addScaledVector(normal,(1-Math.cos(angle))*.045).add(wrist);v.toArray(bent,i*3);
+  }
+ }
+ const temp=new T.BufferGeometry();temp.setAttribute('position',new T.BufferAttribute(bent,3));temp.setIndex(g.index.clone());temp.computeVertexNormals();
+ g.morphAttributes.position=[temp.attributes.position.clone()];g.morphAttributes.normal=[temp.attributes.normal.clone()];g.computeBoundingSphere();temp.dispose();
+}
+
 // Arena-only short sleeves. Rebucket existing triangles so bare forearms use
 // skin rather than a shirt texture. The saved body dimensions never change.
 export function footballGeometry(g){

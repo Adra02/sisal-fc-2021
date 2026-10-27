@@ -1,18 +1,18 @@
 // Activity decisions react to completed play. There is no scene duration,
 // countdown, camera script or periodic repositioning in this director.
-import {DT,clamp,hash} from './arena-motion.js?v=arena-11';
-import {BALL_RACK,BENCH} from './arena-layout.js?v=arena-11';
-import {friendlyLineup} from './arena-teams.js?v=arena-11';
-import {rnd,integer,choose,shuffled,now,actor,ballById,dist,unit,emit,pose,beginPickup,beginPlace,setRest,updateRest,handPoint} from './arena-world-state.js?v=arena-11';
-import {prepareKick,dribble,releaseBall,putInRack,prepareThrow} from './arena-world-ball.js?v=arena-11';
+import {DT,clamp,hash} from './arena-motion.js?v=arena-12';
+import {BALL_RACK,BENCH} from './arena-layout.js?v=arena-12';
+import {friendlyLineup} from './arena-teams.js?v=arena-12';
+import {rnd,integer,choose,shuffled,now,actor,ballById,dist,unit,emit,pose,beginPickup,beginPlace,setRest,updateRest,handPoint} from './arena-world-state.js?v=arena-12';
+import {prepareKick,dribble,releaseBall,putInRack,prepareThrow} from './arena-world-ball.js?v=arena-12';
 
-import {planMatch,requestRestart} from './arena-match.js?v=arena-11';
-import {crossedGoal,outOfPlay,inPenaltyArea} from './arena-laws.js?v=arena-11';
-import {planEquipment,stepEquipment} from './arena-equipment.js?v=arena-11';
-import {isShot,recordPracticeShot,rotatePractice} from './arena-practice.js?v=arena-11';
-import {chooseGroundTechnique,planTechnique,tryAerial,receiveHeading} from './arena-techniques.js?v=arena-11';
-import {keeperAtEnd,isKeeper} from './arena-roles.js?v=arena-11';
-import {predictBall,strikingFoot} from './arena-ball-flight.js?v=arena-11';
+import {planMatch,requestRestart} from './arena-match.js?v=arena-12';
+import {crossedGoal,outOfPlay,inPenaltyArea} from './arena-laws.js?v=arena-12';
+import {planEquipment,stepEquipment} from './arena-equipment.js?v=arena-12';
+import {isShot,recordPracticeShot,rotatePractice} from './arena-practice.js?v=arena-12';
+import {chooseGroundTechnique,planTechnique,tryAerial,receiveHeading} from './arena-techniques.js?v=arena-12';
+import {keeperAtEnd,isKeeper} from './arena-roles.js?v=arena-12';
+import {predictBall,strikingFoot} from './arena-ball-flight.js?v=arena-12';
 const direction=team=>team===0?-1:1;
 const members=w=>w.players.filter(p=>!p.bot);
 const near=(p,x,z,d=.25)=>Math.hypot(p.x-x,p.z-z)<d;

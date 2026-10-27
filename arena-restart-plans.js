@@ -1,10 +1,10 @@
 // Shared football decisions, never a timed cutscene or a change to EA results.
-import {FIELD} from './arena-layout.js?v=arena-11';
-import {hash,clamp} from './arena-motion.js?v=arena-11';
-import {now,actor,ballById,dist} from './arena-world-state.js?v=arena-11';
-import {attackDirection,legalRestartPosition} from './arena-laws.js?v=arena-11';
-import {passClearance,supportTarget} from './arena-tactics.js?v=arena-11';
-import {isKeeper} from './arena-roles.js?v=arena-11';
+import {FIELD} from './arena-layout.js?v=arena-12';
+import {hash,clamp} from './arena-motion.js?v=arena-12';
+import {now,actor,ballById,dist} from './arena-world-state.js?v=arena-12';
+import {attackDirection,legalRestartPosition} from './arena-laws.js?v=arena-12';
+import {passClearance,supportTarget} from './arena-tactics.js?v=arena-12';
+import {isKeeper} from './arena-roles.js?v=arena-12';
 const inside=point=>[clamp(point[0],-15.6,15.6),clamp(point[1],-24.3,24.3)];
 const space=(w,p,team)=>Math.min(12,...w.players.filter(q=>q.team===1-team&&!q.rest&&!q.reserveKeeper).map(q=>Math.hypot(q.x-p[0],q.z-p[1])));
 function teammates(w,m){const mates=m.teams[m.deadTeam].map(key=>actor(w,key)).filter(p=>p&&p.key!==m.taker&&!p.rest&&!isKeeper(p));return mates.length?mates:w.players.filter(p=>isKeeper(p)&&p.team===m.deadTeam&&!p.rest);}

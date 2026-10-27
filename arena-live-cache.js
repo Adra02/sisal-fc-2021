@@ -1,5 +1,5 @@
-import {DT,clamp,mix} from './arena-motion.js?v=arena-11';
-import {worldContext,advanceWorld,captureWorld,exportWorld} from './arena-world.js?v=arena-11';
+import {DT,clamp,mix} from './arena-motion.js?v=arena-12';
+import {worldContext,advanceWorld,captureWorld,exportWorld} from './arena-world.js?v=arena-12';
 const caches=new WeakMap();
 function cache(snapshot){let c=caches.get(snapshot);if(!c){if(snapshot.world?.version!==11||!snapshot.world.start)throw Error('ARENA_WORLD_REQUIRED');const state=structuredClone(snapshot.world.start);c={state,context:worldContext(snapshot),previous:null,current:null,checkpoints:[exportWorld(state)]};caches.set(snapshot,c);}return c;}
 function targetTick(snapshot,seconds){return snapshot.world.start.tick+Math.max(0,Math.floor((seconds*1000-snapshot.world.startAt)/1000/DT));}

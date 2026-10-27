@@ -1,6 +1,6 @@
-import {DT,clamp,hash,random,movePlayers,footPoint,BENCH_SEATS} from './arena-motion.js?v=arena-11';
-import {allocateClip,record,action,finishStates,seatExits} from './arena-clip.js?v=arena-11';
-import {clipPlayers} from './arena-training.js?v=arena-11';
+import {DT,clamp,hash,random,movePlayers,footPoint,BENCH_SEATS} from './arena-motion.js?v=arena-12';
+import {allocateClip,record,action,finishStates,seatExits} from './arena-clip.js?v=arena-12';
+import {clipPlayers} from './arena-training.js?v=arena-12';
 const G=9.81;
 export function buildSetPiece(snapshot,slot,startStates){
  const rng=random(hash('set-piece5:'+slot.serial)),source=clipPlayers(snapshot),real=source.filter(p=>!p.goalkeeper),count=real.length,rotation=((slot.serial%Math.max(1,count))+count)%Math.max(1,count),cast=[...real.slice(rotation),...real.slice(0,rotation)].slice(0,6),keys=new Set(cast.map(p=>p.key)),players=source.map(p=>({...p,active:keys.has(p.key)||p.key==='__keeper_bot'})),states=startStates.map(p=>({...p,team:null,maxSpeed:4.4,seatedTarget:false,priority:keys.has(p.key)?.25:1,aim:undefined})),map=new Map(states.map(p=>[p.key,p])),[a,b,c,d,e,f]=cast.map(p=>map.get(p.key)),k=map.get('__keeper_bot'),side=rng()>.5?1:-1,isCross=slot.scene.kind==='cross',isFoul=slot.scene.kind==='foul'&&cast.length>1;

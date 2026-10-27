@@ -1,23 +1,26 @@
 import * as T from './vendor/three.module.min.js';
 import {environmentTexture} from './studio-materials.js?v=studio-9';
-import {makeAvatar} from './arena-avatar.js?v=arena-11';
-import {sampleContinuous as sampleArena} from './arena-live-cache.js?v=arena-11';
-import {arenaAudio} from './arena-audio.js?v=arena-11';
-import {buildGround} from './arena-environment.js?v=arena-11';
-import {FIELD} from './arena-layout.js?v=arena-11';
-import {contactEffects} from './arena-effects.js?v=arena-11';
-import {createArenaTimeline} from './arena-timeline.js?v=arena-11';
+import {makeAvatar} from './arena-avatar.js?v=arena-12';
+import {sampleContinuous as sampleArena} from './arena-live-cache.js?v=arena-12';
+import {arenaAudio} from './arena-audio.js?v=arena-12';
+import {buildGround} from './arena-environment.js?v=arena-12';
+import {FIELD} from './arena-layout.js?v=arena-12';
+import {contactEffects} from './arena-effects.js?v=arena-12';
+import {createArenaTimeline} from './arena-timeline.js?v=arena-12';
+import {actionFraming,smoothRadius,fullAvatarDetail} from './arena-camera.js?v=arena-12';
+import {paintSky} from './arena-surface.js?v=arena-12';
 const clamp=T.MathUtils.clamp;
 export const appearanceSignature=value=>JSON.stringify(Object.entries(value||{}).filter(([k])=>!['nickname','introduction','entrance','celebration'].includes(k)).sort(([a],[b])=>a<b?-1:1));
 export function createArenaRenderer(host,initialSnapshot,{clock,onFrame,onFailure,onQuality,onCameraChange,selfKey='',volume=.65,cameraPreference=null}={}){
  const coarse=matchMedia('(pointer:coarse)').matches,reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
- let renderer;try{renderer=new T.WebGLRenderer({antialias:!coarse,powerPreference:'default'});}catch(cause){throw Object.assign(Error('La grafica 3D non è disponibile in questo browser. Prova ad attivare l’accelerazione grafica o ad aprire l’app nel browser aggiornato del telefono.'),{code:'ARENA_WEBGL',cause});}
+ let renderer;try{renderer=new T.WebGLRenderer({antialias:true,powerPreference:'default'});}catch(cause){throw Object.assign(Error('La grafica 3D non è disponibile in questo browser. Prova ad attivare l’accelerazione grafica o ad aprire l’app nel browser aggiornato del telefono.'),{code:'ARENA_WEBGL',cause});}
  const resources=new Set(),own=x=>(resources.add(x),x),scene=new T.Scene(),camera=new T.PerspectiveCamera(43,1,.12,165);
- const maxRatio=Math.min(devicePixelRatio||1,coarse?1.45:1.8);
+ const maxRatio=Math.min(devicePixelRatio||1,coarse?1.65:1.8);
  renderer.setPixelRatio(maxRatio);renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.02;
  const canvas=renderer.domElement;canvas.setAttribute('aria-label','SISAL ARENA. Trascina per ruotare; usa due dita per avvicinare.');host.append(canvas);
- scene.environment=own(environmentTexture({studio:false}));scene.environmentIntensity=.42;scene.background=new T.Color('#a3cddd');scene.fog=new T.Fog('#bed8d4',65,145);
+ scene.environment=own(environmentTexture({studio:false}));scene.environmentIntensity=.32;scene.fog=new T.Fog('#c8d8d3',72,160);
  const ground=buildGround(scene,{own,renderer,coarse,reduced}),effects=contactEffects(scene,own),sphere=own(new T.SphereGeometry(FIELD.ballRadius,coarse?24:32,coarse?16:24));
+ const sky=ground.texture(paintSky,64,512);sky.mapping=T.EquirectangularReflectionMapping;scene.background=sky;
  const ballTexture=ground.texture((c,w,h)=>{c.fillStyle='#eeeede';c.fillRect(0,0,w,h);for(let row=0;row<4;row++)for(let j=0;j<8;j++){const x=(j+(row%2)*.5)*w/8,y=row*h/3;c.fillStyle='#123c2e';c.strokeStyle='#8e9d8e';c.lineWidth=1;c.beginPath();for(let i=0;i<5;i++){const a=i*Math.PI*2/5-.7;c.lineTo(x+Math.cos(a)*9,y+Math.sin(a)*9);}c.closePath();c.fill();c.stroke();}},384,192);
  const ballMat=own(new T.MeshStandardMaterial({color:'#fff',map:ballTexture,roughness:.56})),balls=new Map(),avatars=new Map();
  const shadowMap=ground.texture((c,w,h)=>{const g=c.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);g.addColorStop(0,'rgba(9,28,16,.36)');g.addColorStop(.35,'rgba(9,28,16,.20)');g.addColorStop(1,'rgba(9,28,16,0)');c.fillStyle=g;c.fillRect(0,0,w,h);},64,64);
@@ -50,7 +53,6 @@ export function createArenaRenderer(host,initialSnapshot,{clock,onFrame,onFailur
  }
  restoreCamera(cameraPreference);
  function setQuality(mode){quality=['auto','high','low'].includes(mode)?mode:'auto';level=quality==='low'?0:1;drawInterval=quality==='low'||reduced?1000/30:1000/60;renderer.setPixelRatio(quality==='low'?Math.min(1,maxRatio):maxRatio);renderer.shadowMap.enabled=quality!=='low';ground.sun.shadow.mapSize.set(quality==='low'?512:coarse?1024:2048,quality==='low'?512:coarse?1024:2048);ground.sun.shadow.map?.dispose();ground.sun.shadow.map=null;measured=wallSamples=frameSamples=fastWindows=0;resize();onQuality?.({mode:quality,level});}
- function fitPoints(points,padding=5){const xs=points.map(p=>p[0]),zs=points.map(p=>p[1]),dx=Math.max(...xs)-Math.min(...xs),dz=Math.max(...zs)-Math.min(...zs);return Math.max(8.5,(Math.max(dx+padding,(dz+padding)*.82))/(2*Math.tan(T.MathUtils.degToRad(21.5))*Math.min(1.2,camera.aspect)));}
  function draw(ms){
   raf=0;if(disposed||document.hidden||paused||contextLost)return;if(ms-lastRender<drawInterval-1){raf=requestAnimationFrame(draw);return;}
   const elapsed=last?Math.min(.2,(ms-last)/1000):0;last=ms;lastRender=ms;const begin=performance.now(),live=sampleArena(snapshot,clock());timeline.record(live);
@@ -60,31 +62,27 @@ export function createArenaRenderer(host,initialSnapshot,{clock,onFrame,onFailur
   if(chosen){desiredCenter.set(chosen.pos[0],.9,chosen.pos[1]);fit=radius;}
   else if(!manual){
    if(view==='field'){desiredCenter.set(0,.7,0);fit=49*Math.max(1,.88/camera.aspect);}
-   else{let points=f.focus||[[0,0]];
-    if(f.technique&&!reduced){const ball=f.balls.find(b=>b.id===f.technique.ball);points=[f.technique.position,...(ball?[ball.pos.filter((_,i)=>i!==1)]:[])];}
-    const xs=points.map(p=>p[0]),zs=points.map(p=>p[1]);desiredCenter.set((Math.min(...xs)+Math.max(...xs))/2,Math.max(.85,Math.min(1.5,f.ballHeight*.30)),(Math.min(...zs)+Math.max(...zs))/2);fit=fitPoints(points,f.technique?6.5:6);
-    if(f.playing&&f.ballVelocity&&!f.technique){desiredCenter.x+=clamp(f.ballVelocity[0]*.14,-1.4,1.4);desiredCenter.z+=clamp(f.ballVelocity[2]*.14,-1.4,1.4);}
-   }
+   else{const framing=actionFraming(f,camera.aspect);desiredCenter.fromArray(framing.center);fit=framing.radius;}
   }
   if(manual&&!chosen)desiredCenter.copy(center);
   if(first)center.copy(desiredCenter);else center.lerp(desiredCenter,1-Math.exp(-elapsed*(reduced?1.4:2.6)));
-  if(manual)fit=radius;lastFit=clamp(fit,3.5,76);const pavilion=center.x>18.5,az=!manual&&pavilion?-1.24:azimuth,po=!manual&&pavilion?1.30:polar;
+  if(manual)fit=radius;lastFit=first||manual||chosen||view==='field'?clamp(fit,3.5,76):smoothRadius(lastFit,clamp(fit,3.5,76),elapsed);const pavilion=center.x>18.5,az=!manual&&pavilion?-1.24:azimuth,po=!manual&&pavilion?1.30:polar;
   desiredCamera.set(center.x+lastFit*Math.sin(po)*Math.sin(az),center.y+lastFit*Math.cos(po),center.z+lastFit*Math.sin(po)*Math.cos(az));
   if(first)camera.position.copy(desiredCamera);else camera.position.lerp(desiredCamera,1-Math.exp(-Math.max(elapsed,.008)*(reduced?1.5:3)));camera.lookAt(center);
   const self=f.actors.find(p=>p.key===selfKey);ring.visible=!!self;if(self)ring.position.set(self.pos[0],.02,self.pos[1]);
   let contactCount=0;
   for(const p of f.actors){const a=avatars.get(p.key);if(!a)continue;
-   a.setDetail((level>0&&camera.position.distanceTo(a.root.position)<(quality==='high'?25:coarse?13:17))||selected===p.key||selfKey===p.key);
+   point.set(p.pos[0],.8,p.pos[1]);const distance=camera.position.distanceTo(point),detail={low:level===0,selected:selected===p.key||selfKey===p.key};a.setDetail(fullAvatarDetail(distance,height,detail),fullAvatarDetail(distance,height,{...detail,minPixels:165}));
    a.update({...p,speaking:dialogue?.speaker===p.key},time,elapsed,p.velocity);a.root.updateMatrixWorld(true);
    dummy.position.set(p.pos[0],.016,p.pos[1]);dummy.rotation.set(-Math.PI/2,0,0);const fade=1/(1+(p.elevation||0));dummy.scale.set(.72*fade,.80*fade,1);dummy.updateMatrix();contacts.setMatrixAt(contactCount++,dummy.matrix);
-   if(level>0&&camera.position.distanceTo(a.root.position)<14&&!p.seated){for(const name of ['lAnkle','rAnkle']){const ankle=a.limbs.find(b=>b.name===name);if(!ankle)continue;ankle.getWorldPosition(point);const size=.38/(1+Math.max(0,point.y-.04)*7);dummy.position.set(point.x,.018,point.z);dummy.scale.set(size*.65,size,1);dummy.updateMatrix();contacts.setMatrixAt(contactCount++,dummy.matrix);}}
+   if(level>0&&camera.position.distanceTo(a.root.position)<14&&!p.seated){for(const name of ['lAnkle','rAnkle']){const ankle=a.limbs.find(b=>b.name===name);if(!ankle)continue;point.setFromMatrixPosition(ankle.matrixWorld);const size=.38/(1+Math.max(0,point.y-.04)*7);dummy.position.set(point.x,.018,point.z);dummy.scale.set(size*.65,size,1);dummy.updateMatrix();contacts.setMatrixAt(contactCount++,dummy.matrix);}}
   }
   contacts.count=contactCount;contacts.instanceMatrix.needsUpdate=true;
   for(const info of f.balls){const b=balls.get(info.id);if(b){b.visible=info.visible!==false;b.position.set(...info.pos);b.rotation.set(...(info.spin||[0,0,0]));}}
   ground.update(f,camera,level);camera.updateMatrixWorld();effects.update(f,camera,reduced?0:level);cameraRight.setFromMatrixColumn(camera.matrixWorld,0);
   if(!replay)audio.update(f,{x:camera.position.x,y:camera.position.y,z:camera.position.z,rightX:cameraRight.x,rightZ:cameraRight.z},elapsed);
-  renderer.render(scene,camera);scene.updateMatrixWorld();
-  const anchors=f.actors.map(p=>{const a=avatars.get(p.key);a.head.getWorldPosition(headPoint);headPoint.y+=.34;screenPoint.copy(headPoint).project(camera);let visible=screenPoint.z>-1&&screenPoint.z<1&&Math.abs(screenPoint.x)<1.08&&Math.abs(screenPoint.y)<1.08;
+  renderer.render(scene,camera);
+  const anchors=f.actors.map(p=>{const a=avatars.get(p.key);headPoint.setFromMatrixPosition(a.head.matrixWorld);headPoint.y+=.34;screenPoint.copy(headPoint).project(camera);let visible=screenPoint.z>-1&&screenPoint.z<1&&Math.abs(screenPoint.x)<1.08&&Math.abs(screenPoint.y)<1.08;
    if(visible&&p.pos[0]>20){const distance=camera.position.distanceTo(headPoint);raycaster.set(camera.position,headPoint.clone().sub(camera.position).normalize());raycaster.far=distance-.05;visible=!raycaster.intersectObjects(ground.solids,false).length;}
    const x=(screenPoint.x*.5+.5)*width,y=(-.5*screenPoint.y+.5)*height;screenPoint.set(p.pos[0],.025,p.pos[1]).project(camera);const footY=(-.5*screenPoint.y+.5)*height,bodyHeight=Math.max(8,Math.abs(footY-y)-5),bodyWidth=Math.max(8,bodyHeight*.30);return {key:p.key,name:p.name,x,y,bodyBox:{x:x-bodyWidth/2,y:y+2,w:bodyWidth,h:bodyHeight},visible,active:p.active,team:p.team,self:p.key===selfKey,selected:p.key===selected};
   });
@@ -109,7 +107,7 @@ export function createArenaRenderer(host,initialSnapshot,{clock,onFrame,onFailur
  const handlers={pointerdown:down,pointermove:move,pointerup:up,pointercancel:up,wheel,webglcontextlost:lost};for(const [name,fn]of Object.entries(handlers))canvas.addEventListener(name,fn,name==='wheel'?{passive:false}:undefined);
  resume();return {
   follow(key){selected=key||'';view=key?'follow':'director';radius=key?5.8:16;manual=false;saveCamera();},
-  view(mode){view=mode==='field'?'field':'director';selected='';manual=false;saveCamera();},
+  view(mode){view=mode==='field'?'field':'director';if(view==='director')lastFit=clamp(lastFit,12.5,25);selected='';manual=false;saveCamera();},
   zoom(d){if(!manual)radius=lastFit;manual=true;radius=clamp(radius+d,3.5,76);saveCamera();},setQuality,
   replaceSnapshot(next){snapshot=next;timeline.stop();populate(sampleArena(snapshot,clock()));},
   replay(id){const ok=timeline.start(id);if(ok)audio.stop();return ok;},

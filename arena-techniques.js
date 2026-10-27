@@ -1,10 +1,10 @@
 // Procedural skills are selected from the actual ball/space, never from a timer-only scene.
-import {FIELD} from './arena-layout.js?v=arena-11';
-import {clamp,hash} from './arena-motion.js?v=arena-11';
-import {now,actor,dist,unit,rnd,pose,emit} from './arena-world-state.js?v=arena-11';
-import {releaseBall} from './arena-world-ball.js?v=arena-11';
-import {TECHNIQUES} from './arena-technique-data.js?v=arena-11';
-import {predictBall} from './arena-ball-flight.js?v=arena-11';
+import {FIELD} from './arena-layout.js?v=arena-12';
+import {clamp,hash} from './arena-motion.js?v=arena-12';
+import {now,actor,dist,unit,rnd,pose,emit} from './arena-world-state.js?v=arena-12';
+import {releaseBall} from './arena-world-ball.js?v=arena-12';
+import {TECHNIQUES} from './arena-technique-data.js?v=arena-12';
+import {predictBall} from './arena-ball-flight.js?v=arena-12';
 const angle=(a,b)=>Math.atan2(Math.sin(a-b),Math.cos(a-b));
 export function receiveHeading(p,b,d){const toBall=Math.atan2(b.x-p.x,b.z-p.z),toGoal=d<0?Math.PI:0;return toBall+angle(toGoal,toBall)*.35;}
 export function chooseGroundTechnique(w,p,b,target,normal){

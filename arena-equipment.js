@@ -1,6 +1,6 @@
 // Cones are collected and carried off the pitch before a friendly can start.
-import {TRAINING_CONES} from './arena-layout.js?v=arena-11';
-import {actor,now,pose,handPoint,emit} from './arena-world-state.js?v=arena-11';
+import {TRAINING_CONES} from './arena-layout.js?v=arena-12';
+import {actor,now,pose,handPoint,emit} from './arena-world-state.js?v=arena-12';
 export const createEquipment=()=>({cones:TRAINING_CONES.map(([x,z],i)=>({id:'cone-'+i,x,z,y:0,mode:'field',owner:null,tilt:0}))});
 export const equipmentClear=w=>!w.equipment?.cones.some(c=>c.mode!=='stored');
 export function planEquipment(w){

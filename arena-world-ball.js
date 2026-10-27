@@ -1,12 +1,12 @@
-import {DT,clamp} from './arena-motion.js?v=arena-11';
-import {PAVILION,BALL_RACK,FIELD} from './arena-layout.js?v=arena-11';
-import {now,actor,handPoint,emit,footPointWorld,rnd,pose} from './arena-world-state.js?v=arena-11';
-import {offsideAtRelease} from './arena-laws.js?v=arena-11';
-import {trackReceiver} from './arena-tactics.js?v=arena-11';
-import {TECHNIQUES} from './arena-technique-data.js?v=arena-11';
-import {isShot} from './arena-practice.js?v=arena-11';
-import {isKeeper} from './arena-roles.js?v=arena-11';
-import {curveAcceleration,strikingFoot,throwVelocity} from './arena-ball-flight.js?v=arena-11';
+import {DT,clamp} from './arena-motion.js?v=arena-12';
+import {PAVILION,BALL_RACK,FIELD} from './arena-layout.js?v=arena-12';
+import {now,actor,handPoint,emit,footPointWorld,rnd,pose} from './arena-world-state.js?v=arena-12';
+import {offsideAtRelease} from './arena-laws.js?v=arena-12';
+import {trackReceiver} from './arena-tactics.js?v=arena-12';
+import {TECHNIQUES} from './arena-technique-data.js?v=arena-12';
+import {isShot} from './arena-practice.js?v=arena-12';
+import {isKeeper} from './arena-roles.js?v=arena-12';
+import {curveAcceleration,strikingFoot,throwVelocity} from './arena-ball-flight.js?v=arena-12';
 const G=9.81,R=FIELD.ballRadius,ROLL=1.35;
 const smooth=u=>{u=clamp(u);return u*u*(3-2*u)};
 function circleEntry(x,z,dx,dz,r){const a=dx*dx+dz*dz,c=x*x+z*z-r*r;if(a<1e-12)return null;const b=2*(x*dx+z*dz),d=b*b-4*a*c;if(d<0)return null;const u=c<0?0:(-b-Math.sqrt(d))/(2*a);return u>=0&&u<=1?u:null;}

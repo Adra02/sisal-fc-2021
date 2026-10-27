@@ -1,4 +1,4 @@
-import {createArenaOverlay} from './arena-overlays.js?v=arena-11';
+import {createArenaOverlay} from './arena-overlays.js?v=arena-12';
 import {nameKey} from './horse-style.js?v=studio-9';
 const EPOCH=1800000;let current=null;
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -9,7 +9,7 @@ export async function arenaResponse(response){
 }
 export async function openArena(){
  if(current){current.focus();return;}if(!window.SisalAccount?.user){window.SisalAccount?.open();return;}
- if(!document.querySelector('[data-arena-css]')){const css=document.createElement('link');css.rel='stylesheet';css.href='./arena.css?v=arena-11';css.dataset.arenaCss='';document.head.append(css);}
+ if(!document.querySelector('[data-arena-css]')){const css=document.createElement('link');css.rel='stylesheet';css.href='./arena.css?v=arena-12';css.dataset.arenaCss='';document.head.append(css);}
  const previous=document.activeElement,dialog=document.createElement('dialog');current=dialog;dialog.className='arena-dialog';dialog.id='sisal-arena';dialog.setAttribute('aria-label','SISAL ARENA');
  dialog.innerHTML=`<header class="arena-header"><div class="arena-brand"><small>IL CAMPO DEL CLUB</small><h2>SISAL ARENA</h2></div><div class="arena-header-actions"><button data-self aria-label="Segui il mio giocatore">◎ Il mio</button><button data-zen aria-label="Attiva Solo campo" aria-pressed="false">⛶</button><button data-close aria-label="Chiudi SISAL ARENA">Chiudi ×</button></div></header>
  <div class="arena-program"><div><span class="arena-dot" aria-hidden="true"></span><b data-title>Entriamo in campo</b></div><small data-sync role="status">Collegamento…</small><div class="arena-match-strip" data-match-strip hidden><b>VERDI <strong data-match-score>0 – 0</strong> ORO</b><span data-match-info></span></div></div>
@@ -82,11 +82,11 @@ export async function openArena(){
    busyRetries=0;if(data.snapshot?.world?.version!==11)throw Error('Completa l’aggiornamento dell’Arena e il passaggio SQL 19-arena-calcio.sql.');
    if(!Array.isArray(data.snapshot.players))throw Error('La rosa ricevuta non è valida. Riprova tra poco.');
    if(!data.snapshot.players.length){engine?.dispose();engine=null;overlay?.dispose();overlay=null;loading('La rosa non è disponibile. Carica il file Giocatori con il pulsante Termux abituale, poi premi Riprova.');epoch=data.epoch;status('In attesa della rosa del club.',true);schedule();return;}
-   const next=data.snapshot,{prewarmContinuous:prewarmArena}=await import('./arena-live-cache.js?v=arena-11');
+   const next=data.snapshot,{prewarmContinuous:prewarmArena}=await import('./arena-live-cache.js?v=arena-12');
    if(!engine)loading('Entriamo nel campo condiviso…');
    await prewarmArena(next,clock(),{signal:abort.signal,onProgress:p=>{const node=stage.querySelector('.arena-loading');if(node)node.textContent='Preparazione del campo · '+Math.round(p*100)+'%';}});if(disposed)return;
    epoch=data.epoch;snapshot=next;preparedAt=performance.now();lastSync=Number(data.serverNow);syncOk=true;
-   if(!engine){const {createArenaRenderer}=await import('./arena-renderer.js?v=arena-11');if(disposed)return;stage.querySelector('.arena-loading')?.remove();engine=createArenaRenderer(stage,snapshot,{clock,onFrame:renderFrame,onFailure:m=>{contextFailed=m?.code==='ARENA_CONTEXT_LOST';status(m,true);},selfKey,volume,cameraPreference,onCameraChange:value=>{cameraPreference=value;clearTimeout(cameraSaveTimer);cameraSaveTimer=setTimeout(()=>remember(prefKey,JSON.stringify(cameraPreference)),180);}});engine.setQuality(quality);selected=engine.cameraState?.().selected||'';}
+   if(!engine){const {createArenaRenderer}=await import('./arena-renderer.js?v=arena-12');if(disposed)return;stage.querySelector('.arena-loading')?.remove();engine=createArenaRenderer(stage,snapshot,{clock,onFrame:renderFrame,onFailure:m=>{contextFailed=m?.code==='ARENA_CONTEXT_LOST';status(m,true);},selfKey,volume,cameraPreference,onCameraChange:value=>{cameraPreference=value;clearTimeout(cameraSaveTimer);cameraSaveTimer=setTimeout(()=>remember(prefKey,JSON.stringify(cameraPreference)),180);}});engine.setQuality(quality);selected=engine.cameraState?.().selected||'';}
    else engine.replaceSnapshot(next);
    $('[data-audio]').disabled=false;
    overlay?.dispose();const people=[...snapshot.players,{key:'__keeper_bot',name:'BOT · Porta A',appearance:{}},{key:'__keeper_away_bot',name:'BOT · Porta B',appearance:{}}];overlay=createArenaOverlay(stage,people,{selfKey,onSelect:follow});
@@ -114,7 +114,7 @@ export async function openArena(){
  async function visibility(){
   clearTimeout(timer);if(localPaused)return;if(document.hidden){engine?.pause();return;}
   if(!snapshot||Math.floor(clock()*1000/EPOCH)!==epoch||performance.now()-preparedAt>300000){await load();}
-  else{if(engine){const {prewarmContinuous:prewarmArena}=await import('./arena-live-cache.js?v=arena-11');try{await prewarmArena(snapshot,clock());if(!disposed&&!document.hidden&&!localPaused)engine.resume();}catch(e){status(e.message,true);}}schedule();}
+  else{if(engine){const {prewarmContinuous:prewarmArena}=await import('./arena-live-cache.js?v=arena-12');try{await prewarmArena(snapshot,clock());if(!disposed&&!document.hidden&&!localPaused)engine.resume();}catch(e){status(e.message,true);}}schedule();}
  }
  function auth(){if(!window.SisalAccount?.user)close();}
  document.addEventListener('visibilitychange',visibility);window.addEventListener('sisal-eligibility',auth);await load();
