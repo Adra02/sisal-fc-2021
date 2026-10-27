@@ -12,9 +12,9 @@ window.SisalAccount={user:{is_admin:true,player_key:'p1'},open:()=>opened++};
 globalThis.__factory=(host,snapshot,opts)=>{rendered++;lastFrame=opts.onFrame;queueMicrotask(()=>opts.onFrame(frame));return {dispose:()=>disposed++,pause:()=>paused++,resume:()=>resumed++,follow:k=>followed=k,view:k=>view=k,zoom(){},setQuality(){},replaceSnapshot(){},setVolume:v=>{globalThis.__lastVolume=v;},toggleAudio:async()=>true}};
 globalThis.__overlay=createArenaOverlay;globalThis.__nameKey=nameKey;
 let deferred=null;
-globalThis.fetch=async(url)=>{assert.match(url,/action=arena&scene=10$/);fetches++;if(deferred)await deferred;return Response.json({ok:true,version:3,sceneVersion:10,epoch:Math.floor(Date.now()/1800000),serverNow:Date.now(),snapshot:{players:[{key:'p1',name:'<img src=x onerror=alert(1)>',registered:true,appearance:{}}],keeper:null,world:{version:10,startAt:Date.now(),start:{}}}})};
-let source=await fs.readFile('arena-ui.js','utf8');source=source.replace(/^import .*;\n/gm,'').replace("await import('./arena-renderer.js?v=arena-10')","({createArenaRenderer:globalThis.__factory})");
-source=source.replaceAll("await import('./arena-live-cache.js?v=arena-10')","({prewarmContinuous:async()=>{}})");
+globalThis.fetch=async(url)=>{assert.match(url,/action=arena&scene=11$/);fetches++;if(deferred)await deferred;return Response.json({ok:true,version:3,sceneVersion:11,epoch:Math.floor(Date.now()/1800000),serverNow:Date.now(),snapshot:{players:[{key:'p1',name:'<img src=x onerror=alert(1)>',registered:true,appearance:{}}],keeper:null,world:{version:11,startAt:Date.now(),start:{}}}})};
+let source=await fs.readFile('arena-ui.js','utf8');source=source.replace(/^import .*;\n/gm,'').replace("await import('./arena-renderer.js?v=arena-11')","({createArenaRenderer:globalThis.__factory})");
+source=source.replaceAll("await import('./arena-live-cache.js?v=arena-11')","({prewarmContinuous:async()=>{}})");
 source='const createArenaOverlay=globalThis.__overlay,nameKey=globalThis.__nameKey;\n'+source;
 const {openArena}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 await openArena();await openArena();await Promise.resolve();lastFrame(frame);
@@ -32,7 +32,7 @@ window.SisalAccount.user={is_admin:false,player_key:'p1'};await openArena();asse
 let release;deferred=new Promise(r=>release=r);const opening=openArena();document.querySelector('[data-close]').click();release();await opening;assert.equal(rendered,2,'a late request cannot create a renderer after close');deferred=null;
 // Recovery from an empty roster must keep the technique and replay HUD alive.
 const savedFetch=globalThis.fetch;let emptyFetches=0;
-globalThis.fetch=async()=>Response.json({ok:true,version:3,sceneVersion:10,epoch:Math.floor(Date.now()/1800000),serverNow:Date.now(),snapshot:{players:++emptyFetches===1?[]:[{key:'p1',name:'P1',registered:true,appearance:{}}],world:{version:10,startAt:Date.now(),start:{}}}});
+globalThis.fetch=async()=>Response.json({ok:true,version:3,sceneVersion:11,epoch:Math.floor(Date.now()/1800000),serverNow:Date.now(),snapshot:{players:++emptyFetches===1?[]:[{key:'p1',name:'P1',registered:true,appearance:{}}],world:{version:11,startAt:Date.now(),start:{}}}});
 await openArena();assert(document.querySelector('[data-technique]'));assert(!document.querySelector('[data-retry]').hidden);document.querySelector('[data-retry]').click();for(let i=0;i<8;i++)await new Promise(r=>setImmediate(r));assert.doesNotThrow(()=>lastFrame(frame));assert.equal(emptyFetches,2);assert(document.querySelector('[data-technique]'));document.querySelector('[data-close]').click();globalThis.fetch=savedFetch;
 const responseModule=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));await assert.rejects(responseModule.arenaResponse(new Response('A server error occurred',{status:500})),/Il server non ha risposto correttamente/);
 window.SisalAccount.user=null;await openArena();assert.equal(opened,1);assert.equal(fetches,3,'logged out opens login without scene fetch');

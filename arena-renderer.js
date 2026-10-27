@@ -1,12 +1,12 @@
 import * as T from './vendor/three.module.min.js';
 import {environmentTexture} from './studio-materials.js?v=studio-9';
-import {makeAvatar} from './arena-avatar.js?v=arena-10';
-import {sampleContinuous as sampleArena} from './arena-live-cache.js?v=arena-10';
-import {arenaAudio} from './arena-audio.js?v=arena-10';
-import {buildGround} from './arena-environment.js?v=arena-10';
-import {FIELD} from './arena-layout.js?v=arena-10';
-import {contactEffects} from './arena-effects.js?v=arena-10';
-import {createArenaTimeline} from './arena-timeline.js?v=arena-10';
+import {makeAvatar} from './arena-avatar.js?v=arena-11';
+import {sampleContinuous as sampleArena} from './arena-live-cache.js?v=arena-11';
+import {arenaAudio} from './arena-audio.js?v=arena-11';
+import {buildGround} from './arena-environment.js?v=arena-11';
+import {FIELD} from './arena-layout.js?v=arena-11';
+import {contactEffects} from './arena-effects.js?v=arena-11';
+import {createArenaTimeline} from './arena-timeline.js?v=arena-11';
 const clamp=T.MathUtils.clamp;
 export const appearanceSignature=value=>JSON.stringify(Object.entries(value||{}).filter(([k])=>!['nickname','introduction','entrance','celebration'].includes(k)).sort(([a],[b])=>a<b?-1:1));
 export function createArenaRenderer(host,initialSnapshot,{clock,onFrame,onFailure,onQuality,onCameraChange,selfKey='',volume=.65,cameraPreference=null}={}){

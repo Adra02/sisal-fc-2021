@@ -1,7 +1,8 @@
-import {hash} from './arena-motion.js?v=arena-10';
-import {banterLexicon,creativeInvocations} from './arena-banter.js?v=arena-10';
-import {now,actor} from './arena-world-state.js?v=arena-10';
-import {contextualLines,replies,shortClosings} from './arena-dialogue-context.js?v=arena-10';
+import {hash} from './arena-motion.js?v=arena-11';
+import {banterLexicon,creativeInvocations} from './arena-banter.js?v=arena-11';
+import {now,actor} from './arena-world-state.js?v=arena-11';
+import {chooseSpeech,rememberSpeech} from './arena-speech.js?v=arena-11';
+import {contextualLines,replies} from './arena-dialogue-context.js?v=arena-11';
 const extra={
  touch:['Piano coi tocchi, che la palla non ha chiesto il divorzio.','Portala avanti coi piedi: la spiegazione arriva già da sola.','Un controllo alla volta, cazzo. Non stai svuotando il garage.','Sei tu che guidi lei, almeno sulla carta.'],
  deflect:['Respinta: il portiere ha detto no senza aprire una riunione.','Non l’ha tenuta, ma intanto ti ha rovinato la festa.','Seconda palla: muoviti, che quella buona non ti aspetta.','Guanti sul pallone. Il tuo autografo sulla rete può aspettare.'],
@@ -25,7 +26,6 @@ const comeback={
  receive:['Controllata. Tu intanto controlla quanto parli.','È rimasta qui. La battuta di prima la trovi nel cestino.','Piede acceso. La tua bocca può riposare due minuti.']
 };
 const mistakes=new Set(['out','post','foul','badControl','roof']),successes=new Set(['goal','receive','save']);
-function pick(list,seed,recent,kind){let i=hash(seed)%list.length;for(let n=0;n<list.length-1&&recent.includes(kind+':'+i);n++)i=(i+1)%list.length;return {text:list[i],id:kind+':'+i};}
 export function converse(w,context){
  const t=now(w),memory=w.speechMemory,people=context.meta,real=w.players.filter(p=>!p.bot&&!p.rest);
  memory.phrases||=[];
@@ -36,26 +36,25 @@ export function converse(w,context){
  if(pending&&t>=pending.at&&t<=pending.expires&&!events.some(e=>(priority[e.type]||0)>=60)&&t-memory.lastAt>6.8){
   const speaker=actor(w,pending.speaker),incoming=w.balls.some(b=>b.flight?.receiver===pending.speaker);
   if(speaker&&!speaker.rest&&!speaker.kick&&!speaker.aerial&&!incoming&&Math.hypot(speaker.vx,speaker.vz)<4.5){
-   const until=t+Math.min(4.8,Math.max(3.1,pending.text.length/25));w.dialogue.push({id:'reply-'+pending.id,at:t,until,speaker:speaker.key,name:people.get(speaker.key)?.appearance?.nickname||people.get(speaker.key)?.name||speaker.key,text:pending.text,event:'answer'});if(w.dialogue.length>8)w.dialogue.shift();memory.lastAt=t;memory.lastSpeaker=speaker.key;delete memory.reply;
+   const until=t+Math.min(4.8,Math.max(3.1,pending.text.length/25));rememberSpeech(memory,pending.chosen);w.dialogue.push({id:'reply-'+pending.id,at:t,until,speaker:speaker.key,name:people.get(speaker.key)?.appearance?.nickname||people.get(speaker.key)?.name||speaker.key,text:pending.text,event:'answer'});if(w.dialogue.length>8)w.dialogue.shift();memory.lastAt=t;memory.lastSpeaker=speaker.key;memory.nextAt=t+9+(hash('quiet:'+pending.id)%7);delete memory.reply;
   }
  }
  for(const e of events){
   if(mistakes.has(e.type)&&e.actor){const witness=real.filter(p=>p.key!==e.actor).sort((a,b)=>Math.hypot(a.x-e.pos[0],a.z-e.pos[2])-Math.hypot(b.x-e.pos[0],b.z-e.pos[2]))[0];if(witness)memory.mistakes[e.actor]={type:e.type,witness:witness.key,event:e.id};}
-  const recall=successes.has(e.type)&&memory.mistakes[e.actor],eligible=recall&&e.id-recall.event<42&&actor(w,recall.witness)&&comeback[e.type];
-  let kind=eligible?'reply-'+e.type:e.type==='save'&&e.saveType==='deflect'?'deflect':e.type==='penaltyAwarded'?'penalty':e.type==='freeKickAwarded'?'freeKick':e.type==='cornerAwarded'?'corner':e.type==='interception'?'interception':e.type;
-  const base=extra[kind]||banterLexicon[kind],list=eligible?comeback[e.type]:base?[...base,...(contextualLines[kind]||[])]:contextualLines[kind];if(!list||t-memory.lastAt<7.0||!real.length)continue;
+  const recall=!e.ownGoal&&successes.has(e.type)&&memory.mistakes[e.actor];let eligible=recall&&e.id-recall.event<42&&actor(w,recall.witness)&&comeback[e.type];
+  const regular=e.ownGoal?'ownGoal':e.type==='throwIn'?'throwIn':e.type==='save'&&e.saveType==='deflect'?'deflect':e.type==='penaltyAwarded'?'penalty':e.type==='freeKickAwarded'?'freeKick':e.type==='cornerAwarded'?'corner':e.type==='interception'?'interception':e.type;
+  let kind=eligible?'reply-'+e.type:regular;const base=extra[kind]||banterLexicon[kind];let list=eligible?comeback[e.type]:base?[...base,...(contextualLines[kind]||[])]:contextualLines[kind];if(t<Math.max(memory.lastAt+8,memory.nextAt||0)||!real.length)continue;
   const subject=actor(w,e.actor),receiver=actor(w,e.target);
-  const speaker=eligible&&subject&&!subject.bot?subject:receiver&&!receiver.bot&&!receiver.rest?receiver:real.filter(p=>p.key!==e.actor&&p.key!==memory.lastSpeaker).sort((a,b)=>Math.hypot(a.x-e.pos[0],a.z-e.pos[2])-Math.hypot(b.x-e.pos[0],b.z-e.pos[2]))[0]||real[0];
+  let speaker=eligible&&subject&&!subject.bot?subject:receiver&&!receiver.bot&&!receiver.rest?receiver:real.filter(p=>p.key!==e.actor&&p.key!==memory.lastSpeaker).sort((a,b)=>Math.hypot(a.x-e.pos[0],a.z-e.pos[2])-Math.hypot(b.x-e.pos[0],b.z-e.pos[2]))[0]||real[0];
   if(speaker.kick||speaker.aerial)continue;
-  let chosen=pick(list,w.seed+':'+e.id+':'+kind,memory.recent.slice(-24),kind);const called=eligible?people.get(recall.witness):subject?people.get(subject.key):null;
-  for(let attempt=0;attempt<list.length&&memory.phrases.includes(hash(chosen.text));attempt++)chosen=pick(list,w.seed+':'+e.id+':'+kind+':'+attempt,memory.recent.slice(-24),kind);
-  memory.phrases.push(hash(chosen.text));if(memory.phrases.length>48)memory.phrases.shift();
-  const opening=eligible&&called?(called.appearance?.nickname||called.name)+', ':hash('invocation:'+w.seed+':'+e.id)%5===0?creativeInvocations[hash('exotic:'+w.seed+':'+e.id)%creativeInvocations.length]+', ':'';
-  const tail=chosen.text.length<80&&hash('tail:'+w.seed+':'+e.id)%4===0?' '+shortClosings[hash('ending:'+e.id)%shortClosings.length]:'';
+  let chosen=chooseSpeech(kind,list,w.seed+':'+e.id+':'+kind,memory);if(!chosen&&eligible){eligible=false;kind=regular;list=[...(extra[kind]||banterLexicon[kind]||[]),...(contextualLines[kind]||[])];chosen=chooseSpeech(kind,list,w.seed+':'+e.id+':'+kind,memory);delete memory.mistakes[e.actor];speaker=receiver&&!receiver.bot&&!receiver.rest?receiver:real.filter(p=>p.key!==e.actor&&p.key!==memory.lastSpeaker).sort((a,b)=>Math.hypot(a.x-e.pos[0],a.z-e.pos[2])-Math.hypot(b.x-e.pos[0],b.z-e.pos[2]))[0]||real[0];if(speaker.kick||speaker.aerial)continue;}if(!chosen)continue;const called=eligible?people.get(recall.witness):subject?people.get(subject.key):null;rememberSpeech(memory,chosen);
+  const invocation=!eligible&&hash('invocation:'+w.seed+':'+e.id)%5===0?chooseSpeech('invocation',creativeInvocations,'exotic:'+w.seed+':'+e.id,memory,{reply:true}):null;if(invocation)rememberSpeech(memory,invocation);
+  const opening=eligible&&called?(called.appearance?.nickname||called.name)+', ':invocation?invocation.text+', ':'';
+  const tail='';
   const text=opening+chosen.text.charAt(0).toLowerCase()+chosen.text.slice(1)+tail,at=t+.20+(hash('reaction:'+e.id)%5)*.08,until=at+Math.min(6.2,Math.max(3.3,text.length/22));
-  if(!eligible&&replies[e.type]&&subject&&!subject.bot&&!subject.rest&&subject.key!==speaker.key)memory.reply={id:e.id,speaker:subject.key,at:Math.max(until+.5,t+7.0),expires:t+12.5,text:replies[e.type][hash('reply:'+w.seed+':'+e.id)%replies[e.type].length]};
+  if(!eligible&&replies[e.type]&&subject&&!subject.bot&&!subject.rest&&subject.key!==speaker.key){const answer=chooseSpeech('answer-'+e.type,replies[e.type],'reply:'+w.seed+':'+e.id,memory,{reply:true});if(answer)memory.reply={id:e.id,speaker:subject.key,at:Math.max(until+.5,t+7.0),expires:t+13.5,text:answer.text,chosen:answer};}
   w.dialogue.push({id:e.id,at,until,speaker:speaker.key,name:people.get(speaker.key)?.appearance?.nickname||people.get(speaker.key)?.name||speaker.key,text,event:kind});if(w.dialogue.length>8)w.dialogue.shift();
-  memory.lastAt=t;memory.lastSpeaker=speaker.key;memory.recent.push(chosen.id);if(memory.recent.length>30)memory.recent.shift();if(eligible)delete memory.mistakes[e.actor];
+  memory.lastAt=t;memory.nextAt=t+10+(hash('silence:'+w.seed+':'+e.id)%8);memory.lastSpeaker=speaker.key;memory.recent.push(chosen.id);if(memory.recent.length>30)memory.recent.shift();if(eligible)delete memory.mistakes[e.actor];
  }
  for(const [key,m]of Object.entries(memory.mistakes))if(w.eventId-m.event>60||!actor(w,key))delete memory.mistakes[key];
 }

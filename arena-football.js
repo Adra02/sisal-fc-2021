@@ -1,7 +1,7 @@
-import {DT,clamp,hash,random,bodyState,movePlayers,footPoint,length,BENCH_SEATS} from './arena-motion.js?v=arena-10';
-import {allocateClip,record,action,finishStates,seatExits} from './arena-clip.js?v=arena-10';
-import {clipPlayers} from './arena-training.js?v=arena-10';
-import {friendlyLineup} from './arena-teams.js?v=arena-10';
+import {DT,clamp,hash,random,bodyState,movePlayers,footPoint,length,BENCH_SEATS} from './arena-motion.js?v=arena-11';
+import {allocateClip,record,action,finishStates,seatExits} from './arena-clip.js?v=arena-11';
+import {clipPlayers} from './arena-training.js?v=arena-11';
+import {friendlyLineup} from './arena-teams.js?v=arena-11';
 const GRAVITY=9.81,BALL_RADIUS=.14;
 const norm=(x,z)=>{const d=Math.hypot(x,z)||1;return [x/d,z/d];};
 export function buildFriendly(snapshot,slot,startStates){

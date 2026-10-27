@@ -1,5 +1,5 @@
-import {SCENES} from './arena-scenes.js?v=arena-10';
-import {FIELD,PAVILION,STATIONS} from './arena-layout.js?v=arena-10';
+import {SCENES} from './arena-scenes.js?v=arena-11';
+import {FIELD,PAVILION,STATIONS} from './arena-layout.js?v=arena-11';
 export const EPOCH_MS=1800000,SLOT_SECONDS=50,VERSION=2;
 export const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 export const smooth=x=>{x=clamp(x);return x*x*(3-2*x)};

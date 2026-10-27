@@ -1,7 +1,7 @@
 // Geometric playing rules for the existing reduced-size club pitch.
 // No scores, identities, account data or EA statistics are inferred here.
-import {FIELD as F} from './arena-layout.js?v=arena-10';
-import {isKeeper} from './arena-roles.js?v=arena-10';
+import {FIELD as F} from './arena-layout.js?v=arena-11';
+import {isKeeper} from './arena-roles.js?v=arena-11';
 export const attackDirection=team=>team===0?-1:1;
 export const ownGoalSign=team=>-attackDirection(team);
 export const pointDistance=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);

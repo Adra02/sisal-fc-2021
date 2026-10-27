@@ -1,11 +1,11 @@
-import {DT,clamp,movePlayers} from './arena-motion.js?v=arena-10';
-import {createWorld,reconcileWorld,resetActivities,exportWorld,now,actor,restWeight,handPoint,WORLD_VERSION,SESSION_SECONDS} from './arena-world-state.js?v=arena-10';
-import {stepBalls,stepKick,stepThrow} from './arena-world-ball.js?v=arena-10';
-import {planWorld,reactToBalls,afterWorld} from './arena-world-play.js?v=arena-10';
-import {converse} from './arena-conversation.js?v=arena-10';
-import {stepTechniques} from './arena-techniques.js?v=arena-10';
-import {TECHNIQUES,techniqueLabel} from './arena-technique-data.js?v=arena-10';
-import {isKeeper} from './arena-roles.js?v=arena-10';
+import {DT,clamp,movePlayers} from './arena-motion.js?v=arena-11';
+import {createWorld,reconcileWorld,resetActivities,exportWorld,now,actor,restWeight,handPoint,WORLD_VERSION,SESSION_SECONDS} from './arena-world-state.js?v=arena-11';
+import {stepBalls,stepKick,stepThrow} from './arena-world-ball.js?v=arena-11';
+import {planWorld,reactToBalls,afterWorld} from './arena-world-play.js?v=arena-11';
+import {converse} from './arena-conversation.js?v=arena-11';
+import {stepTechniques} from './arena-techniques.js?v=arena-11';
+import {TECHNIQUES,techniqueLabel} from './arena-technique-data.js?v=arena-11';
+import {isKeeper} from './arena-roles.js?v=arena-11';
 export {createWorld,reconcileWorld,exportWorld,WORLD_VERSION,SESSION_SECONDS};
 export function worldContext(snapshot){return {snapshot,keeper:snapshot.keeper||null,meta:new Map([...snapshot.players.map(p=>[p.key,p]),['__keeper_bot',{key:'__keeper_bot',name:'BOT · Porta A',appearance:{silk:'gold',number:'1'}}],['__keeper_away_bot',{key:'__keeper_away_bot',name:'BOT · Porta B',appearance:{silk:'navy',number:'12'}}]])};}
 export function stepWorld(w,context){
@@ -31,8 +31,8 @@ export function captureWorld(w,context){
  const actors=w.players.map(p=>{
   const meta=context.meta.get(p.key)||{key:p.key,name:p.key,appearance:{}},a=p.action&&t<=p.action.end?p.action:null,held=w.balls.find(b=>b.owner===p.key&&['hand','pickup','place'].includes(b.mode)),cone=w.equipment?.cones.find(c=>c.owner===p.key),seated=restWeight(w,p),v=Math.hypot(p.vx,p.vz);let gesture=a?.kind||(held?'carryBall':cone?'carryEquipment':v>.12?(v>2?'run':'walk'):p.bot?'keeper':'idle'),phase=a?clamp((t-a.start)/(a.end-a.start||1)):0;
   if(seated>0){gesture=p.rest?.phase==='rise'?'standFromSeat':'sit';phase=p.rest?.phase==='rise'?clamp(t-p.rest.riseAt):.5;}
-  const currentBall=w.balls.find(b=>b.id===(w.match?.ball||w.focusBall))||w.balls[0],look=dialogue&&v<.3&&actor(w,dialogue.speaker)?actor(w,dialogue.speaker):held?{x:p.x+Math.sin(p.heading)*3,z:p.z+Math.cos(p.heading)*3}:currentBall;
-  return {...meta,goalkeeper:w.match?isKeeper(p):p.bot||context.keeper===p.key,bot:p.bot,reserve:p.reserveKeeper||false,pos:[p.x,p.z],velocity:[p.vx,p.vz],acceleration:p.acceleration||[0,0],turnRate:p.turnRate||0,brace:p.brace||0,braceSide:p.braceSide||0,heading:p.heading,look:[look?.x||0,look?.z||0],stepCycle:p.cycle,travel:p.travel,strideLength:p.stride,elevation:p.elevation||0,gesture,phase,actionTime:t,gestureStart:a?.start,contact:a?.contact,foot:a?.foot??1,footTarget:a?.footTarget,headTarget:a?.headTarget,handTarget:held?[held.x,held.y,held.z]:a?.handOffset?[p.x+a.handOffset[0],a.handOffset[1],p.z+a.handOffset[2]]:a?.handTarget||(cone?[cone.x,cone.y+.15,cone.z]:undefined),diveSide:a?.side||0,jumpHeight:a?.jumpHeight||0,strength:a?.strength??1,seatBlend:seated,seated:seated>.9,preciseMotion:true,active:!p.rest&&!p.reserveKeeper,team:p.team,dirty:!!a?.dirty,personality:p.personality||0};
+  const currentBall=w.balls.find(b=>b.id===(w.match?.ball||w.focusBall))||w.balls[0],look=p.lookTarget?{x:p.lookTarget[0],z:p.lookTarget[1]}:dialogue&&v<.3&&actor(w,dialogue.speaker)?actor(w,dialogue.speaker):held?{x:p.x+Math.sin(p.heading)*3,z:p.z+Math.cos(p.heading)*3}:currentBall;
+  return {...meta,goalkeeper:w.match?isKeeper(p):p.bot||context.keeper===p.key,bot:p.bot,reserve:p.reserveKeeper||false,pos:[p.x,p.z],velocity:[p.vx,p.vz],acceleration:p.acceleration||[0,0],turnRate:p.turnRate||0,pivot:p.pivot||0,shielding:p.shielding||false,signal:p.signal&&t<p.signal.until?p.signal:null,brace:p.brace||0,braceSide:p.braceSide||0,heading:p.heading,look:[look?.x||0,look?.z||0],stepCycle:p.cycle,travel:p.travel,strideLength:p.stride,elevation:p.elevation||0,gesture,phase,actionTime:t,gestureStart:a?.start,contact:a?.contact,foot:a?.foot??1,footTarget:a?.footTarget,headTarget:a?.headTarget,handTarget:held?[held.x,held.y,held.z]:a?.handOffset?[p.x+a.handOffset[0],a.handOffset[1],p.z+a.handOffset[2]]:a?.handTarget||(cone?[cone.x,cone.y+.15,cone.z]:undefined),diveSide:a?.side||0,jumpHeight:a?.jumpHeight||0,strength:a?.strength??1,seatBlend:seated,seated:seated>.9,preciseMotion:true,active:!p.rest&&!p.reserveKeeper,team:p.team,dirty:!!a?.dirty,personality:p.personality||0};
  });
  const balls=w.balls.map(b=>({id:b.id,pos:[b.x,b.y,b.z],spin:[b.spinX,b.spinY,b.spinZ],visible:true,owner:b.owner,mode:b.mode})),main=w.balls.find(b=>b.id===(w.match?.ball||w.focusBall))||w.balls.find(b=>b.mode!=='rack')||w.balls[0],near=actors.filter(p=>p.active).sort((a,b)=>Math.hypot(a.pos[0]-main.x,a.pos[1]-main.z)-Math.hypot(b.pos[0]-main.x,b.pos[1]-main.z)).slice(0,3);
  const performing=w.players.filter(p=>!p.rest&&p.action&&t<=p.action.end&&TECHNIQUES[p.action.technique||p.action.kind]).filter(p=>p.action.ball?p.action.ball===main.id:Math.hypot(p.x-main.x,p.z-main.z)<5).sort((a,b)=>b.action.start-a.action.start||(a.key<b.key?-1:1))[0];const action=performing?.action,type=action?.technique||action?.kind,technique=performing?{key:performing.key,name:context.meta.get(performing.key)?.appearance?.nickname||context.meta.get(performing.key)?.name||performing.key,label:techniqueLabel(type),at:action.start,contact:action.contact,until:action.end,position:[performing.x,performing.z],ball:main.id}:null;

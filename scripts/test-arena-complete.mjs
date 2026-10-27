@@ -40,5 +40,5 @@ for(const n of [3,7,14]){
  }
  assert(matchSeen&&keeperSeen);assert(minimum>.64);assert(counts.pass||counts.shot);keeperCases.push({players:n,seconds:1200,minimum,ended,offside:counts.offside||0,shots:counts.shot||0,saves:counts.save||0});checks+=5;
 }
-const start=performance.now(),snap=prepareWorldSnapshot(roster(14),'p0',150),bytes=Buffer.byteLength(JSON.stringify(snap));assert(bytes<1500000);assert.equal(snap.checkpoints.length,5);assert(snap.checkpoints.every(x=>x.state.version===10));checks+=3;
+const start=performance.now(),snap=prepareWorldSnapshot(roster(14),'p0',150),bytes=Buffer.byteLength(JSON.stringify(snap));assert(bytes<1500000);assert.equal(snap.checkpoints.length,5);assert(snap.checkpoints.every(x=>x.state.version===11));checks+=3;
 console.log(JSON.stringify({test:'Arena completa',checks,curve:{north:[north.x,north.z],east:[east.x,east.z]},keeperCases,checkpoint:{players:14,cpuMs:Math.round(performance.now()-start),bytes},note:'Real deterministic engine, numerical audio and replay; no GPU/FPS or physical-phone claim.'}));

@@ -1,7 +1,7 @@
 // Shared, serializable simulation state. No browser, network or account writes.
-import {DT,hash,clamp} from './arena-motion.js?v=arena-10';
-import {BALL_RACK,BENCH,TRAINING_CONES,FIELD} from './arena-layout.js?v=arena-10';
-export const WORLD_VERSION=10,SESSION_SECONDS=1800,HZ=24;
+import {DT,hash,clamp} from './arena-motion.js?v=arena-11';
+import {BALL_RACK,BENCH,TRAINING_CONES,FIELD} from './arena-layout.js?v=arena-11';
+export const WORLD_VERSION=11,SESSION_SECONDS=1800,HZ=24;
 export const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 export const unit=(x,z)=>{const n=Math.hypot(x,z)||1;return [x/n,z/n];};
 export const actor=(w,key)=>w.players.find(p=>p.key===key);
@@ -46,7 +46,7 @@ export function handPoint(p,side=1){const h=p.heading,s=Math.sin(h),c=Math.cos(h
 export function footPointWorld(p,d=.36){return [p.x+Math.sin(p.heading)*d,FIELD.ballRadius,p.z+Math.cos(p.heading)*d];}
 export function beginPickup(w,p,b,reach=.64){
  if(b.motion||(b.owner&&b.owner!==p.key)||b.y>.55||Math.hypot(p.x-b.x,p.z-b.z)>Math.min(.76,reach))return false;
- b.owner=p.key;b.mode='pickup';b.flight=null;b.net=null;b.vx=b.vy=b.vz=0;b.motion={type:'pickup',at:now(w),until:now(w)+.85,from:[b.x,b.y,b.z]};
+ p.motorAcceleration=[-p.vx*9.5,-p.vz*9.5];b.owner=p.key;b.mode='pickup';b.flight=null;b.net=null;b.vx=b.vy=b.vz=0;b.motion={type:'pickup',at:now(w),until:now(w)+.85,from:[b.x,b.y,b.z]};
  pose(w,p,'collect',1.0,{contact:now(w)+.28,handTarget:[b.x,b.y,b.z]});return true;
 }
 export function beginPlace(w,p,b,point){

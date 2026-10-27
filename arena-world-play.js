@@ -1,18 +1,18 @@
 // Activity decisions react to completed play. There is no scene duration,
 // countdown, camera script or periodic repositioning in this director.
-import {DT,clamp,hash} from './arena-motion.js?v=arena-10';
-import {BALL_RACK,BENCH} from './arena-layout.js?v=arena-10';
-import {friendlyLineup} from './arena-teams.js?v=arena-10';
-import {rnd,integer,choose,shuffled,now,actor,ballById,dist,unit,emit,pose,beginPickup,beginPlace,setRest,updateRest,handPoint} from './arena-world-state.js?v=arena-10';
-import {prepareKick,dribble,releaseBall,putInRack,prepareThrow} from './arena-world-ball.js?v=arena-10';
+import {DT,clamp,hash} from './arena-motion.js?v=arena-11';
+import {BALL_RACK,BENCH} from './arena-layout.js?v=arena-11';
+import {friendlyLineup} from './arena-teams.js?v=arena-11';
+import {rnd,integer,choose,shuffled,now,actor,ballById,dist,unit,emit,pose,beginPickup,beginPlace,setRest,updateRest,handPoint} from './arena-world-state.js?v=arena-11';
+import {prepareKick,dribble,releaseBall,putInRack,prepareThrow} from './arena-world-ball.js?v=arena-11';
 
-import {planMatch,requestRestart} from './arena-match.js?v=arena-10';
-import {crossedGoal,outOfPlay,inPenaltyArea} from './arena-laws.js?v=arena-10';
-import {planEquipment,stepEquipment} from './arena-equipment.js?v=arena-10';
-import {isShot,recordPracticeShot,rotatePractice} from './arena-practice.js?v=arena-10';
-import {chooseGroundTechnique,planTechnique,tryAerial,receiveHeading} from './arena-techniques.js?v=arena-10';
-import {keeperAtEnd,isKeeper} from './arena-roles.js?v=arena-10';
-import {predictBall,strikingFoot} from './arena-ball-flight.js?v=arena-10';
+import {planMatch,requestRestart} from './arena-match.js?v=arena-11';
+import {crossedGoal,outOfPlay,inPenaltyArea} from './arena-laws.js?v=arena-11';
+import {planEquipment,stepEquipment} from './arena-equipment.js?v=arena-11';
+import {isShot,recordPracticeShot,rotatePractice} from './arena-practice.js?v=arena-11';
+import {chooseGroundTechnique,planTechnique,tryAerial,receiveHeading} from './arena-techniques.js?v=arena-11';
+import {keeperAtEnd,isKeeper} from './arena-roles.js?v=arena-11';
+import {predictBall,strikingFoot} from './arena-ball-flight.js?v=arena-11';
 const direction=team=>team===0?-1:1;
 const members=w=>w.players.filter(p=>!p.bot);
 const near=(p,x,z,d=.25)=>Math.hypot(p.x-x,p.z-z)<d;
@@ -130,7 +130,7 @@ function startGather(w,context){
  b.group='match';w.mode='gather';emit(w,'gather',actor(w,carrier),null,b);
 }
 export function planWorld(w,context){
- const t=now(w);for(const p of w.players){p.target=[p.x,p.z];p.maxSpeed=p.bot?5.3:5.5;p.faceLock=false;p.priority=1;p.aim=undefined;p.elevation=0;p.seatedTarget=false;if(p.action&&p.action.end<t)p.action=null;}
+ const t=now(w);for(const p of w.players){p.target=[p.x,p.z];p.maxSpeed=p.bot?5.3:5.5;p.faceLock=false;p.priority=1;p.aim=undefined;p.elevation=0;p.seatedTarget=false;p.lookTarget=null;p.shielding=false;if(p.action&&p.action.end<t)p.action=null;}
  if(w.mode==='training'&&!(w.completed>=w.nextMatchAt&&members(w).length-(context.keeper?1:0)>=2&&w.groups.every(g=>g.stage==='done'))){
   if(!w.groups.some(g=>g.stage!=='done'))w.groups=[];
   if(!w.groups.length)assignGroups(w,context);
@@ -138,7 +138,7 @@ export function planWorld(w,context){
  }else if(w.match){for(const g of w.groups)if(g.stage!=='done')planGroup(w,g,context);planMatch(w,context,{carryTo,aimPickup});}
  planEquipment(w);
  // Resting players approach from the front, backstep and rise before leaving.
- for(const p of w.players){if(p.rest){const target=updateRest(w,p);if(target)p.target=target;}if(p.kick){const b=ballById(w,p.kick.ball),h=Math.atan2(p.kick.target[0]-b.x,p.kick.target[2]-b.z)+(p.kick.type==='heelPass'?Math.PI:0);p.faceLock=true;p.aim=h;p.target=p.kick.stage==='swing'?[p.x,p.z]:[b.x-Math.sin(h)*.36,b.z-Math.cos(h)*.36];p.maxSpeed=p.kick.stage==='swing'?0:3.8;p.priority=.2;}
+ for(const p of w.players){if(p.rest){const target=updateRest(w,p);if(target)p.target=target;}if(p.kick){p.lookTarget=[p.kick.target[0],p.kick.target[2]];const b=ballById(w,p.kick.ball),h=Math.atan2(p.kick.target[0]-b.x,p.kick.target[2]-b.z)+(p.kick.type==='heelPass'?Math.PI:0);p.faceLock=true;p.aim=h;p.target=p.kick.stage==='swing'?[p.x,p.z]:[b.x-Math.sin(h)*.36,b.z-Math.cos(h)*.36];p.maxSpeed=p.kick.stage==='swing'?0:3.8;p.priority=.2;}
   planTechnique(w,p);
   if(!p.rest&&!p.bot&&p.group==null&&w.mode==='training'&&Math.hypot(p.x-BALL_RACK.x,p.z-BALL_RACK.z)<2.2){p.target=[15.8,18+(hash(p.key)%5)*1.1];}
   if(p.bot&&w.mode==='training'&&!w.groups.some(g=>goalie(w,g.sign,context)?.key===p.key)){p.target=[p.key==='__keeper_bot'?4:-4,p.key==='__keeper_bot'?-23.5:23.5];p.aim=p.key==='__keeper_bot'?0:Math.PI;}
@@ -157,7 +157,7 @@ function illegalTouch(w,p,b){
  return false;
 }
 function receive(w,p,b,event='receive'){
- if(illegalTouch(w,p,b))return;
+ if(illegalTouch(w,p,b))return;delete p.reception;
  const from=b.flight?.from,incoming=Math.hypot(b.vx,b.vy,b.vz),t=now(w),height=b.y,front=(b.x-p.x)*Math.sin(p.heading)+(b.z-p.z)*Math.cos(p.heading);
  if(incoming>15&&front<-.12&&rnd(w)<.16){b.owner=null;b.lastTouch=p.key;b.vx*=.42;b.vz*=.42;b.vy=Math.max(.6,b.vy*.15);b.flight={from:p.key,team:p.team,type:'badControl',at:t};p.controlUntil=t+.50;pose(w,p,'balance',.55);emit(w,'badControl',p,from,b);return;}
  b.owner=p.key;b.lastTouch=p.key;b.flight=null;b.vx*=.15;b.vz*=.15;b.vy=Math.min(0,b.vy)*.1;p.nextTouch=t+.25;
@@ -218,6 +218,7 @@ export function reactToBalls(w,context){
 export function afterWorld(w,context){
  const t=now(w);stepEquipment(w);
  for(const e of w.newEvents){
+  if(w.match&&w.match.ball===e.ball&&(e.type==='post'||e.type==='save'&&e.saveType==='deflect'))w.match.reboundUntil=t+4.5;
   const practice=w.groups.find(g=>g.ball===e.ball&&g.stage==='play');if(practice&&isShot(e.type))recordPracticeShot(w,practice,e.actor);
   if(['pass','outsidePass','heelPass','cross','shot','outsideShot','chip','bicycle','scissor','penalty','freeKick','volley','header','corner','throwIn','throw','kickoff','goalKick','indirect'].includes(e.type)){
    if(w.match&&w.match.ball===e.ball){w.match.phase='play';w.match.lastChange=t;w.match.lastDecision=t+.30;}

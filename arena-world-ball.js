@@ -1,12 +1,12 @@
-import {DT,clamp} from './arena-motion.js?v=arena-10';
-import {PAVILION,BALL_RACK,FIELD} from './arena-layout.js?v=arena-10';
-import {now,actor,handPoint,emit,footPointWorld,rnd,pose} from './arena-world-state.js?v=arena-10';
-import {offsideAtRelease} from './arena-laws.js?v=arena-10';
-import {trackReceiver} from './arena-tactics.js?v=arena-10';
-import {TECHNIQUES} from './arena-technique-data.js?v=arena-10';
-import {isShot} from './arena-practice.js?v=arena-10';
-import {isKeeper} from './arena-roles.js?v=arena-10';
-import {curveAcceleration,strikingFoot} from './arena-ball-flight.js?v=arena-10';
+import {DT,clamp} from './arena-motion.js?v=arena-11';
+import {PAVILION,BALL_RACK,FIELD} from './arena-layout.js?v=arena-11';
+import {now,actor,handPoint,emit,footPointWorld,rnd,pose} from './arena-world-state.js?v=arena-11';
+import {offsideAtRelease} from './arena-laws.js?v=arena-11';
+import {trackReceiver} from './arena-tactics.js?v=arena-11';
+import {TECHNIQUES} from './arena-technique-data.js?v=arena-11';
+import {isShot} from './arena-practice.js?v=arena-11';
+import {isKeeper} from './arena-roles.js?v=arena-11';
+import {curveAcceleration,strikingFoot,throwVelocity} from './arena-ball-flight.js?v=arena-11';
 const G=9.81,R=FIELD.ballRadius,ROLL=1.35;
 const smooth=u=>{u=clamp(u);return u*u*(3-2*u)};
 function circleEntry(x,z,dx,dz,r){const a=dx*dx+dz*dz,c=x*x+z*z-r*r;if(a<1e-12)return null;const b=2*(x*dx+z*dz),d=b*b-4*a*c;if(d<0)return null;const u=c<0?0:(-b-Math.sqrt(d))/(2*a);return u>=0&&u<=1?u:null;}
@@ -70,18 +70,23 @@ export function stepBalls(w){
   for(const k of ['x','y','z','vx','vy','vz','spinX','spinY','spinZ'])b[k]=Math.round(b[k]*100000)/100000;
  }
 }
-export function releaseBall(w,p,b,target,type='pass',receiver=null){
+export function releaseBall(w,p,b,target,type='pass',receiver=null,options={}){
  const distance=Math.hypot(target[0]-b.x,target[2]-b.z),high=['cross','corner','throw','throwIn'].includes(type),shot=isShot(type),speed=type==='heelPass'?8:shot?19+rnd(w)*5:high?13:10.5+rnd(w)*1.6,duration=type==='chip'?clamp(distance/10,.7,1.6):high?clamp(distance/15,.80,1.8):clamp(distance/speed,.18,2.5),initial=high||shot?distance/duration:distance/duration+.5*ROLL*duration,factor=distance?initial/distance:0;
  b.vx=(target[0]-b.x)*factor;b.vz=(target[2]-b.z)*factor;b.vy=high||shot?(target[1]-b.y+.5*G*duration*duration)/duration:0;
  if(type==='freeKick')b.vy+=.8;
+ if(type==='throw'||type==='throwIn'){const velocity=throwVelocity([b.x,b.y,b.z],target,clamp(distance/11,.62,1.55));[b.vx,b.vy,b.vz]=velocity;}
  const outside=['outsidePass','outsideShot'].includes(type),curve=outside?(p.personality%2?1:-1)*(type==='outsideShot'?2.8:1.5):type==='freeKick'?(rnd(w)-.5)*.65:0;
  if(curve&&distance){const sideX=(target[2]-b.z)/distance,sideZ=-(target[0]-b.x)/distance;b.vx-=sideX*curve*duration*.5;b.vz-=sideZ*curve*duration*.5;}
- b.mode='free';b.owner=null;b.motion=null;b.lastTouch=p.key;b.net=null;b.pendingFinish=null;b.flight={from:p.key,team:p.team,type,at:now(w),receiver,destination:[...target],curve,offside:offsideAtRelease(w,p,b,type),shotBy:shot?p.key:null};
+ if(b.restartGuard&&b.restartGuard.kicker!==p.key)b.restartGuard=null;
+ const restart=options.restartType||type;
+ b.mode='free';b.owner=null;b.motion=null;b.lastTouch=p.key;b.net=null;b.pendingFinish=null;b.flight={from:p.key,team:p.team,type,at:now(w),receiver,destination:[...target],curve,offside:offsideAtRelease(w,p,b,restart),shotBy:shot?p.key:null};
  if(type==='cross'&&!w.match){const drill=w.groups.find(g=>g.ball===b.id&&g.stage==='play');if(drill){drill.crosses=(drill.crosses||0)+1;const choices=['volley','bicycle','scissor'].filter(k=>k!==drill.lastFinish);b.flight.finishPreference=choices[Math.floor(rnd(w)*choices.length)];drill.lastFinish=b.flight.finishPreference;}}
- if(w.match?.ball===b.id&&['kickoff','goalKick','corner','freeKick','indirect','penalty','throwIn'].includes(type))b.restartGuard={type,kicker:p.key,team:p.team};
+ if(w.match?.ball===b.id&&['kickoff','goalKick','corner','freeKick','indirect','penalty','throwIn'].includes(restart))b.restartGuard={type:restart,kicker:p.key,team:p.team};
+ if(w.match?.ball===b.id&&w.match.restartPlan&&!w.match.restartPlan.releasedAt)w.match.restartPlan.releasedAt=now(w);
  if(w.match?.ball===b.id&&type==='throw'&&isKeeper(p))b.restartGuard={type:'keeperThrow',kicker:p.key,team:p.team};
  if(p.action){p.action.contact=now(w);p.action.footTarget=[b.x,b.y,b.z];p.action.foot??=strikingFoot(p,b);}
- emit(w,type,p,receiver,b,{team:p.team,intensity:clamp(initial/24,.20,1)});
+ if(receiver){const q=actor(w,receiver);p.lookTarget=[target[0],target[2]];if(q)q.lookTarget=[b.x,b.z];}
+ emit(w,type,p,receiver,b,{team:p.team,intensity:clamp(initial/24,.20,1),...(options.scheme?{scheme:options.scheme}:{})});
 }
 export function prepareKick(w,p,b,target,type='pass',receiver=null){
  if(p.kick||p.skill||p.aerial||b.mode==='hand'||b.motion||(b.owner&&b.owner!==p.key)||b.flight)return false;b.owner=p.key;
@@ -94,7 +99,7 @@ export function stepKick(w,p,b){
  const h=Math.atan2(k.target[0]-b.x,k.target[2]-b.z)+(k.type==='heelPass'?Math.PI:0),plant=[b.x-Math.sin(h)*.36,b.z-Math.cos(h)*.36];p.aim=h;p.target=plant;
  if(k.stage==='plant'&&Math.hypot(p.x-b.x,p.z-b.z)<.65){b.vx*=Math.exp(-8*DT);b.vz*=Math.exp(-8*DT);}
  if(k.stage==='plant'&&Math.hypot(p.x-plant[0],p.z-plant[1])<.15&&Math.hypot(p.vx,p.vz)<1.15&&Math.abs(Math.atan2(Math.sin(h-p.heading),Math.cos(h-p.heading)))<.35){k.stage='swing';const short=['pass','kickoff','indirect','goalKick'].includes(k.type),spec=TECHNIQUES[k.type];k.release=t+(spec?.wind??(short?.17:.23));pose(w,p,spec?.gesture||(k.type==='cross'||k.type==='corner'?'cross':short?'pass':'shot'),spec?.duration??(short?.50:.70),{ball:b.id,foot:k.foot,contact:k.release,footTarget:[b.x,b.y,b.z],strength:['pass','outsidePass','heelPass'].includes(k.type)?.45:1,technique:k.type});if(spec)emit(w,'techniqueSetup',p,null,b,{technique:k.type});}
- if(k.stage==='swing'){p.target=[p.x,p.z];p.maxSpeed=0;if(t>=k.release){if(Math.hypot(p.x-b.x,p.z-b.z)<.62){releaseBall(w,p,b,k.target,k.type,k.receiver);}p.kick=null;}}
+ if(k.stage==='swing'){p.target=[p.x,p.z];p.maxSpeed=0;if(t>=k.release){if(Math.hypot(p.x-b.x,p.z-b.z)<.62){releaseBall(w,p,b,k.target,k.type,k.receiver,{restartType:k.restartType,scheme:k.scheme});}p.kick=null;}}
  if(t-k.started>3.0){p.kick=null;}
 }
 export function dribble(w,p,b,direction){
@@ -110,4 +115,9 @@ export function dribble(w,p,b,direction){
 }
 export function putInRack(w,b){b.mode='rack';b.owner=null;b.motion=null;b.group=null;b.flight=null;b.vx=b.vy=b.vz=0;b.net=null;b.pendingFinish=null;emit(w,'rack',null,null,b);}
 export function prepareThrow(w,p,b,target,type='throw',receiver=null){if(p.throw||b.mode!=='hand'||b.owner!==p.key)return false;p.throw={at:now(w),release:now(w)+.70,ball:b.id,target,type,receiver};pose(w,p,type,.95,{contact:now(w)+.70});return true;}
-export function stepThrow(w,p,b){if(!p.throw)return;const k=p.throw;if(!b||b.owner!==p.key||b.mode!=='hand'){p.throw=null;return;}if(now(w)>=k.release){releaseBall(w,p,b,k.target,k.type,k.receiver);p.throw=null;}}
+export function stepThrow(w,p,b){
+ if(!p.throw)return;const k=p.throw;if(!b||b.owner!==p.key||b.mode!=='hand'){p.throw=null;return;}
+ const q=actor(w,k.receiver),plan=w.match?.ball===b.id?w.match.restartPlan:null;
+ if(q){const target=plan?.receiver===q.key?plan.target:[q.x+q.vx*.22,k.target[1],q.z+q.vz*.22];k.target=[...target];p.lookTarget=[target[0],target[2]];}
+ if(now(w)>=k.release){releaseBall(w,p,b,k.target,k.type,k.receiver,{scheme:plan?.scheme});p.throw=null;}
+}

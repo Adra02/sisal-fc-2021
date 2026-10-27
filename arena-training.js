@@ -1,7 +1,7 @@
-import {createDrillPlan,varyDrillPlan} from './arena-drills.js?v=arena-10';
-import {DT,clamp,mix,hash,bodyState,movePlayers,sampleTrack,footPoint,BENCH_SEATS} from './arena-motion.js?v=arena-10';
-import {allocateClip,record,motionAt,action,finishStates,seatExits} from './arena-clip.js?v=arena-10';
-import {FIELD,PAVILION} from './arena-layout.js?v=arena-10';
+import {createDrillPlan,varyDrillPlan} from './arena-drills.js?v=arena-11';
+import {DT,clamp,mix,hash,bodyState,movePlayers,sampleTrack,footPoint,BENCH_SEATS} from './arena-motion.js?v=arena-11';
+import {allocateClip,record,motionAt,action,finishStates,seatExits} from './arena-clip.js?v=arena-11';
+import {FIELD,PAVILION} from './arena-layout.js?v=arena-11';
 export function clipPlayers(snapshot){return [...(snapshot.players||[]).map(p=>({...p,personality:hash(p.key)})),{key:'__keeper_bot',name:'BOT · Portiere',appearance:{silk:'gold',number:'1'},goalkeeper:true},{key:'__keeper_away_bot',name:'BOT · Seconda porta',appearance:{silk:'sky',number:'12'},goalkeeper:true}];}
 export function initialStates(snapshot){const p=clipPlayers(snapshot),n=(snapshot.players||[]).length,cols=Math.min(10,Math.max(3,Math.ceil(Math.sqrt(n*1.4)))),rows=Math.ceil(n/cols);return p.map((a,i)=>bodyState(a,a.key==='__keeper_bot'?[0,-24.8]:a.key==='__keeper_away_bot'?[0,24.8]:[-13+(i%cols)*26/(cols-1),2+Math.floor(i/cols)*Math.min(3,20/Math.max(1,rows-1))]));}
 function storyAt(t,duration,arrival){const end=duration-1.4;if(t<arrival)return t/arrival*9;return t<end?9+(t-arrival)/(end-arrival)*26:35+(t-end)/1.4*15;}
