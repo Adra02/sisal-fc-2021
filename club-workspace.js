@@ -59,9 +59,14 @@ function decorate(){
 }
 function nav(){
  const n=document.querySelector('.bottomnav');if(!n||n.dataset.workspaceNav)return;n.dataset.workspaceNav='true';n.classList.add('cc-navigation');
- const brand=node('button','cc-rail-brand','<img src="./icons/icon-192.png" alt=""><span><b>SISAL FC 2021</b><small>CLUBHOUSE · FC27</small></span>');brand.type='button';brand.setAttribute('aria-label','Apri SISAL ARENA dal logo del club');brand.onclick=()=>document.querySelector('.club-brand')?.click();n.prepend(brand);
+ const brand=node('div','cc-rail-brand','<img src="./icons/icon-192.png" alt=""><span><b>SISAL FC 2021</b><small>CLUBHOUSE · FC27</small></span>');n.prepend(brand);
  const label=node('small','cc-rail-caption','IL TUO CLUB');brand.after(label);
  const footer=node('div','cc-rail-footer','<span class="cc-rail-live"></span><b>Un club, lo stesso archivio.</b><small>Dati condivisi · accesso personale</small>');n.append(footer);
 }
-window.addEventListener('sisal-content-rendered',decorate);window.addEventListener('sisal-eligibility',()=>{nav();decorate();});
+function alignNavigation(){
+ const n=document.querySelector('.cc-navigation'),active=n?.querySelector('[data-tab].active');
+ if(!n||!active||getComputedStyle(n).flexDirection!=='row')return;
+ n.scrollTo?.({left:Math.max(0,active.offsetLeft-(n.clientWidth-active.offsetWidth)/2),behavior:'auto'});
+}
+window.addEventListener('sisal-content-rendered',()=>{decorate();alignNavigation();});window.addEventListener('sisal-eligibility',()=>{nav();decorate();});
 await window.sisalAccountReady;nav();decorate();

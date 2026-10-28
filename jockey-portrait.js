@@ -1,6 +1,6 @@
 import {environmentTexture} from './studio-materials.js?v=studio-9';
 import * as T from './vendor/three.module.min.js';
-import {createJockey} from './jockey-model.js?v=studio-9';
+import {createJockey} from './jockey-model.js?v=club-53';
 import {styleColors,paintSilks,nameKey} from './horse-style.js?v=studio-9';
 import {disposeTree} from './studio-geometry.js?v=studio-9';
 const cache=new Map();

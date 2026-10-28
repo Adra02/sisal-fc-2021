@@ -11,7 +11,7 @@ export async function GET(req){try{
   const taken=new Set([...d.accounts.map(x=>x.key),...await rpc('sisal_excluded_keys',{})]);
   return ok({ok:true,hasOwner:d.hasOwner,register:r.players.filter(x=>!taken.has(x.key)),login:d.accounts.filter(x=>x.status==='active'),rosterAvailable:r.available});
  }
- if(action==='arena'){if(new URL(req.url).searchParams.get('scene')!=='11'){await requireAccount(req);return Response.json({ok:false,code:'ARENA_UPDATE_REQUIRED',error:'L’Arena è stata aggiornata. Ricarica completamente la web app per entrare nella stessa versione dei compagni.'},{status:409,headers:{'Cache-Control':'private, no-store'}});}const {arenaState}=await import('../lib/arena.js');const state=await arenaState(sessionHash(req));return Response.json(state,{status:state.pending?202:200,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff',...(state.pending?{'Retry-After':'3'}:{})}});}
+ if(action==='arena'){await requireAccount(req);return Response.json({ok:false,code:'ARENA_REMOVED',error:'SISAL ARENA è stata rimossa.'},{status:410,headers:{'Cache-Control':'private, no-store'}});}
  const user=await requireAccount(req);
  if(action==='me')return ok({ok:true,user});
  if(action==='appearances')return ok({ok:true,styles:await accountRpc('appearances',{},sessionHash(req)),excluded:await accountRpc('lineup_exclusions',{},sessionHash(req))});
@@ -38,15 +38,15 @@ export async function POST(req){try{
   const s=token();const user=await accountRpc('login',{id:c.id,version:c.version,hash:c.hash,token:hashToken(s),label:req.headers.get('user-agent')||'Dispositivo'});return ok({ok:true,user},s);
  }
  const user=await requireAccount(req);const session=sessionHash(req);
+ if(action==='arena_keeper')return Response.json({ok:false,code:'ARENA_REMOVED',error:'SISAL ARENA è stata rimossa.'},{status:410,headers:{'Cache-Control':'private, no-store'}});
  if(action==='logout'||action==='logout_all'){await accountRpc(action,{},session);return ok({ok:true},'');}
  if(action==='appearance'){const appearance=validateStyle({...user.appearance,...p.appearance});if(!Number.isInteger(p.revision))throw fail('CONFLICT');return ok({ok:true,user:await accountRpc(action,{appearance,revision:p.revision},session)});}
  // All credential/role changes need the acting user's password, not a remembered cookie alone.
- if(['password','approve','reject','suspend','reactivate','promote','demote','reset_token','import_token','revoke_import','delete_account','allow_registration','arena_keeper'].includes(action)){
+ if(['password','approve','reject','suspend','reactivate','promote','demote','reset_token','import_token','revoke_import','delete_account','allow_registration'].includes(action)){
   await limit(req,'sensitive',user.id);
   const c=await accountRpc('credentials',{key:user.player_key});if(!await verifyPassword(p.currentPassword,c?.hash))throw fail('RECENT_LOGIN');
   if(action==='password'){await accountRpc('password',{version:c.version,hash:await hashPassword(p.password)},session);return ok({ok:true},'');}
   if(!user.is_admin)throw fail('FORBIDDEN');
-  if(action==='arena_keeper')return ok(await rpc('sisal_arena',{p_action:'keeper',p_session:session,p:{key:nameKey(p.key)}}));
   const value=token();const params={id:p.id,key:nameKey(p.key),token:hashToken(value)};
   const result=await accountRpc(action,params,session);
   return ok({...result,...(['reset_token','import_token'].includes(action)?{token:value}:{})});

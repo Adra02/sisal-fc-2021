@@ -26,12 +26,12 @@ export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,c
    solvePoint.set(...target);bone.position.copy(solvePoint);
    if(parent>=0){solveInverse.copy(parentQ).invert();bone.position.sub(solveParent.set(...t[bodyData.bones[parent][0]])).applyQuaternion(solveInverse);}
    q.identity();const child=firstChildren[i];
-   if(name==='chest')q.setFromAxisAngle(solveDir.set(0,0,1),kind==='arena'?-Math.atan2(t.chest[0]-t.pelvis[0],t.chest[1]-t.pelvis[1]):(standing?0:kind==='racing'?-.50:-.22)+(kind==='bow'?-.22:0));
+   if(name==='chest')q.setFromAxisAngle(solveDir.set(0,0,1),(standing?0:kind==='racing'?-.50:-.22)+(kind==='bow'?-.22:0));
    else if(name!=='pelvis'&&child>=0){solveDir.set(...t[bodyData.bones[child][0]]).sub(solvePoint).normalize();q.setFromUnitVectors(restDirections[i],solveDir);}
    else if(name.includes('Wrist')){solvePoint.set(.08,-.025,name[0]==='l'?-.07:.07).normalize();solveDir.set(...(kind==='arms'?[0,1,0]:kind==='salute'&&name[0]==='r'?[.1,.8,-.4]:[1,-.1,0])).normalize();q.setFromUnitVectors(solvePoint,solveDir);}
    bone.quaternion.copy(q);if(parent>=0)bone.quaternion.premultiply(solveInverse);
   }
-  if(kind!=='arena')body.updateMatrixWorld(true);
+  body.updateMatrixWorld(true);
   return capture?bones.map(b=>({p:b.position.clone(),q:b.quaternion.clone()})):undefined;
  }
  const rest=solve(targets),poses={};
@@ -71,7 +71,6 @@ export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,c
   if(w>0){head.rotation.z=(standing?0:.17)+(kind==='bow'?-.14*w:0);head.rotation.y=kind==='crowd'?.3*w:0;}
  };
  rider.userData.idle=(time,pointer={x:0,y:0},reduced=false)=>{idleTime=time;head.rotation.y=reduced?0:T.MathUtils.lerp(head.rotation.y,pointer.x*.18,.09);head.rotation.z=(standing?0:.17)-(reduced?0:pointer.y*.04);if(head.userData.eyes)for(const eye of head.userData.eyes)eye.rotation.y=reduced?0:pointer.x*.10;const phase=time%5.4,blink=!reduced&&phase<.16?Math.sin(phase/.16*Math.PI):0;if(blink>0||head.userData.wasBlink){head.userData.blink?.(blink);head.userData.wasBlink=blink>0;}};
- rider.userData.arenaRig=standing?t=>{solve(t,'arena',false);}:undefined;
  rider.userData.headgear=gear;rider.userData.faceFrame=faceFrame;
  rider.userData.pose('salute',0,true,0);return {rider,head,arms,body,skeleton};
 }

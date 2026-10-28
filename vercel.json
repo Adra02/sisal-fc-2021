@@ -2,8 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "functions": {
-    "api/account.js": {
-      "includeFiles": "arena-*.js"
-    }
+    "api/club-data.js": {"maxDuration": 180},
+    "api/editorial.js": {"maxDuration": 120}
   }
 }

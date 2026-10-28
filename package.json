@@ -1,6 +1,6 @@
 {
   "name": "sisal-fc-2021-fc27-command-center",
-  "version": "32.1.52",
+  "version": "32.1.53",
   "private": true,
   "type": "module",
   "engines": {
@@ -34,18 +34,15 @@
     "test:migration": "node scripts/test-shared-contract.mjs && node scripts/test-supabase.mjs && node scripts/test-supabase-api.mjs && node scripts/test-migration.mjs && node scripts/test-news-client.mjs && node scripts/test-export.mjs && node scripts/test-no-legacy-storage.mjs",
     "test:accounts": "node scripts/test-accounts.mjs && node scripts/test-account-ui.mjs && node scripts/test-account-app.mjs",
     "test:account-race": "node scripts/test-account-race.mjs",
-    "test:upgrade": "node scripts/test-historical-recovery.mjs && node scripts/test-data-matrix-v5.mjs && node scripts/test-data-flow-v5.mjs && node scripts/test-eyes-helmet.mjs && node scripts/test-portrait-v5.mjs && node scripts/test-face-emotes-v6.mjs && node scripts/test-arena-simulation.mjs && node scripts/test-arena-football-v8.mjs && node scripts/test-arena-contact-v8.mjs && node scripts/test-arena-contact-clock-v7.mjs && node scripts/test-arena-avatar.mjs && node scripts/test-arena-gait-v6.mjs && node scripts/test-label-layout-v6.mjs && node scripts/test-arena-overlays-v6.mjs && node scripts/test-club-workspace-v6.mjs && node scripts/test-arena-ui.mjs && node scripts/test-arena-renderer.mjs && node scripts/test-arena-sql.mjs && node scripts/test-accounts.mjs && node scripts/test-account-ui.mjs && node scripts/test-release-resources.mjs",
-    "test:arena-movement": "node scripts/test-arena-movement.mjs && node scripts/test-arena-movement-sql.mjs && node scripts/test-arena-movement-variety.mjs",
-    "test:arena-live": "node scripts/test-arena-movement.mjs && node scripts/test-arena-movement-sql.mjs && node scripts/test-arena-movement-variety.mjs && node scripts/test-arena-live-world.mjs && node scripts/test-arena-live-contact.mjs && node scripts/test-arena-live-restarts.mjs && node scripts/test-arena-sql.mjs && node scripts/test-arena-ui.mjs && node scripts/test-arena-renderer.mjs",
-    "test:arena-football": "node scripts/test-arena-football-laws.mjs && node scripts/test-arena-football-sql.mjs && node scripts/test-arena-audio.mjs && npm run test:arena-live",
-    "test:arena-skills": "node scripts/test-arena-skills.mjs && node scripts/test-arena-skills-sql.mjs && node scripts/test-arena-football-laws.mjs && npm run test:arena-live",
-    "test:arena-completa": "node scripts/test-arena-athlete.mjs && node scripts/test-arena-complete.mjs && node scripts/test-arena-complete-sql.mjs && node scripts/test-arena-football-laws.mjs && node scripts/test-arena-skills.mjs && node scripts/test-arena-live-world.mjs && node scripts/test-arena-live-contact.mjs && node scripts/test-arena-live-restarts.mjs && node scripts/test-arena-gait-v6.mjs && node scripts/test-arena-ui.mjs && node scripts/test-arena-renderer.mjs && node scripts/test-arena-overlays-v6.mjs && node scripts/test-arena-audio.mjs && node scripts/test-arena-sql.mjs && node scripts/test-release-resources.mjs && node scripts/test-arena-cache.mjs",
-    "test:arena-calcio": "node scripts/test-arena-restart-outcomes.mjs && node scripts/test-arena-setpiece-outcomes.mjs && node scripts/test-arena-football-decisions.mjs && node scripts/test-arena-body-football.mjs && node scripts/test-arena-football-upgrade-sql.mjs && npm run test:arena-completa",
-    "test:arena-visual": "node scripts/test-arena-visual-motion.mjs && node scripts/test-arena-athlete.mjs && node scripts/test-arena-gait-v6.mjs && node scripts/test-arena-body-football.mjs && node scripts/test-arena-live-contact.mjs && node scripts/test-arena-contact-clock-v7.mjs && node scripts/test-arena-avatar.mjs && node scripts/test-arena-renderer.mjs && node scripts/test-arena-ui.mjs && node scripts/test-release-resources.mjs && node scripts/test-arena-cache.mjs"
+    "test:upgrade": "node scripts/test-historical-recovery.mjs && node scripts/test-data-matrix-v5.mjs && node scripts/test-data-flow-v5.mjs && node scripts/test-eyes-helmet.mjs && node scripts/test-portrait-v5.mjs && node scripts/test-face-emotes-v6.mjs && node scripts/test-label-layout-v6.mjs && node scripts/test-club-workspace-v6.mjs && node scripts/test-accounts.mjs && node scripts/test-account-ui.mjs && node scripts/test-release-resources.mjs",
+    "test:release53": "npm run verify && node scripts/test-release-resources.mjs && node scripts/test-release53.mjs && node scripts/test-gazzetta53.mjs && node scripts/test-club-editorial.mjs && node scripts/test-club-ui.mjs && node scripts/test-club-workspace-v6.mjs && npm run test:accounts && npm run test:account-race && npm run test:pipeline && npm run test:shared && npm run test:frontend && npm run test:ai && node scripts/test-player-photo-v32141.mjs && node scripts/test-data-flow-v5.mjs && node scripts/test-historical-recovery.mjs && node scripts/test-formation.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.9",
     "@napi-rs/canvas": "^1.0.11",
     "jsdom": "^30.1.2"
+  },
+  "dependencies": {
+    "@vercel/functions": "3.10.4"
   }
 }

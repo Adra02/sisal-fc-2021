@@ -1,0 +1,302 @@
+[
+  {
+    "matchId": "1000",
+    "timestamp": 1792000000,
+    "clubs": {
+      "328794": {
+        "details": {
+          "name": "Sisal FC 2021"
+        },
+        "goals": 3,
+        "goalsAgainst": 1
+      },
+      "fixture-opponent": {
+        "details": {
+          "name": "Club di esempio"
+        },
+        "goals": 1,
+        "goalsAgainst": 3
+      }
+    },
+    "players": {
+      "328794": {
+        "p": {
+          "playername": "AdraTheTrue02",
+          "goals": 2,
+          "assists": 1,
+          "rating": 9.1
+        }
+      }
+    }
+  },
+  {
+    "matchId": "1001",
+    "timestamp": 1791913600,
+    "clubs": {
+      "328794": {
+        "details": {
+          "name": "Sisal FC 2021"
+        },
+        "goals": 3,
+        "goalsAgainst": 1
+      },
+      "fixture-opponent": {
+        "details": {
+          "name": "Club di esempio"
+        },
+        "goals": 1,
+        "goalsAgainst": 3
+      }
+    },
+    "players": {
+      "328794": {
+        "p": {
+          "playername": "AdraTheTrue02",
+          "goals": 2,
+          "assists": 1,
+          "rating": 9.1
+        }
+      }
+    }
+  },
+  {
+    "matchId": "1002",
+    "timestamp": 1791827200,
+    "clubs": {
+      "328794": {
+        "details": {
+          "name": "Sisal FC 2021"
+        },
+        "goals": 3,
+        "goalsAgainst": 1
+      },
+      "fixture-opponent": {
+        "details": {
+          "name": "Club di esempio"
+        },
+        "goals": 1,
+        "goalsAgainst": 3
+      }
+    },
+    "players": {
+      "328794": {
+        "p": {
+          "playername": "AdraTheTrue02",
+          "goals": 2,
+          "assists": 1,
+          "rating": 9.1
+        }
+      }
+    }
+  },
+  {
+    "matchId": "1003",
+    "timestamp": 1791740800,
+    "clubs": {
+      "328794": {
+        "details": {
+          "name": "Sisal FC 2021"
+        },
+        "goals": 3,
+        "goalsAgainst": 1
+      },
+      "fixture-opponent": {
+        "details": {
+          "name": "Club di esempio"
+        },
+        "goals": 1,
+        "goalsAgainst": 3
+      }
+    },
+    "players": {
+      "328794": {
+        "p": {
+          "playername": "AdraTheTrue02",
+          "goals": 2,
+          "assists": 1,
+          "rating": 9.1
+        }
+      }
+    }
+  },
+  {
+    "matchId": "1004",
+    "timestamp": 1791654400,
+    "clubs": {
+      "328794": {
+        "details": {
+          "name": "Sisal FC 2021"
+        },
+        "goals": 3,
+        "goalsAgainst": 1
+      },
+      "fixture-opponent": {
+        "details": {
+          "name": "Club di esempio"
+        },
+        "goals": 1,
+        "goalsAgainst": 3
+      }
+    },
+    "players": {
+      "328794": {
+        "p": {
+          "playername": "AdraTheTrue02",
+          "goals": 2,
+          "assists": 1,
+          "rating": 9.1
+        }
+      }
+    }
+  },
+  {
+    "matchId": "1005",
+    "timestamp": 1791568000,
+    "clubs": {
+      "328794": {
+        "details": {
+          "name": "Sisal FC 2021"
+        },
+        "goals": 3,
+        "goalsAgainst": 1
+      },
+      "fixture-opponent": {
+        "details": {
+          "name": "Club di esempio"
+        },
+        "goals": 1,
+        "goalsAgainst": 3
+      }
+    },
+    "players": {
+      "328794": {
+        "p": {
+          "playername": "AdraTheTrue02",
+          "goals": 2,
+          "assists": 1,
+          "rating": 9.1
+        }
+      }
+    }
+  },
+  {
+    "matchId": "1006",
+    "timestamp": 1791481600,
+    "clubs": {
+      "328794": {
+        "details": {
+          "name": "Sisal FC 2021"
+        },
+        "goals": 3,
+        "goalsAgainst": 1
+      },
+      "fixture-opponent": {
+        "details": {
+          "name": "Club di esempio"
+        },
+        "goals": 1,
+        "goalsAgainst": 3
+      }
+    },
+    "players": {
+      "328794": {
+        "p": {
+          "playername": "AdraTheTrue02",
+          "goals": 2,
+          "assists": 1,
+          "rating": 9.1
+        }
+      }
+    }
+  },
+  {
+    "matchId": "1007",
+    "timestamp": 1791395200,
+    "clubs": {
+      "328794": {
+        "details": {
+          "name": "Sisal FC 2021"
+        },
+        "goals": 3,
+        "goalsAgainst": 1
+      },
+      "fixture-opponent": {
+        "details": {
+          "name": "Club di esempio"
+        },
+        "goals": 1,
+        "goalsAgainst": 3
+      }
+    },
+    "players": {
+      "328794": {
+        "p": {
+          "playername": "AdraTheTrue02",
+          "goals": 2,
+          "assists": 1,
+          "rating": 9.1
+        }
+      }
+    }
+  },
+  {
+    "matchId": "1008",
+    "timestamp": 1791308800,
+    "clubs": {
+      "328794": {
+        "details": {
+          "name": "Sisal FC 2021"
+        },
+        "goals": 3,
+        "goalsAgainst": 1
+      },
+      "fixture-opponent": {
+        "details": {
+          "name": "Club di esempio"
+        },
+        "goals": 1,
+        "goalsAgainst": 3
+      }
+    },
+    "players": {
+      "328794": {
+        "p": {
+          "playername": "AdraTheTrue02",
+          "goals": 2,
+          "assists": 1,
+          "rating": 9.1
+        }
+      }
+    }
+  },
+  {
+    "matchId": "1009",
+    "timestamp": 1791222400,
+    "clubs": {
+      "328794": {
+        "details": {
+          "name": "Sisal FC 2021"
+        },
+        "goals": 3,
+        "goalsAgainst": 1
+      },
+      "fixture-opponent": {
+        "details": {
+          "name": "Club di esempio"
+        },
+        "goals": 1,
+        "goalsAgainst": 3
+      }
+    },
+    "players": {
+      "328794": {
+        "p": {
+          "playername": "AdraTheTrue02",
+          "goals": 2,
+          "assists": 1,
+          "rating": 9.1
+        }
+      }
+    }
+  }
+]

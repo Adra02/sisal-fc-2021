@@ -1,4 +1,4 @@
-import {publishPaper} from '../lib/paper-job.js';
+import {schedulePaper} from '../lib/paper-auto.js';
 import {requireAccount,errorResponse} from '../lib/accounts.js';
 import { withStoreRequest } from '../lib/shared-store.js';
 import { buildTeam, parseJsonText, normalizePlayersFile, normalizeMatchesFile, detectDataFile, extractHistoricalTotals, resolveStoredTotals } from '../lib/data-pipeline.js';
@@ -6,7 +6,7 @@ import { CATEGORIES, ROLES, assertCategory, assertRole, hasStorageConfig, readAl
 import { importTrackerTotals, validateTotals, normalizeTrackerUrl } from '../lib/tracker-import.js';
 import { recognizeDataFile } from '../lib/file-ai-recognizer.js';
 
-export const maxDuration = 60;
+export const maxDuration = 180;
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
 
 function json(body, status = 200) {
@@ -326,7 +326,7 @@ async function handlePOST(request, actor) {
       const body = await request.json();
       const role = assertRole(String(body?.role || ''));
       const action = String(body?.action || '');
-      if(action==='completeUpdate'){if(role!=='own')return json({ok:true,gazzetta:{ok:true,skipped:true}});return json({ok:true,gazzetta:await publishPaper(actor)});}
+      if(action==='completeUpdate'){if(role!=='own')return json({ok:true,gazzetta:{ok:true,skipped:true}});return json({ok:true,gazzetta:await schedulePaper(actor)});}
 
       if (action === 'saveTotals') {
         const payload = totalsPayloadFrom(
@@ -723,8 +723,10 @@ async function handlePOST(request, actor) {
     // Non facciamo una seconda lettura dello stesso database.
     await updateMemory(role, team, team.memory);
 
+    const gazzetta=role==='own'?await schedulePaper(actor):undefined;
     return json({
       ok: true,
+      gazzetta,
       role,
       category,
       fileName: payload.fileName,

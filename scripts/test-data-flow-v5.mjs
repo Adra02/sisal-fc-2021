@@ -31,6 +31,8 @@ globalThis.fetch=async(url,opts={})=>{
  }
  assert(url.startsWith('https://test.supabase.co/rest/v1/rpc/'),url);sqlCalls++;
  const name=new URL(url).pathname.split('/').at(-1),p=JSON.parse(opts.body);
+ // Publication is covered by test-gazzetta53; isolate this dataset/assistant contract.
+ if(name==='sisal_paper53')return Response.json({skipped:true});
  if(!['sisal_team_read','sisal_account'].includes(name))sqlWrites++;
  try{const out=await db.query(`select ${name}(${Object.keys(p).map((k,i)=>k+' => $'+(i+1)).join(',')}) v`,Object.values(p));return Response.json(out.rows[0].v);}catch(e){return Response.json({message:e.message},{status:400});}
 };

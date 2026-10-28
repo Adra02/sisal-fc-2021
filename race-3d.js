@@ -2,7 +2,7 @@ import {placeLabels,leaderLine} from './scene-labels.js?v=studio-9';
 import {spectatorPose} from './race-crowd.js?v=studio-9';
 import {animateGallop,dustSample} from './horse-gait.js?v=studio-9';
 import {createHorse} from './horse-model.js?v=studio-9';
-import {createJockey} from './jockey-model.js?v=studio-9';
+import {createJockey} from './jockey-model.js?v=club-53';
 import {signaturePose} from './race-signature.js?v=studio-9';
 import {styleColors,paintSilks} from './horse-style.js?v=studio-9';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */

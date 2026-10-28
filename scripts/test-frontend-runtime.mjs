@@ -1,34 +1,22 @@
 import fs from 'node:fs/promises';
-import vm from 'node:vm';
-
-const source = await fs.readFile(new URL('../index-inline.js', import.meta.url), 'utf8');
-const elements = new Map();
-function element() {
-  return {
-    innerHTML: '', textContent: '', value: '', disabled: false, files: [], className: '', style: {}, dataset: {}, children: [],
-    addEventListener() {}, click() {}, focus() {}, prepend() {}, remove() {}, appendChild() {}
-  };
-}
-const document = {
-  getElementById(id) { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); },
-  querySelectorAll() { return []; },
-  createElement() { return element(); },
-  addEventListener() {}
-};
-const localStore = new Map();
-const localStorage = { getItem(k){return localStore.has(k)?localStore.get(k):null;}, setItem(k,v){localStore.set(k,String(v));}, removeItem(k){localStore.delete(k);} };
-const sessionStorage = { getItem(){return null;}, setItem(){}, removeItem(){} };
-const fakeResponse = { ok:false, status:503, async json(){return {ok:false,error:'stub'};} };
-const navigator = { serviceWorker: { register: async()=>({}) } };
-let installListeners=[];
-const window = { addEventListener(name,fn){ if(name==='beforeinstallprompt'||name==='appinstalled') installListeners.push([name,fn]); }, scrollTo(){} };
-const location = { protocol:'http:', href:'http://localhost/' };
-const alerts = [];
-const ctx = { document, localStorage, sessionStorage, navigator, window, location, fetch: async()=>fakeResponse, console, Intl, Date, Number, String, Boolean, Object, Array, Map, Set, Math, JSON, Error, Promise, encodeURIComponent, decodeURIComponent, URL, Intl, setTimeout, clearTimeout, alert: x=>alerts.push(x), confirm:()=>false, prompt:()=>'' };
-ctx.globalThis = ctx;
-vm.createContext(ctx);
-let error = null;
-try { vm.runInContext(source, ctx, { filename:'index-inline.js' }); } catch (e) { error = e; }
-if (error) throw error;
-await new Promise(r=>setTimeout(r,20));
-console.log('test-frontend-runtime: OK');
+import assert from 'node:assert/strict';
+import {JSDOM,VirtualConsole} from 'jsdom';
+// Actual document instead of the obsolete hand-written DOM stub.
+const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));
+const dom=new JSDOM(await fs.readFile('index.html','utf8'),{url:'https://sisal.test',runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc}),w=dom.window;
+w.matchMedia=()=>({matches:true,addEventListener(){}});w.scrollTo=()=>{};
+w.sisalAccountReady=Promise.resolve();w.SisalAccount={user:{id:'fixture',player_key:'alpha',is_admin:true},isEligible:()=>true};
+let requests=0,registered='';w.fetch=async url=>{if(String(url).includes('/api/club-data')){requests++;return Response.json({ok:false,error:'Fixture: archivio non disponibile'},{status:503});}return Response.json({});};
+Object.defineProperty(w.navigator,'serviceWorker',{value:{register:async url=>{registered=url;return {};}}});
+const ready=new Promise((resolve,reject)=>{
+ const timeout=setTimeout(()=>reject(Error('Dataset error view did not finish rendering')),2000);
+ w.addEventListener('sisal-content-rendered',()=>{if(w.document.querySelector('#liveStatus').textContent.includes('Archivio centrale non disponibile')){clearTimeout(timeout);resolve();}});
+});
+await w.eval(await fs.readFile('index-inline.js','utf8'));await ready;
+assert.equal(requests,1);assert(registered.includes('sw.js?v=club-53'));
+assert(w.document.querySelector('#content').textContent.trim().length>0);
+assert(w.document.querySelector('#liveStatus').textContent.includes('Archivio centrale non disponibile'));
+for(const b of w.document.querySelectorAll('.bottomnav [data-tab]')){b.click();assert(w.document.querySelector('#content').textContent.trim().length>0,b.dataset.tab+' opens even without data');}
+const install=new w.Event('beforeinstallprompt',{cancelable:true});w.dispatchEvent(install);assert(install.defaultPrevented,'install handler remains registered');
+assert.equal(errors.length,0,errors.map(e=>e.message).join('\n'));dom.window.close();
+console.log('PASS frontend runtime: actual HTML + JS in JSDOM, authenticated startup, one dataset read, unavailable-data state, nine sections, versioned SW and install handler. Not a visual/GPU test.');

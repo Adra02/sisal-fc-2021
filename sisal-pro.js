@@ -21,7 +21,8 @@
   try { enabled=localStorage.getItem(preferenceKey)!=='off'; } catch {}
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   function pauseAmbient(){
-    document.body.classList.toggle('sisal-ambient-paused',!enabled||document.hidden||reduced.matches||Boolean(document.querySelector('.sr-host,.sisal-ritual,.arena-dialog[open],.studio-dialog[open],#ac-panel[open]')));
+    document.documentElement.classList.toggle('club-page-hidden',document.hidden);
+    document.body.classList.toggle('sisal-ambient-paused',!enabled||document.hidden||reduced.matches||Boolean(document.querySelector('.sr-host,.sisal-ritual,.studio-dialog[open],#ac-panel[open]')));
   }
   function createAtmosphere(){
     const layer=document.createElement('div');layer.className='sisal-atmosphere';layer.setAttribute('aria-hidden','true');
@@ -47,7 +48,7 @@
     new MutationObserver(pauseAmbient).observe(document.body,{childList:true});
     const modalRoot=document.querySelector('#modalRoot');if(modalRoot)new MutationObserver(pauseAmbient).observe(modalRoot,{childList:true});
     const account=document.querySelector('#ac-panel');if(account)new MutationObserver(pauseAmbient).observe(account,{attributes:true,attributeFilter:['open']});
-    for(const event of ['sisal-arena-opened','sisal-arena-closed','sisal-race-complete'])window.addEventListener(event,pauseAmbient);
+    for(const event of ['sisal-race-complete'])window.addEventListener(event,pauseAmbient);
     pauseAmbient();
   }
   function decorateNavigation(){

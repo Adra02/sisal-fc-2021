@@ -18,8 +18,9 @@ async function readRecord(key){
  return {...row.record,dataUrl:row.image_path?await downloadImage(row.image_path):'',_revision:row.revision};
 }
 function identity(input){
- const clubId=String(input.clubId||'').trim(),playerName=String(input.playerName||'').trim(),playerKey=photoIdentity(clubId,playerName);
- if(String(input.playerKey||'')!==playerKey)throw new Error('Identità foto non valida: aggiorna la pagina e riapri il giocatore.');
+ const clubId=String(input.clubId||'').trim(),playerName=String(input.playerName||'').trim();
+  let playerKey;try{playerKey=photoIdentity(clubId,playerName);}catch{throw fail('PHOTO_IDENTITY',400);}
+ if(String(input.playerKey||'')!==playerKey)throw fail('PHOTO_IDENTITY',400);
  return{clubId,playerName,playerKey};
 }
 function belongs(record,key,id,legacy=false){return record?.playerKey===key&&normalizePlayerName(record.playerName)===normalizePlayerName(id.playerName)&&(legacy?!record.clubId||String(record.clubId)===id.clubId:String(record.clubId)===id.clubId);}
