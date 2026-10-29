@@ -1,7 +1,7 @@
 /* Anatomical head topology and shape deltas: MakeHuman CC0, assets/studio/LICENSES.md. */
 import * as T from './vendor/three.module.min.js';
 import {microTexture,irisTexture,skinDetailTexture} from './studio-materials.js?v=studio-9';
-import {buildGroom,beardCoverage} from './jockey-groom.js?v=studio-9';
+import {buildGroom,beardCoverage} from './jockey-groom.js?v=club-56';
 import data from './assets/studio/human-head.js?v=studio-9';
 import {geometry,mesh,tube,material,smooth,surface} from './studio-geometry.js?v=studio-9';
 const faceTargets={oval:{'head-oval':.35},round:{'head-round':.7,'head-fat-incr':.15},square:{'head-square':.65},heart:{'head-triangular':.35,'chin-triangle':.35},angular:{'head-diamond':.4,'head-fat-decr':.3},narrow:{'head-scale-horiz-decr':.3}};
@@ -42,7 +42,7 @@ export function buildFace(head,{s,showHelmet=true,detail=1}){
   const beardMask=beardCoverage(s,x,y,z);if(beardMask)c.lerp(new T.Color(beardColor||'#503523'),beardMask*(s.beard==='stubble'?.25:s.beard==='full'?.78:.55));
   color.push(c.r,c.g,c.b);
  }
- const uv=[];for(let i=0;i<p.length;i+=3)uv.push(.5+Math.atan2(p[i+2],p[i])/(Math.PI*2),(p[i+1]+.21)/.46);const g=geometry({position:Array.from(p),index:data.index,color,uv});const face=mesh(head,g,material('#ffffff',{vertexColors:true,roughness:.55,clearcoat:.035,map:skinDetailTexture(s),bumpMap:microTexture('skin'),bumpScale:.00022}), 'anatomical-face');
+ const uv=[];for(let i=0;i<p.length;i+=3)uv.push(.5+Math.atan2(p[i+2],p[i])/(Math.PI*2),(p[i+1]+.21)/.46);const g=geometry({position:Array.from(p),index:data.index,color,uv});const face=mesh(head,g,material('#ffffff',{vertexColors:true,roughness:.64,clearcoat:.015,map:skinDetailTexture(s),bumpMap:microTexture('skin'),bumpScale:.00022}), 'anatomical-face');
  // Temporary gestures blend over the saved identity, then return to it.
  // Cache the morph targets: no full facial solve is needed at every frame.
  const emotions=new Map(),closed=facePositions(s,1),groomBindings=[];let emotion=null,emotionWeight=0,blinkWeight=0;
@@ -54,10 +54,10 @@ export function buildFace(head,{s,showHelmet=true,detail=1}){
  head.userData.faceMesh=face;head.userData.baseFace=p;head.userData.blink=t=>{blinkWeight=t;updateFace();};
  head.userData.expression=(kind,weight=0)=>{if(kind&&!emotions.has(kind))emotions.set(kind,facePositions({...s,expression:kind}));if(kind===emotion&&Math.abs(weight-emotionWeight)<.025)return;emotion=kind;emotionWeight=T.MathUtils.clamp(weight,0,1);updateFace();};
  const browProbe=new T.Mesh(g,new T.MeshBasicMaterial({side:T.DoubleSide})),browRay=new T.Raycaster();browProbe.updateMatrixWorld(true);
- const eyeMat=material('#eee9df',{roughness:.22,clearcoat:1,clearcoatRoughness:.08});const eyes=[];
+ const eyeMat=material('#eee9df',{roughness:.30,clearcoat:.32,clearcoatRoughness:.18});const eyes=[];
  for(let n=0;n<2;n++){const pos=data.eyeCenters[n],eye=new T.Group();eye.position.set(...pos);head.add(eye);mesh(eye,new T.SphereGeometry(.024,24,16),eyeMat,'eyeball');
   const ip=[],ii=[],iu=[];for(let row=0;row<=16;row++)for(let j=0;j<=40;j++){const r=.0108*row/16,a=j*Math.PI/20;ip.push(Math.sqrt(.024**2-r*r)+.00012,r*Math.cos(a),r*Math.sin(a));iu.push(.5+Math.cos(a)*row/32,.5+Math.sin(a)*row/32);if(row<16&&j<40){const k=row*41+j;ii.push(k,k+41,k+1,k+1,k+41,k+42); /* Outward +X: visible iris, not inward sclera. */}}
-  mesh(eye,geometry({position:ip,index:ii,uv:iu}),material(s.eyeColor||'#644c2c',{map:irisTexture(),roughness:.23,clearcoat:1}),'iris');eyes.push(eye);
+  mesh(eye,geometry({position:ip,index:ii,uv:iu}),material(s.eyeColor||'#644c2c',{map:irisTexture(),roughness:.34,clearcoat:.18}),'iris');eyes.push(eye);
   const sign=n?1:-1,weight={fine:.0018,medium:.003,bold:.0044}[s.browWeight]||.003;
   const b=[];for(let k=0;k<=12;k++){const u=k/12,z=sign*(.019+u*.065);let y=.104+Math.sin(u*Math.PI)*.008;if(s.brow==='arched')y+=Math.sin(u*Math.PI)*.01;if(s.brow==='angled')y+=u*.01;if(s.brow==='soft')y+=Math.sin(u*Math.PI)*.003;if(s.brow==='flat')y-=.01;browRay.set(new T.Vector3(.45,y,z),new T.Vector3(-1,0,0));const hit=browRay.intersectObject(browProbe)[0];b.push([hit?hit.point.x+.00015:.166-u*.025,y,z]);}
   const curve=new T.CatmullRomCurve3(b.map(v=>new T.Vector3(...v))),bp=[],bi=[];

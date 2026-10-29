@@ -2,7 +2,7 @@ import {environmentTexture} from './studio-materials.js?v=studio-9';
 import * as T from './vendor/three.module.min.js';
 import {Reflector} from './vendor/Reflector.js';
 import {createJockey} from './jockey-model.js?v=club-53';
-import {createHorse} from './horse-model.js?v=studio-9';
+import {createHorse} from './horse-model.js?v=club-56';
 import {styleColors,paintSilks,validateStyle} from './horse-style.js?v=studio-9';
 import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-9';
 import {signaturePose} from './race-signature.js?v=studio-9';

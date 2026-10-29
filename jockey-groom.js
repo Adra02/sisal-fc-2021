@@ -56,7 +56,7 @@ function groom(parent,g,{color,count=1500,length=.012,curly=false,beard=false,co
  for(let k=0;k<count;k++){const sampled=sample(k);if(!sampled)continue;const {point:root,normal}=sampled,mask=coverage(...root);if(noise(k*7.03)>.15+.85*mask||mask<.02)continue;
   const direction=flow?flow(root):new T.Vector3(beard?-.1:-1,beard?-1:-.12,Math.sign(root.z)*.08);
   direction.addScaledVector(normal,-direction.dot(normal)).normalize();if(direction.lengthSq()<.2)direction.set(0,0,1).addScaledVector(normal,-normal.z).normalize();
-  const side=new T.Vector3().crossVectors(normal,direction).normalize(),steps=curly?10:5,len=length*(.65+.5*noise(k+26))*(beard?(.4+.6*mask):1),width=beard?.00019:curly?.00038:.00017,first=p.length/3,c=tint.clone().multiplyScalar(.72+.43*noise(k+57));
+  const side=new T.Vector3().crossVectors(normal,direction).normalize(),steps=curly?10:5,len=length*(.65+.5*noise(k+26))*(beard?(.4+.6*mask):1),width=beard?.00019:curly?.00038:.00017,first=p.length/3,c=tint.clone().multiplyScalar(.86+.22*noise(k+57));
   roots.push(...root);
   for(let j=0;j<=steps;j++){const t=j/steps,v=root.clone();
    if(curly){const phase=t*Math.PI*(3.3+noise(k+112)),r=len*(.14+.05*noise(k+99));v.addScaledVector(normal,t*len*.38).addScaledVector(side,Math.sin(phase)*r).addScaledVector(direction,(1-Math.cos(phase))*r+t*len*.14);}
@@ -65,7 +65,7 @@ function groom(parent,g,{color,count=1500,length=.012,curly=false,beard=false,co
   }
  }
  if(!ix.length)return null;
- const fibres=mesh(parent,geometry({position:p,index:ix,color:cols}),material('#fff',{vertexColors:true,side:T.DoubleSide,roughness:.74,sheen:.24,sheenRoughness:.76}),name);fibres.castShadow=false;fibres.userData.surfaceRoots=Float32Array.from(roots);fibres.userData.segments=curly?10:5;return fibres;
+ const fibres=mesh(parent,geometry({position:p,index:ix,color:cols}),material('#fff',{vertexColors:true,side:T.DoubleSide,roughness:.57,sheen:.38,sheenRoughness:.65}),name);fibres.castShadow=false;fibres.userData.surfaceRoots=Float32Array.from(roots);fibres.userData.segments=curly?10:5;return fibres;
 }
 const hairSources=new Map();
 function hairTexture(curly){
@@ -110,7 +110,7 @@ function longHair(head,scalp,s,color,detail=1){
  for(let k=0;k<=56;k++){const a=Math.PI*(.34+k/56*1.32),dir=new T.Vector3(Math.cos(a),0,Math.sin(a));ray.set(dir.clone().multiplyScalar(.4).add(new T.Vector3(0,.17,0)),dir.clone().negate());const hit=ray.intersectObject(probe)[0];anchors.push(hit?hit.point.clone():new T.Vector3(Math.cos(a)*.13,.17,Math.sin(a)*.13));}
  probe.material.dispose();
  if(s.hair==='long'||s.hair==='bob'){
-  const len=s.hair==='bob'?.22:.35;
+  const len=s.hair==='bob'?.29:.43;
   const locks=surface(head,mat,(u,v)=>{const a=u*56,k=Math.min(55,Math.floor(a)),root=anchors[k].clone().lerp(anchors[k+1],a-k),radial=new T.Vector3(root.x,0,root.z).normalize(),length=len+.010*Math.sin(u*83)+.006*Math.sin(u*193),y=root.y-v*length,earClearance=.026*Math.exp(-(((y-.018)/.065)**2))*smooth(0,.12,v),fold=Math.sin(u*183+v*.7)*.0012*Math.sin(Math.PI*v);return root.addScaledVector(radial,earClearance+Math.sin(v*Math.PI)*.019+v*.010+fold).add(new T.Vector3(-v*v*.025,-v*length,0)).toArray();},144,40);locks.name='rooted-long-hair';
   groom(head,locks.geometry,{color:color,count:Math.round(2400*detail),length:.021,flow:()=>new T.Vector3(-.05,-1,0)});
  }else{

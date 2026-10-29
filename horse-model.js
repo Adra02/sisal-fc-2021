@@ -31,7 +31,7 @@ export function createHorse(input={},number=''){
   g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));if(colors.length)g.setAttribute('color',new T.Float32BufferAttribute(colors,3));
   const m=new T.SkinnedMesh(g,mat);m.name=tag==='body'?'equine-continuous-surface':'equine-'+tag;m.castShadow=true;m.receiveShadow=true;group.add(m);m.bind(skeleton,new T.Matrix4());return m;
  }
- const horse=skinPart('body',material('#fff',{vertexColors:true,roughness:.60,clearcoat:.08,clearcoatRoughness:.68,sheen:.18,sheenRoughness:.7,bumpMap:microTexture('coat',256),bumpScale:.0004}));
+ const horse=skinPart('body',material('#fff',{vertexColors:true,roughness:.55,clearcoat:.025,clearcoatRoughness:.68,sheen:.30,sheenRoughness:.7,bumpMap:microTexture('coat',256),bumpScale:.0004}));
  const hair=material(s.maneColor,{roughness:.76,sheen:.22,bumpMap:microTexture('hair'),bumpScale:.0006});skinPart('mane',hair);skinPart('tail',hair);
  // Fine deterministic strands follow the original mane/tail skeleton.
  for(const tag of ['mane','tail']){const d=data.parts[tag],source=geometry(d),p=[],ix=[],si=[],sw=[],cols=[],normal=new T.Vector3(),along=new T.Vector3(),side=new T.Vector3(),root=new T.Vector3(),v=new T.Vector3(),count=tag==='mane'?500:700;
@@ -58,7 +58,7 @@ export function createHorse(input={},number=''){
  function girthAt(angle,side){const key='g'+angle.toFixed(6)+':'+side;if(tackIntersections.has(key))return tackIntersections.get(key);const center=new T.Vector3(.07,1.80,0),radial=new T.Vector3(0,Math.cos(angle),Math.sin(angle)*side);ray.set(center.clone().addScaledVector(radial,2),radial.clone().negate());const hit=ray.intersectObject(probe)[0];const p=(hit?.point||center.clone().addScaledVector(radial,.4)).clone().addScaledVector(radial,.018).toArray();tackIntersections.set(key,p);return p;}
  const saddleY=topAt(-.24)+.055;const seat=new T.Vector3(-.24,saddleY+.025,0);group.userData.seat=seat;
  const cv=globalThis.document?.createElement('canvas');let clothMap;
- if(cv){cv.width=512;cv.height=384;const c=cv.getContext('2d');c.fillStyle=s.clothColor;c.fillRect(0,0,512,384);c.strokeStyle=s.trimColor;c.lineWidth=9;c.strokeRect(10,10,492,364);c.setLineDash([2,5]);c.lineWidth=1;c.strokeStyle='#ffffff70';c.strokeRect(22,22,468,340);c.setLineDash([]);c.fillStyle='#f4edd9';c.textAlign='center';c.textBaseline='middle';c.font='700 145px Georgia';c.fillText(s.number||number,265,207);clothMap=new T.CanvasTexture(cv);clothMap.colorSpace=T.SRGBColorSpace;}
+ if(cv){cv.width=512;cv.height=384;const c=cv.getContext('2d');c.fillStyle=s.clothColor;c.fillRect(0,0,512,384);c.strokeStyle=s.trimColor;c.lineWidth=9;c.strokeRect(10,10,492,364);c.setLineDash([2,5]);c.lineWidth=1;c.strokeStyle='#ffffff70';c.strokeRect(22,22,468,340);c.setLineDash([]);c.fillStyle='#f4edd9';c.textAlign='center';c.textBaseline='middle';c.font='800 145px system-ui';c.fillText(s.number||number,265,207);clothMap=new T.CanvasTexture(cv);clothMap.colorSpace=T.SRGBColorSpace;}
  for(const side of [-1,1]){
   const cloth=surface(group,material(clothMap?'#fff':s.clothColor,{map:clothMap,side:T.DoubleSide,roughness:.95,sheen:.28,bumpMap:microTexture('fabric'),bumpScale:.0007}),(u,v)=>{const x=-.79+u*.96,y=topAt(x)-.56*(1-v);return [x,y+.024,side*(sideAt(x,y,side)+.024)];},24,14);cloth.name='embroidered-number-cloth';
   if(side<0){const uv=cloth.geometry.attributes.uv;for(let i=0;i<uv.count;i++)uv.setX(i,1-uv.getX(i));}

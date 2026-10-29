@@ -1,7 +1,7 @@
 import * as T from './vendor/three.module.min.js';
 import {microTexture} from './studio-materials.js?v=studio-9';
 import bodyData from './assets/studio/human-body.js?v=studio-9';
-import {buildFace} from './jockey-face.js?v=studio-9';
+import {buildFace} from './jockey-face.js?v=club-56';
 import {styleColors} from './horse-style.js?v=studio-9';
 import {geometry,mesh,tube,material} from './studio-geometry.js?v=studio-9';
 // The same body, joint rig and head scale for every account and every view.
