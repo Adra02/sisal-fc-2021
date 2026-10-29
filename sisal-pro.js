@@ -22,7 +22,7 @@
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   function pauseAmbient(){
     document.documentElement.classList.toggle('club-page-hidden',document.hidden);
-    document.body.classList.toggle('sisal-ambient-paused',!enabled||document.hidden||reduced.matches||Boolean(document.querySelector('.sr-host,.sisal-ritual,.studio-dialog[open],#ac-panel[open]')));
+    document.body.classList.toggle('sisal-ambient-paused',!enabled||document.hidden||reduced.matches||Boolean(document.querySelector('.sr-host,.sisal-ritual,.studio-dialog[open],#ac-panel[open],.paper-dialog[open]')));
   }
   function createAtmosphere(){
     const layer=document.createElement('div');layer.className='sisal-atmosphere';layer.setAttribute('aria-hidden','true');
@@ -39,13 +39,13 @@
     if(footer){
       const wrap=document.createElement('div');wrap.style.marginTop='10px';
       const toggle=document.createElement('button');toggle.type='button';toggle.className='btn ghost';toggle.style.fontSize='11px';
-      const update=()=>{toggle.textContent=reduced.matches?'Movimenti ridotti dal dispositivo':`Sfondo animato: ${enabled?'attivo':'in pausa'}`;toggle.setAttribute('aria-pressed',String(enabled&&!reduced.matches));toggle.disabled=reduced.matches;};
+      const update=()=>{toggle.textContent=reduced.matches?'Movimenti ridotti dal dispositivo':`Effetti animati: ${enabled?'attivo':'in pausa'}`;toggle.setAttribute('aria-pressed',String(enabled&&!reduced.matches));toggle.disabled=reduced.matches;};
       toggle.onclick=()=>{enabled=!enabled;try{localStorage.setItem(preferenceKey,enabled?'on':'off')}catch{}update();pauseAmbient();};
       reduced.addEventListener?.('change',()=>{update();pauseAmbient();});update();wrap.appendChild(toggle);footer.appendChild(wrap);
     }
     document.addEventListener('visibilitychange',pauseAmbient);
     // Watch insertions/removals only; do not observe animation styles or frame updates.
-    new MutationObserver(pauseAmbient).observe(document.body,{childList:true});
+    new MutationObserver(pauseAmbient).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open']});
     const modalRoot=document.querySelector('#modalRoot');if(modalRoot)new MutationObserver(pauseAmbient).observe(modalRoot,{childList:true});
     const account=document.querySelector('#ac-panel');if(account)new MutationObserver(pauseAmbient).observe(account,{attributes:true,attributeFilter:['open']});
     for(const event of ['sisal-race-complete'])window.addEventListener(event,pauseAmbient);

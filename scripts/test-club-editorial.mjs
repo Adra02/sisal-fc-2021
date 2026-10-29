@@ -35,7 +35,7 @@ await assert.rejects(news({...create,id:randomUUID(),request_id:randomUUID()},me
 await assert.rejects(rpc('claim',{lease:randomUUID(),fingerprint:'x'},member),/FORBIDDEN/);
 await assert.rejects(call('sisal_editorial',{p_action:'notifications',p_session:'wrong'}),/UNAUTHORIZED/);
 const facts=[{id:'m1',timestamp:1792000000,competition:'league',goals:3,against:1,opponent:'Club B',players:[]}];
-const model=validateEdition({title:'Il tabellone presenta il conto',teamLine:'Tre gol e una vittoria: finalmente qualcosa da festeggiare.',stories:[{title:'La porta ritrovata',text:'Tre gol segnati: per una volta il mirino era acceso.',matchId:'m1'},{title:'Il reparto dietro',text:'Un gol subito: il conto della serata non è immacolato.',matchId:'m1'}]},facts);
+const model=validateEdition({title:'Il tabellone presenta il conto',teamLine:'Tre gol e una vittoria: finalmente qualcosa da festeggiare.',stories:[{ref:1,title:'La porta ritrovata',text:'Tre gol segnati: per una volta il mirino era acceso.',matchId:'m1'}]},facts);
 const lease=randomUUID();const claims=await Promise.allSettled([rpc('claim',{lease,fingerprint:'fp'}),rpc('claim',{lease:randomUUID(),fingerprint:'fp'})]);assert.equal(claims.filter(x=>x.status==='fulfilled').length,1,'single concurrent generator');
 const issued=await rpc('publish',{lease,fingerprint:'fp',model});assert(issued.edition.id);assert((await rpc('claim',{lease:randomUUID(),fingerprint:'fp'})).existing,'same dataset no second generation');
 assert.equal((await rpc('notifications',{},member)).items.filter(x=>x.kind==='paper').length,1);
@@ -54,19 +54,19 @@ assert.equal((await POST(req('read_all',member,'POST','https://evil.test'))).sta
 assert.equal((await GET(req('latest'))).status,200);
 for(const m of ['quota','timeout','partial']){mode=m;await assert.rejects(generateEdition(facts,[]));assert.equal((await rpc('latest')).edition.id,issued.edition.id,'failed generation preserves edition');}
 mode='ok';
-await db.exec(await fs.readFile('setup/20-gazzetta-automatica.sql','utf8'));
+await db.exec(await fs.readFile('setup/20-gazzetta-automatica.sql','utf8'));await db.exec(await fs.readFile('setup/21-gazzetta-cinque-partite.sql','utf8'));
 // Actual HTTP handler → shared-store → current pipeline → mocked Gemini → SQL publication.
 await db.query("update team_state set files=$1 where role='own'",[{league:{parsed:[{id:'m1',timestamp:1792000000,clubs:[{id:'328794',name:'Sisal FC 2021',goals:3},{id:'b',name:'Club B',goals:1}],players:[]}]}}]);
 await db.exec("update club_editorial_lock set attempted_at=now()-interval '2 minutes'");
 // Existing title is deliberately changed so the diversity check remains effective.
 const realFetch=globalThis.fetch;globalThis.fetch=async(url,opts)=>{if(url.includes('googleapis'))return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({...model,title:'Il conto stavolta lo pagano gli altri'})}]}}]});return realFetch(url,opts);};
-let generated=await POST(req('generate',admin,'POST'));assert.equal(generated.status,200);const output=await generated.json();assert(output.edition.id);assert.equal(output.edition.model.goals,3);assert.equal(output.edition.model.against,1);
+let generated=await POST(req('generate',admin,'POST'));assert.equal(generated.status,200);const output=await generated.json();assert(output.edition.id);assert.equal(output.edition.model.stories[0].goals,3);assert.equal(output.edition.model.stories[0].against,1);
 assert((await (await POST(req('generate',admin,'POST'))).json()).existing,'API duplicate returns shared edition');
 globalThis.fetch=realFetch;
 await db.query("update team_state set files=$1 where role='own'",[{league:{parsed:[{id:'m2',timestamp:1792000100,clubs:[{id:'328794',name:'Sisal FC 2021',goals:4},{id:'b',name:'Club B',goals:1}],players:[]}]}}]);
 for(const errorMode of ['quota','timeout','partial']){mode=errorMode;await db.exec("update club_editorial_lock set attempted_at=now()-interval '2 minutes'");const failed=await POST(req('generate',admin,'POST'));assert(failed.status>=400);assert.equal((await rpc('latest')).edition.id,output.edition.id);assert.equal((await db.query('select lease from club_editorial_lock')).rows[0].lease,null);}
 mode='ok';
-assert.deepEqual(await generateEdition(facts,[]),model);await assert.rejects(generateEdition(facts,[model]),/REPEATED/);assert.throws(()=>validateEdition({...model,title:'Il mister decide tutto'},facts));assert.equal(validateEdition({...model,stories:[{...model.stories[0],matchId:'inventato'},model.stories[1]]},facts).stories[0].matchId,'m1','IDs come from facts, never the model');
+assert.deepEqual(await generateEdition(facts,[]),model);await assert.rejects(generateEdition(facts,[model]),/REPEATED/);assert.throws(()=>validateEdition({...model,title:'Il mister decide tutto'},facts));assert.equal(validateEdition({...model,stories:[{...model.stories[0],matchId:'inventato'}]},facts).stories[0].matchId,'m1','IDs come from facts, never the model');
 const team={club:{id:'a'},matches:[{id:'1',timestamp:1,clubs:[{id:'a',goals:0},{id:'b',goals:1}],players:[]}]};assert.deepEqual(editionFacts(team).facts,editionFacts(team).facts);assert.throws(()=>editionFacts({matches:[]}));
 const rig={arms:[new Group(),new Group()],rider:new Group(),head:new Group()};signaturePose(rig,'arms',1,true);assert.equal(rig.arms[0].rotation.z,2.4);signaturePose(rig,'bow',1,true);assert.equal(rig.rider.rotation.z,-.45);
 await db.close();console.log('PASS: additive SQL twice, preserved legacy likes, concurrent receipts and read state, admin events, generation lease/idempotency, API auth/CSRF, AI failures (simulated), persistent cosmetics.');

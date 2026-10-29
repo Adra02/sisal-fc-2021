@@ -12,7 +12,7 @@ globalThis.__PortraitRenderer=class{
 let source=await fs.readFile('jockey-portrait.js','utf8');
 source=source.replace("import * as T from './vendor/three.module.min.js';","import * as Three from '"+new URL('../vendor/three.module.min.js',import.meta.url).href+"';const T={...Three,WebGLRenderer:globalThis.__PortraitRenderer};");
 source=source.replace(/from '(\.\/[^']+)'/g,(_,p)=>"from '"+new URL('../'+p.slice(2),import.meta.url).href+"'");
-const {portraitImage}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const {portraitImage,portraitFallback}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 const subject={name:'Subject',key:nameKey('Subject'),appearance:{eyes:'hazel',helmetVisible:'on',hair:'bald'}};
 assert(portraitImage(subject));assert.equal(frames.at(-1).helmet,false,'subject current helmet preference respected');
 const colour=styleColors(subject.appearance).eyeColor;
@@ -21,4 +21,5 @@ assert(portraitImage(subject));assert.equal(frames.length,1,'identical portrait 
 selected='on';assert(portraitImage(subject));assert.equal(frames.length,2,'helmet change invalidates cache');assert.equal(frames.at(-1).helmet,true);
 selected='off';assert(portraitImage(subject,{closeup:true}));assert.equal(frames.at(-1).helmet,false);
 assert.equal(portraitImage({...subject,key:'viewer'}),null,'mismatched identity refused');
+const fallback=portraitFallback(subject);assert(fallback?.startsWith('data:image/png;base64,'),'2D fallback is a local PNG');assert.equal(portraitFallback({...subject,key:'viewer'}),null,'fallback refuses mismatched identity');assert.equal(portraitFallback(subject),fallback,'fallback cached');
 console.log('PASS actual portrait scene/model with simulated GPU: subject identity, eye materials, live helmet preference in paper/closeup, cache invalidation and mismatch rejection.');

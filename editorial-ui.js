@@ -15,7 +15,7 @@ async function refreshPaper(force=false){
   const d=await api('latest');if(epoch!==paperEpoch)return;receive(d.edition||null);
   const error=d.generation?.error;
   if(error){const reason={PAPER_SETUP:'La configurazione della Gazzetta va completata.',INTERRUPTED:'La preparazione è stata interrotta.',GEMINI_QUOTA:'Quota IA esaurita.',TimeoutError:'L’IA non ha risposto in tempo.',INVALID_EDITION:'L’IA ha restituito un’edizione incompleta.',REPEATED_EDITION:'L’IA ha ripetuto un titolo.',NO_MATCHES:'Servono partite con punteggi disponibili.',DATA_CHANGED:'I dati sono cambiati durante la preparazione.'}[error]||'L’ultimo tentativo non è riuscito.';status(reason+' L’ultima edizione valida è conservata.'+(window.SisalAccount?.user?.is_admin?' Puoi riprovare dal pulsante qui sotto.':''));}
-  else status(d.generation?.pending||d.generation?.working?'La redazione IA sta preparando la nuova prima pagina. L’edizione precedente resta leggibile.':'');
+  else status(d.generation?.pending||d.generation?.working?'La redazione IA sta preparando la nuova edizione. L’edizione precedente resta leggibile.':'');
  }catch(e){if(epoch===paperEpoch)status(e.message+' L’ultima edizione rimane disponibile.');}})().finally(()=>paperRead=null);
  return paperRead;
 }
@@ -24,15 +24,16 @@ function bind(){
  document.querySelectorAll('[data-refresh-paper],[data-generate-paper]').forEach(b=>{if(!admin){b.remove();return;}
   b.disabled=generating;
   if(b.hasAttribute('data-refresh-paper')){b.onclick=()=>refreshPaper(true);return;}
-  b.onclick=async()=>{if(generating)return;generating=true;bind();status('La redazione IA sta preparando la prima pagina…');
+  b.onclick=async()=>{if(generating)return;generating=true;bind();status('La redazione IA sta preparando le cinque pagine…');
    try{const d=await api('generate',{});++paperEpoch;
     if(d.pending){status('La redazione sta già lavorando. L’ultima edizione è conservata.');return;}
-    receive(d.edition||edition);status(d.existing?'Questi dati hanno già un’edizione condivisa. Nessuna nuova chiamata all’IA.':'Nuova prima pagina pubblicata.');await refreshNotifications();
+    receive(d.edition||edition);status(d.existing?'Questi dati hanno già un’edizione condivisa. Nessuna nuova chiamata all’IA.':'Nuova edizione pubblicata.');await refreshNotifications();
    }catch(e){status(e.message);}finally{generating=false;bind();}
   };
  });
 }
 await window.sisalAccountReady;
+const launch=document.createElement('button');launch.type='button';launch.className='paper-launch';launch.setAttribute('aria-label','Apri Gazzetta della Sisal');launch.setAttribute('aria-haspopup','dialog');launch.innerHTML='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h4v4H7zM14 8h3m-3 4h3M7 16h10"/></svg><span>Gazzetta</span>';document.querySelector('.topbar').append(launch);launch.onclick=()=>window.SisalEdition?.open();
 const bell=document.createElement('button');bell.className='club-bell';bell.type='button';bell.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/></svg><span>Notifiche</span><b>0</b>' ;bell.setAttribute('aria-label','Notifiche');document.querySelector('.topbar').append(bell);
 const panel=document.createElement('dialog');panel.className='club-notifications';panel.setAttribute('aria-label','Notifiche del club');panel.addEventListener('click',e=>{if(e.target===panel){const r=panel.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)panel.close();}});document.body.append(panel);
 let notificationEpoch=0,noticeSeen=null;
@@ -47,7 +48,7 @@ function renderNotifications(error=''){
  ++notificationEpoch;snapshot=await api('read',{id:event.id});++notificationEpoch;panel.close();renderNotifications();
  if(event.kind==='signup')await window.SisalAccount.open('admin',event.target);
  else if(event.kind==='news')await window.SisalNews.open(event.target);
- else{const r=await fetch('/api/editorial?action=edition&id='+encodeURIComponent(event.target),{cache:'no-store',credentials:'same-origin',signal:AbortSignal.timeout(20000)});const d=await r.json().catch(()=>({}));if(!r.ok||!d.edition)throw Error('Edizione non disponibile.');++paperEpoch;receive(d.edition);window.SisalEdition.open();}
+ else{const r=await fetch('/api/editorial?action=edition&id='+encodeURIComponent(event.target),{cache:'no-store',credentials:'same-origin',signal:AbortSignal.timeout(20000)});const d=await r.json().catch(()=>({}));if(!r.ok||!d.edition)throw Error('Edizione non disponibile.');++paperEpoch;receive(d.edition);window.SisalEdition.open({refresh:false});}
  }catch(e){if(!panel.open)panel.showModal();renderNotifications(e.message);}});
 }
 async function refreshNotifications(){const epoch=++notificationEpoch;try{const next=await api('notifications');if(epoch===notificationEpoch){if(noticeSeen){const fresh=next.items.filter(x=>!x.read&&!noticeSeen.has(x.id)).sort((a,b)=>b.id-a.id)[0];if(fresh)window.dispatchEvent(new CustomEvent('sisal-internal-notice',{detail:fresh}));}if(noticeSeen)next.items.forEach(x=>noticeSeen.add(x.id));else noticeSeen=new Set(next.items.map(x=>x.id));snapshot=next;renderNotifications();}}catch(e){if(epoch===notificationEpoch)renderNotifications(e.message);}}
@@ -61,5 +62,5 @@ let uploadNoticeTimer;
 window.addEventListener('sisal-data-updated',e=>{
  clearTimeout(uploadNoticeTimer);
  if(e.detail?.ok===false){status(e.detail.error||'Dati salvati. La Gazzetta richiede un controllo.');return;}
- if(e.detail?.queued){status('Nuovi dati salvati. La redazione IA preparerà la prima pagina.');uploadNoticeTimer=setTimeout(()=>{if(!document.hidden){refreshPaper(true);refreshNotifications();}},45000);}
+ if(e.detail?.queued){status('Nuovi dati salvati. La redazione IA preparerà le cinque pagine.');uploadNoticeTimer=setTimeout(()=>{if(!document.hidden){refreshPaper(true);refreshNotifications();}},45000);}
 });

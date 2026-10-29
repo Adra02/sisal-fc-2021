@@ -1,6 +1,6 @@
 (async function(){'use strict';
 await window.sisalAccountReady;
-const APP_VERSION='v32.1.53';
+const APP_VERSION='v32.1.54';
 const FORMATIONS=[
 '4-2-1-3','4-4-1-1','4-2-3-1 Wide','4-3-3 Attack','4-1-2-1-2 Narrow','4-4-2','4-3-1-2','4-3-3 Holding','4-4-2 Holding','4-1-2-1-2 Wide','4-2-3-1','4-1-4-1','4-3-3 Defend','4-3-2-1','4-5-1 Flat','4-2-2-2','4-3-3','4-2-4','4-1-3-2','4-5-1 Attack','3-4-2-1','3-5-2','5-2-1-2','3-4-1-2','5-3-2','5-2-3','5-4-1','3-4-3','3-1-4-2'];
 const FORM_ROWS={
@@ -1511,49 +1511,75 @@ function numeric(v){return v!==null&&v!==undefined&&v!==''&&Number.isFinite(Numb
 function timestamp(v){const n=Number(v);return Number.isFinite(n)?n:Date.parse(v)||0;}
 function frontPageModel(){
  const edition=window.SisalEditorial?.edition,model=edition?.model;if(!model)return null;
- // Old five-match editions remain readable until a new front page is published.
- if(model.schemaVersion===2){const match=model.stories?.[0];if(!match)return null;return {...match,id:edition.id,title:match.title,teamLine:'',stories:[{title:'IL COMMENTO DELLA REDAZIONE',text:match.text}]};}
+ // A one-match historical edition remains readable; new publications contain up to five pages.
+ if(model.schemaVersion===3)return {...model,id:edition.id,legacy:true,stories:[{...model,title:model.title,text:(model.stories||[]).map(s=>s.title+'\n'+s.text).join('\n\n')}]};
  return {...model,id:edition.id};
 }
-function paperTools(){return `<div class="editorial-tools"><p class="paper-auto-note"><span aria-hidden="true">●</span> Edizione condivisa · aggiornata dall’IA dopo il caricamento di nuovi dati della squadra.</p>${window.SisalAccount?.user?.is_admin?'<div class="paper-admin-actions"><button class="btn" data-generate-paper>Prepara / riprova edizione</button><button class="btn ghost" data-refresh-paper>Controlla aggiornamento</button></div>':''}<p data-paper-status role="status" aria-live="polite"></p></div>`;}
+function paperTools(){return `<div class="editorial-tools"><p class="paper-auto-note"><span aria-hidden="true">●</span> Un’edizione per tutto il club · fino a cinque partite · l’IA la aggiorna dopo nuovi JSON della squadra. File identici: nessuna nuova generazione.</p>${window.SisalAccount?.user?.is_admin?'<div class="paper-admin-actions"><button class="btn" data-generate-paper>Prepara / riprova edizione</button><button class="btn ghost" data-refresh-paper>Controlla aggiornamento</button></div>':''}<p data-paper-status role="status" aria-live="polite"></p></div>`;}
 function paperText(value){return String(value??'').replace(/(?:nel\s+)?match\s+\d{10,}/gi,'nella partita archiviata').replace(/#?\b\d{10,}\b/g,'');}
-function paperMarkup(model){if(!model)return `<article class="sisal-paper paper-front paper-empty"><header><small>IL GIORNALE DEL CLUB</small><h2>GAZZETTA<br>DELLA SISAL</h2></header><h3>La prossima prima pagina nasce qui.</h3><p>Quando un amministratore aggiorna i JSON della squadra, l’IA prepara il giornale. Nel frattempo l’ultima edizione valida resta disponibile.</p>${paperTools()}</article>`;
- const stories=model.stories||[];if(!stories.length)return paperMarkup(null);
- const score=model.goals!=null&&model.against!=null?`${model.goals} – ${model.against}`:model.score||'—';
- return `<article class="sisal-paper paper-front paper-reader" data-edition-key="${esc(model.id||model.date+model.title)}" tabindex="-1"><header><div class="paper-topline"><small>EDIZIONE SPOGLIATOIO</small><small>IL GIORNALE DEL CLUB</small></div><h2>GAZZETTA<br>DELLA SISAL</h2><p>${esc(model.date||'')} ${model.competition?' · '+esc(competitionLabel(model.competition)):''}<span> · SATIRA SPORTIVA</span></p></header><div class="sisal-paper-score"><b>${esc(model.own||'Sisal FC 2021')}</b><strong>${esc(score)}</strong><b>${esc(model.opponent||'Avversario')}</b></div><div class="paper-lead"><small>LA PRIMA PAGINA</small><h3>${esc(paperText(model.title))}</h3>${model.teamLine?`<p>${esc(paperText(model.teamLine))}</p>`:''}</div><div class="sisal-paper-stories">${stories.map(st=>`<section><h4>${esc(paperText(st.title))}</h4>${paperText(st.text).split(/\n+/).filter(Boolean).map(t=>`<p>${esc(t)}</p>`).join('')}</section>`).join('')}</div><footer class="paper-colophon"><b>LA REDAZIONE SISAL</b><span>Numeri dell’ultima partita archiviata.<br>Satira sulle prestazioni nel gioco.</span></footer><button type="button" class="btn primary" data-share-paper>Condividi prima pagina</button>${paperTools()}</article>`;
+function paperPortraitCaption(p){
+ const rating=Number(p?.rating),tied=Array.isArray(p?.tied)&&p.tied.length>1;
+ return `${p?.votesComplete?'Top player':'Miglior voto disponibile'} · ${String(p?.name||'')} · ${Number.isFinite(rating)?rating.toLocaleString('it-IT',{maximumFractionDigits:2}):'—'}${tied?' · a pari voto':''}`;
+}
+function paperMarkup(model){if(!model?.stories?.length)return `<article class="sisal-paper paper-front paper-empty"><header><small>IL GIORNALE DEL CLUB</small><h2>GAZZETTA<br>DELLA SISAL</h2></header><h3>La prossima edizione nasce qui.</h3><p>L’IA prepara fino a cinque pagine quando arrivano nuovi JSON della squadra. L’ultima edizione valida resta disponibile anche se la redazione è temporaneamente ferma.</p>${paperTools()}</article>`;
+ const stories=model.stories.slice(0,5);
+ return `<article class="sisal-paper paper-front paper-reader" data-edition-key="${esc(model.id||model.date+model.title)}" tabindex="-1"><header><div class="paper-topline"><small>EDIZIONE SPOGLIATOIO</small><small>${stories.length} ${stories.length===1?'PARTITA':'PARTITE'} · SATIRA SPORTIVA</small></div><h2>GAZZETTA<br>DELLA SISAL</h2><p>${esc(model.date||'')} <span>· IL GIORNALE DEL CLUB</span></p></header><div class="paper-edition-lead"><h3>${esc(paperText(model.title))}</h3>${model.teamLine?`<p>${esc(paperText(model.teamLine))}</p>`:''}</div>${model.legacy?'<p class="paper-legacy-note">Edizione precedente a una partita. Un amministratore può preparare il nuovo formato da cinque pagine con i dati già caricati.</p>':''}<nav class="paper-pagination" aria-label="Pagine della Gazzetta"><button type="button" data-paper-prev disabled aria-label="Partita precedente">←</button><span data-paper-position aria-live="polite">Partita 1 di ${stories.length}</span><button type="button" data-paper-next ${stories.length<2?'disabled':''} aria-label="Partita successiva">→</button></nav><div class="paper-page-index" role="group" aria-label="Scegli una partita">${stories.map((st,i)=>`<button type="button" data-paper-to="${i}" aria-pressed="${i===0}"><span>0${i+1}</span> ${esc(st.opponent||'Partita '+(i+1))}</button>`).join('')}</div><div class="paper-match-pages">${stories.map((st,i)=>`<section data-paper-page="${i}" ${i?'hidden':''} aria-label="Partita ${i+1}"><div class="paper-match-meta"><span>${esc(st.date||model.date||'')}</span><span>${esc(competitionLabel(st.competition||''))}</span></div><div class="sisal-paper-score"><b>${esc(st.own||'Sisal FC 2021')}</b><strong>${st.goals!=null&&st.against!=null?`${esc(st.goals)} – ${esc(st.against)}`:'—'}</strong><b>${esc(st.opponent||'Avversario')}</b></div><div class="paper-rubric">IL PROCESSO ALLA PARTITA <span>0${i+1}</span></div><h3 class="paper-match-title">${esc(paperText(st.title))}</h3><div class="paper-report-layout">${st.portrait?`<figure class="paper-mvp" data-paper-portrait="${esc(JSON.stringify(st.portrait))}"><div data-portrait-image role="img" aria-label="Fantino di ${esc(st.portrait.name)}"><span>Preparazione del ritratto…</span></div><figcaption><small>LA FOTO DELLA PARTITA</small><b>${esc(paperPortraitCaption(st.portrait))}</b>${st.portrait.tied?.length>1?`<span>A pari voto: ${esc(st.portrait.tied.join(', '))}. Ritratto scelto per gol, assist, parate, poi nome.</span>`:''}<span>${st.portrait.defaultAppearance?'Aspetto predefinito':'Personalizzazione del giocatore'} · fantino senza cavallo</span><span data-portrait-mode></span></figcaption></figure>`:'<aside class="paper-no-mvp">Pagelle individuali non disponibili: nessun top player inventato.</aside>'}<div class="paper-column">${paperText(st.text).split(/\n+/).filter(Boolean).map(t=>`<p>${esc(t)}</p>`).join('')}</div></div><footer class="paper-colophon"><b>LA REDAZIONE SISAL</b><span>Risultati reali.<br>Satira sulle prestazioni nel gioco.</span></footer></section>`).join('')}</div><button type="button" class="btn primary" data-share-paper>Condividi questa pagina</button>${paperTools()}</article>`;
 }
 const teamBase=teamPage,funBase=funPage;
-teamPage=function(){if(!dataReady(state.own))return shell('SQUADRA','Command Center',empty(state.sharedError?'Non è stato possibile leggere l’archivio. Riprova senza cancellare i dati.':'Carica i JSON nella sezione I tuoi dati per iniziare.'));return `<details class="sisal-news"><summary>📰 GAZZETTA DELLA SISAL · apri l’ultima edizione</summary>${paperMarkup(frontPageModel(state.own))}</details>`+teamBase();};
+teamPage=function(){return teamBase();};
 funPage=function(){return funBase();};
+let paperDialog=null;
+function renderPaperDialog(){
+ if(!paperDialog)return;const body=paperDialog.querySelector('[data-paper-body]'),previous=body.querySelector('[data-edition-key]')?.dataset.editionKey,top=body.scrollTop;
+ body.innerHTML=paperMarkup(frontPageModel());
+ window.SisalEditorial?.bind();import('./paper-interactions.js?v=club-54').then(m=>m.bindInteractions(body)).catch(()=>{});
+ body.querySelectorAll('[data-share-paper]').forEach(b=>b.onclick=()=>exportPaper(b));
+ body.scrollTop=previous===body.querySelector('[data-edition-key]')?.dataset.editionKey?top:0;
+}
+function openPaper({refresh=true}={}){
+ if(!paperDialog){paperDialog=document.createElement('dialog');paperDialog.className='paper-dialog';paperDialog.setAttribute('aria-labelledby','paper-dialog-title');paperDialog.innerHTML='<div class="paper-dialog-head"><div><span>SISAL FC 2021</span><h2 id="paper-dialog-title">Gazzetta della Sisal</h2></div><button type="button" data-close-paper aria-label="Chiudi Gazzetta">✕</button></div><div data-paper-body></div>';document.body.append(paperDialog);paperDialog.querySelector('[data-close-paper]').onclick=()=>paperDialog.close();paperDialog.addEventListener('click',e=>{if(e.target!==paperDialog)return;const r=paperDialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)paperDialog.close();});}
+ renderPaperDialog();if(!paperDialog.open)paperDialog.showModal();paperDialog.querySelector('[data-close-paper]').focus({preventScroll:true});
+ import('./paper-interactions.js?v=club-54').then(m=>m.bindInteractions(paperDialog)).catch(()=>{});
+ if(refresh)window.SisalEditorial?.refreshPaper();
+}
 function canvasBase(height){const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=height;const c=canvas.getContext('2d');c.fillStyle='#05180e';c.fillRect(0,0,1080,height);return {canvas,c};}
 function text(c,value,x,y,width,size=30,color='#edfff2',weight=600){c.fillStyle=color;c.font=`${weight} ${size}px system-ui`;const words=String(value).split(/\s+/);let line='';for(const word of words){if(c.measureText(line+word).width>width&&line){c.fillText(line,x,y);y+=size*1.35;line='';}if(c.measureText(word).width>width){for(const char of word){if(c.measureText(line+char).width>width){c.fillText(line,x,y);y+=size*1.35;line='';}line+=char;}line+=' ';}else line+=word+' ';}if(line)c.fillText(line.trimEnd(),x,y);return y+size*1.5;}
 async function sendCanvas(canvas,title){const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw Error('Immagine non disponibile');const file=new File([blob],shareSlug(title)+'.png',{type:'image/png'});if(navigator.share&&navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title});return;}catch(e){if(e.name==='AbortError')return;}}downloadShareFile(file);showToast('✓ Immagine salvata');}
 async function exportLineup(button){button.disabled=true;const roster=lineup(),formation=state.formation;try{const images=await Promise.all(roster.map(async item=>{if(!item.player)return null;const url=await fetchSharedPlayerPhoto(item.player).catch(()=> '');if(!/^data:image\/(png|jpeg|webp);base64,/i.test(url))return null;return new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=url;});}));const {canvas,c}=canvasBase(1450);c.strokeStyle='#bca36b';c.lineWidth=2;c.strokeRect(30,30,1020,1390);text(c,'SISAL FC 2021',60,80,960,42,'#dfca93',850);text(c,'FORMAZIONE UFFICIALE · '+formation,60,130,960,26,'#c6d7bf');const x=65,y=205,w=950,h=1110;c.fillStyle='#09371f';c.fillRect(x,y,w,h);for(let i=0;i<10;i++){c.fillStyle=i%2?'#0a4024':'#09371f';c.fillRect(x,y+i*h/10,w,h/10);}c.strokeStyle='#70ff9e';c.lineWidth=3;c.strokeRect(x,y,w,h);c.beginPath();c.moveTo(x,y+h/2);c.lineTo(x+w,y+h/2);c.moveTo(x+w/2+100,y+h/2);c.arc(x+w/2,y+h/2,100,0,Math.PI*2);c.stroke();c.strokeRect(x+w*.25,y,w*.5,h*.15);c.strokeRect(x+w*.25,y+h*.85,w*.5,h*.15);
  roster.forEach((item,i)=>{const px=x+w*item.coord.x/100,py=y+h*item.coord.y/100,name=item.player?.name||(item.bot?'BOT':'Da assegnare');c.textAlign='center';c.fillStyle='#00170d';c.fillRect(px-103,py-93,206,34);c.font='700 21px system-ui';c.fillStyle='#f0fff4';c.fillText(name,px,py-69,200);c.save();c.beginPath();c.arc(px,py-15,37,0,Math.PI*2);c.clip();c.fillStyle='#104d2d';c.fillRect(px-40,py-55,80,80);if(images[i]){const im=images[i],size=Math.min(im.width,im.height);c.drawImage(im,(im.width-size)/2,(im.height-size)/2,size,size,px-37,py-52,74,74);}else{c.font='900 25px system-ui';c.fillStyle='#95ffb8';c.fillText(item.bot?'BOT':item.player?playerInitials(name):'+',px,py-7);}c.restore();c.strokeStyle='#75ffa6';c.beginPath();c.arc(px,py-15,38,0,Math.PI*2);c.stroke();c.font='800 22px system-ui';c.fillStyle='#b9ffcd';c.fillText(item.role,px,py+48);});c.textAlign='left';text(c,'SISAL FC 2021 · LA NOSTRA FORMAZIONE',65,1385,950,23);await sendCanvas(canvas,'Formazione Sisal '+formation);}catch(e){showToast('Impossibile creare la formazione: riprova.',true);}finally{button.disabled=false;}}
 async function exportPaper(button){
- const model=frontPageModel();if(!model)return;button.disabled=true;
+ const model=frontPageModel(),reader=button.closest('.paper-reader');if(!model||!reader)return;
+ const page=Number(reader.querySelector('[data-paper-page]:not([hidden])')?.dataset.paperPage||0),story=model.stories[page];if(!story)return;button.disabled=true;
  try{
-  const {canvas,c}=canvasBase(6400);let y=72;
-  y=text(c,'EDIZIONE SPOGLIATOIO · IL GIORNALE DEL CLUB',60,y,960,22,'#9bffba');
-  y=text(c,'GAZZETTA DELLA SISAL',60,y+32,960,66,'#efffe7',900);
-  y=text(c,(model.date||'')+(model.competition?' · '+competitionLabel(model.competition):''),60,y+8,960,23);
-  const score=model.goals!=null&&model.against!=null?`${model.goals} – ${model.against}`:model.score||'—';
-  y=text(c,(model.own||'Sisal FC 2021')+'   '+score+'   '+(model.opponent||'Avversario'),60,y+30,960,33,'#9cf4bc',800);
-  y=text(c,paperText(model.title),60,y+36,960,54,'#efffe7',900);
-  if(model.teamLine)y=text(c,paperText(model.teamLine),60,y+18,960,29);
-  for(const story of model.stories){y+=25;c.fillStyle='#34583c';c.fillRect(60,y,960,2);y=text(c,paperText(story.title),60,y+40,960,27,'#9cf4bc',800);y=text(c,paperText(story.text),60,y+9,960,28);}
-  y=text(c,'Risultati reali · Satira sulle prestazioni nel gioco.',60,y+35,960,21,'#b4c9bb');
+  const {canvas,c}=canvasBase(6400);c.fillStyle='#e8ecdf';c.fillRect(0,0,1080,6400);let y=70;
+  const ink='#173b28',muted='#46634d',print=(v,size=30,weight=500)=>{y=text(c,paperText(v),64,y,952,size,ink,weight);};
+  print('EDIZIONE SPOGLIATOIO · '+(page+1)+' / '+model.stories.length,22,700);y+=20;
+  print('GAZZETTA DELLA SISAL',62,900);print(story.date||model.date||'',23);
+  y+=24;print((story.own||'Sisal FC 2021')+'   '+(story.goals??'—')+' – '+(story.against??'—')+'   '+(story.opponent||'Avversario'),35,800);
+  y+=24;print(story.title,48,850);y+=20;
+  if(story.portrait){
+   const portraits=await import('./jockey-portrait.js?v=club-54');
+   const rendered=portraits.portraitImage(story.portrait),source=rendered||portraits.portraitFallback(story.portrait);
+   if(source){const image=await new Promise(resolve=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>resolve(null);i.src=source;});if(image){const h=952*image.height/image.width;c.drawImage(image,64,y,952,h);y+=h+35;}}
+   print(paperPortraitCaption(story.portrait),26,800);
+   if(!rendered)print('Illustrazione locale · 3D non disponibile',20);
+   if(story.portrait.tied?.length>1)print('A pari voto: '+story.portrait.tied.join(', '),22);
+   y+=16;
+  }
+  for(const paragraph of String(story.text||'').split(/\n+/).filter(Boolean)){print(paragraph,31);y+=18;}
+  y+=20;c.fillStyle='#52705d';c.fillRect(64,y,952,2);y+=40;
+  y=text(c,'LA REDAZIONE SISAL · Risultati reali, satira sportiva.',64,y,952,22,muted,600);
   if(y+45>canvas.height)throw Error('Immagine troppo lunga');
-  const out=document.createElement('canvas');out.width=1080;out.height=Math.ceil(y+45);out.getContext('2d').drawImage(canvas,0,0);await sendCanvas(out,'Gazzetta della Sisal');
+  const out=document.createElement('canvas');out.width=1080;out.height=Math.ceil(y+45);out.getContext('2d').drawImage(canvas,0,0);await sendCanvas(out,'Gazzetta della Sisal - '+story.opponent);
  }catch{showToast('Impossibile creare l’immagine: riprova.',true);}finally{button.disabled=false;}
 }
 
-bind=function(){baseBind();decoratePitch();import('./paper-interactions.js?v=club-53').then(m=>m.bindInteractions()).catch(()=>{});window.SisalEditorial?.bind();document.querySelectorAll('[data-share-paper]').forEach(b=>b.onclick=()=>exportPaper(b));document.querySelectorAll('[data-sisal-retry]').forEach(b=>b.onclick=loadSharedData);};
+bind=function(){baseBind();decoratePitch();import('./paper-interactions.js?v=club-54').then(m=>m.bindInteractions()).catch(()=>{});window.SisalEditorial?.bind();document.querySelectorAll('[data-share-paper]').forEach(b=>b.onclick=()=>exportPaper(b));document.querySelectorAll('[data-sisal-retry]').forEach(b=>b.onclick=loadSharedData);};
 let lastTab=state.tab;
 render=function(){baseRender();const content=el('content');content.setAttribute('aria-busy',String(state.loadingShared));if(lastTab!==state.tab&&!matchMedia('(prefers-reduced-motion: reduce)').matches)content.animate?.([{opacity:.4,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:160,easing:'ease-out'});lastTab=state.tab;};
 window.addEventListener('sisal-eligibility',()=>{if(state.tab==='pitch')render();});
-window.SisalEdition={frontPageModel,lineup,BOT,paperMarkup,open(){state.tab='team';render();const box=document.querySelector('.sisal-news');if(box){box.open=true;box.scrollIntoView?.({block:'start',behavior:'smooth'});box.querySelector('.paper-reader')?.focus({preventScroll:true});}}};
-window.addEventListener('sisal-edition',()=>{if(state.tab==='team'){const wasOpen=document.querySelector('.sisal-news')?.open;render();if(wasOpen){const details=document.querySelector('.sisal-news');details.open=true;details.dataset.refreshed='true';}}});
+window.SisalEdition={frontPageModel,lineup,BOT,paperMarkup,open:openPaper};
+window.addEventListener('sisal-edition',()=>{if(paperDialog?.open)renderPaperDialog();});
 window.SisalPlayerProfile={roleGroup:position=>department(position),roster:()=>state.own?.players||[],open:p=>playerModal(p.id,p.name,p.platform),async renderOwn(target){
  const user=window.SisalAccount?.user;if(!user)throw Error('Accedi per aprire la tua scheda.');
  if(!state.own)await loadSharedData();
@@ -1565,6 +1591,6 @@ window.SisalPlayerProfile={roleGroup:position=>department(position),roster:()=>s
 })();
 window.SisalWorkspace={snapshot:()=>({tab:state.tab,own:state.own,opponent:state.opponent}),go:tab=>{if(!['team','players','top','pitch','matches','fun','opponent','ai','data'].includes(tab))return;state.tab=tab;render();window.scrollTo({top:0,behavior:'smooth'});}};
 boot();
-if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=club-53').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=club-54').catch(()=>{});
 })();
 
