@@ -1,6 +1,6 @@
 {
   "name": "sisal-fc-2021-fc27-command-center",
-  "version": "32.1.54",
+  "version": "32.1.55",
   "private": true,
   "type": "module",
   "engines": {
@@ -36,7 +36,8 @@
     "test:account-race": "node scripts/test-account-race.mjs",
     "test:upgrade": "node scripts/test-historical-recovery.mjs && node scripts/test-data-matrix-v5.mjs && node scripts/test-data-flow-v5.mjs && node scripts/test-eyes-helmet.mjs && node scripts/test-portrait-v5.mjs && node scripts/test-face-emotes-v6.mjs && node scripts/test-label-layout-v6.mjs && node scripts/test-club-workspace-v6.mjs && node scripts/test-accounts.mjs && node scripts/test-account-ui.mjs && node scripts/test-release-resources.mjs",
     "test:release54": "npm run verify && node scripts/test-release-resources.mjs && node scripts/test-release54.mjs && node scripts/test-gazzetta54.mjs && node scripts/test-club-editorial.mjs && node scripts/test-club-ui.mjs && node scripts/test-club-workspace-v6.mjs && npm run test:accounts && npm run test:account-race && npm run test:pipeline && npm run test:shared && npm run test:frontend && npm run test:ai && node scripts/test-player-photo-v32141.mjs && node scripts/test-data-flow-v5.mjs && node scripts/test-historical-recovery.mjs && node scripts/test-formation.mjs",
-    "test:release53": "npm run test:release54"
+    "test:release53": "npm run test:release54",
+    "test:release55": "npm run test:release54 && node scripts/test-neon55.mjs && node scripts/test-pitch55.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.9",

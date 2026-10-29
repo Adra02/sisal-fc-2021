@@ -39,7 +39,7 @@
     if(footer){
       const wrap=document.createElement('div');wrap.style.marginTop='10px';
       const toggle=document.createElement('button');toggle.type='button';toggle.className='btn ghost';toggle.style.fontSize='11px';
-      const update=()=>{toggle.textContent=reduced.matches?'Movimenti ridotti dal dispositivo':`Effetti animati: ${enabled?'attivo':'in pausa'}`;toggle.setAttribute('aria-pressed',String(enabled&&!reduced.matches));toggle.disabled=reduced.matches;};
+      const update=()=>{toggle.textContent=reduced.matches?'Movimenti ridotti dal dispositivo':`Sfondo animato: ${enabled?'attivo':'in pausa'}`;toggle.setAttribute('aria-pressed',String(enabled&&!reduced.matches));toggle.disabled=reduced.matches;};
       toggle.onclick=()=>{enabled=!enabled;try{localStorage.setItem(preferenceKey,enabled?'on':'off')}catch{}update();pauseAmbient();};
       reduced.addEventListener?.('change',()=>{update();pauseAmbient();});update();wrap.appendChild(toggle);footer.appendChild(wrap);
     }
