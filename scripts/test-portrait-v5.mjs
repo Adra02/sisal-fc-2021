@@ -6,7 +6,7 @@ globalThis.document={createElement:()=>createCanvas(256,256)};
 let selected='off',frames=[];
 globalThis.window={SisalAccount:{user:{display_name:'Viewer'},styleFor:n=>n==='Subject'?{helmetVisible:selected,eyes:'blue'}:{helmetVisible:'on',eyes:'green'}}};
 globalThis.__PortraitRenderer=class{
- constructor(){this.domElement={toDataURL:()=>`data:image/png;base64,simulated-${frames.length}`}}setSize(){}setPixelRatio(){}dispose(){}forceContextLoss(){}
+ constructor(){this.shadowMap={};this.domElement={toDataURL:()=>`data:image/png;base64,simulated-${frames.length}`}}setSize(){}setPixelRatio(){}dispose(){}forceContextLoss(){}
  render(scene){let rider;scene.traverse(o=>{if(o.userData?.headgear)rider=o});assert(rider);const irises=[];scene.traverse(o=>{if(o.name==='iris')irises.push(o.material.color.getHexString())});frames.push({helmet:rider.userData.headgear.visible,irises});}
 };
 let source=await fs.readFile('jockey-portrait.js','utf8');

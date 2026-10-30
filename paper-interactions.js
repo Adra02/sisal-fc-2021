@@ -1,6 +1,6 @@
 const pageMemory=new Map();
 function rememberKey(reader){return 'sisal_paper_page_v4:'+String(window.SisalAccount?.user?.id||'member')+':'+reader.dataset.editionKey;}
-async function fill(reader){try{const {fillPortraits}=await import('./jockey-portrait.js?v=club-54');await fillPortraits(reader);}catch{for(const n of reader.querySelectorAll('[data-portrait-image]'))if(!n.querySelector('img'))n.textContent='Ritratto non disponibile su questo dispositivo.';}}
+async function fill(reader){try{const {fillPortraits}=await import('./jockey-portrait.js?v=club-57');await fillPortraits(reader);}catch{for(const n of reader.querySelectorAll('[data-portrait-image]'))if(!n.querySelector('img'))n.textContent='Ritratto non disponibile su questo dispositivo.';}}
 export function bindInteractions(root=document){
  for(const reader of root.querySelectorAll('.paper-reader')){
   if(reader.dataset.paperBound==='true'){fill(reader);continue;}reader.dataset.paperBound='true';

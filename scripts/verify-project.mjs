@@ -30,9 +30,9 @@ const appScript=html.match(/src="\.\/(index-inline\.js\?v=[^"]+)"/)?.[1];
 assert.ok(appScript,'application entry point declared');
 assert.ok(sw.includes('./'+appScript),'service worker caches the actual application entry point');
 assert.ok(js.includes("APP_VERSION='v"+pkg.version+"'"),'runtime version agrees with package');assert.ok(html.includes('· v'+pkg.version),'visible footer agrees with package');
-assert.match(sw,/const CACHE='sisal-fc27-club-56'/);
+assert.match(sw,/const CACHE='sisal-fc27-club-57'/);
 for(const file of ['studio-viewer.js','studio-ui.js','studio-geometry.js','studio-materials.js','studio.css','horse-model.js','assets/studio/human-head.js','assets/studio/human-body.js','assets/studio/horse-body.js','vendor/Reflector.js'])await fs.access(path.join(root,file));
-assert.match(html,/studio-ui\.js\?v=club-55/);
+assert.match(html,/studio-ui\.js\?v=club-57/);
 assert.match(html,/studio\.css\?v=club-53/);
 
 for(const text of ['Dati totali','Stagione corrente','Overall Stats','Giocatori','Carriera giocatori','Campionato','Playoff','Amichevoli','Playoff Achievements','OVR','Profilo Pro','Informazioni club','/api/club-data','DATA_FILES']) {

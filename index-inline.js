@@ -1,6 +1,6 @@
 (async function(){'use strict';
 await window.sisalAccountReady;
-const APP_VERSION='v32.1.56';
+const APP_VERSION='v32.1.57';
 const FORMATIONS=[
 '4-2-1-3','4-4-1-1','4-2-3-1 Wide','4-3-3 Attack','4-1-2-1-2 Narrow','4-4-2','4-3-1-2','4-3-3 Holding','4-4-2 Holding','4-1-2-1-2 Wide','4-2-3-1','4-1-4-1','4-3-3 Defend','4-3-2-1','4-5-1 Flat','4-2-2-2','4-3-3','4-2-4','4-1-3-2','4-5-1 Attack','3-4-2-1','3-5-2','5-2-1-2','3-4-1-2','5-3-2','5-2-3','5-4-1','3-4-3','3-1-4-2'];
 const FORM_ROWS={
@@ -1532,14 +1532,14 @@ let paperDialog=null;
 function renderPaperDialog(){
  if(!paperDialog)return;const body=paperDialog.querySelector('[data-paper-body]'),previous=body.querySelector('[data-edition-key]')?.dataset.editionKey,top=body.scrollTop;
  body.innerHTML=paperMarkup(frontPageModel());
- window.SisalEditorial?.bind();import('./paper-interactions.js?v=club-54').then(m=>m.bindInteractions(body)).catch(()=>{});
+ window.SisalEditorial?.bind();import('./paper-interactions.js?v=club-57').then(m=>m.bindInteractions(body)).catch(()=>{});
  body.querySelectorAll('[data-share-paper]').forEach(b=>b.onclick=()=>exportPaper(b));
  body.scrollTop=previous===body.querySelector('[data-edition-key]')?.dataset.editionKey?top:0;
 }
 function openPaper({refresh=true}={}){
  if(!paperDialog){paperDialog=document.createElement('dialog');paperDialog.className='paper-dialog';paperDialog.setAttribute('aria-labelledby','paper-dialog-title');paperDialog.innerHTML='<div class="paper-dialog-head"><div><span>SISAL FC 2021</span><h2 id="paper-dialog-title">Gazzetta della Sisal</h2></div><button type="button" data-close-paper aria-label="Chiudi Gazzetta">✕</button></div><div data-paper-body></div>';document.body.append(paperDialog);paperDialog.querySelector('[data-close-paper]').onclick=()=>paperDialog.close();paperDialog.addEventListener('click',e=>{if(e.target!==paperDialog)return;const r=paperDialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)paperDialog.close();});}
  renderPaperDialog();if(!paperDialog.open)paperDialog.showModal();paperDialog.querySelector('[data-close-paper]').focus({preventScroll:true});
- import('./paper-interactions.js?v=club-54').then(m=>m.bindInteractions(paperDialog)).catch(()=>{});
+ import('./paper-interactions.js?v=club-57').then(m=>m.bindInteractions(paperDialog)).catch(()=>{});
  if(refresh)window.SisalEditorial?.refreshPaper();
 }
 function canvasBase(height){const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=height;const c=canvas.getContext('2d');c.fillStyle='#05180e';c.fillRect(0,0,1080,height);return {canvas,c};}
@@ -1558,7 +1558,7 @@ async function exportPaper(button){
   y+=24;print((story.own||'Sisal FC 2021')+'   '+(story.goals??'—')+' – '+(story.against??'—')+'   '+(story.opponent||'Avversario'),35,800);
   y+=24;print(story.title,48,850);y+=20;
   if(story.portrait){
-   const portraits=await import('./jockey-portrait.js?v=club-54');
+   const portraits=await import('./jockey-portrait.js?v=club-57');
    const rendered=portraits.portraitImage(story.portrait),source=rendered||portraits.portraitFallback(story.portrait);
    if(source){const image=await new Promise(resolve=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>resolve(null);i.src=source;});if(image){const h=952*image.height/image.width;c.drawImage(image,64,y,952,h);y+=h+35;}}
    print(paperPortraitCaption(story.portrait),26,800);
@@ -1574,7 +1574,7 @@ async function exportPaper(button){
  }catch{showToast('Impossibile creare l’immagine: riprova.',true);}finally{button.disabled=false;}
 }
 
-bind=function(){baseBind();decoratePitch();import('./paper-interactions.js?v=club-54').then(m=>m.bindInteractions()).catch(()=>{});window.SisalEditorial?.bind();document.querySelectorAll('[data-share-paper]').forEach(b=>b.onclick=()=>exportPaper(b));document.querySelectorAll('[data-sisal-retry]').forEach(b=>b.onclick=loadSharedData);};
+bind=function(){baseBind();decoratePitch();import('./paper-interactions.js?v=club-57').then(m=>m.bindInteractions()).catch(()=>{});window.SisalEditorial?.bind();document.querySelectorAll('[data-share-paper]').forEach(b=>b.onclick=()=>exportPaper(b));document.querySelectorAll('[data-sisal-retry]').forEach(b=>b.onclick=loadSharedData);};
 let lastTab=state.tab;
 render=function(){baseRender();const content=el('content');content.setAttribute('aria-busy',String(state.loadingShared));if(lastTab!==state.tab&&!matchMedia('(prefers-reduced-motion: reduce)').matches)content.animate?.([{opacity:.4,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:160,easing:'ease-out'});lastTab=state.tab;};
 window.addEventListener('sisal-eligibility',()=>{if(state.tab==='pitch')render();});
@@ -1591,6 +1591,6 @@ window.SisalPlayerProfile={roleGroup:position=>department(position),roster:()=>s
 })();
 window.SisalWorkspace={snapshot:()=>({tab:state.tab,own:state.own,opponent:state.opponent}),go:tab=>{if(!['team','players','top','pitch','matches','fun','opponent','ai','data'].includes(tab))return;state.tab=tab;render();window.scrollTo({top:0,behavior:'smooth'});}};
 boot();
-if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=club-56').catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('./sw.js?v=club-57').catch(()=>{});
 })();
 

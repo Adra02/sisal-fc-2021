@@ -1,9 +1,8 @@
-import {environmentTexture} from './studio-materials.js?v=studio-9';
+import {studioLights,studioJockey} from './jockey-studio.js?v=club-57';
 import * as T from './vendor/three.module.min.js';
 import {Reflector} from './vendor/Reflector.js';
-import {createJockey} from './jockey-model.js?v=club-53';
 import {createHorse} from './horse-model.js?v=club-56';
-import {styleColors,paintSilks,validateStyle} from './horse-style.js?v=studio-9';
+import {validateStyle} from './horse-style.js?v=studio-9';
 import {material,mesh,disposeTree} from './studio-geometry.js?v=studio-9';
 import {signaturePose} from './race-signature.js?v=studio-9';
 const cameras={horse:{at:[0,1.78,0],height:4.15,width:4.7},face:{at:[.04,.75,0],height:.48,width:.36},hair:{at:[.01,.81,0],height:.51,width:.40},outfit:{at:[0,.02,0],height:2.35,width:1.08},gloves:{at:[.06,-.08,.23],height:.49,width:.46},saddle:{at:[-.25,1.96,0],height:1.7,width:1.9},number:{at:[-.31,1.90,.37],height:1.15,width:1.25},helmet:{at:[.03,.84,0],height:.52,width:.42},signature:{at:[0,.08,0],height:2.52,width:1.5}};
@@ -17,15 +16,13 @@ export function mountStudio(host,{appearance={},name='',part='horse',controls=tr
  const caption=document.createElement('div');caption.className='studio-caption';caption.setAttribute('aria-live','polite');host.append(caption);
  const toolbar=document.createElement('div');toolbar.className='studio-toolbar';toolbar.setAttribute('aria-label','Controlli anteprima');
  if(controls){toolbar.innerHTML='<button type="button" data-tool="rotate" aria-label="Ruota di novanta gradi">↻ Ruota</button><button type="button" data-tool="zoom" aria-label="Ingrandisci">＋</button><button type="button" data-tool="unzoom" aria-label="Riduci">−</button><button type="button" data-tool="light">Luce: studio</button><button type="button" data-tool="compare" aria-pressed="false">Prima / dopo</button><button type="button" data-tool="mirror" aria-pressed="false">Fronte / retro</button><button type="button" data-tool="gear" aria-pressed="false">Ispeziona</button>';host.append(toolbar);}
- const scene=new T.Scene();scene.environment=environmentTexture({studio:true});scene.environmentIntensity=.30;scene.background=new T.Color('#142b23');scene.fog=new T.Fog('#142b23',13,30);const camera=new T.PerspectiveCamera(34,1,.015,60),target=new T.Vector3(),desired=new T.Vector3();
- scene.add(new T.HemisphereLight('#eee9de','#263e31',1.5));const key=new T.DirectionalLight('#fff0d8',2.8);key.position.set(4,6,5);key.castShadow=true;key.shadow.mapSize.set(mobile?512:1024,mobile?512:1024);Object.assign(key.shadow.camera,{left:-4,right:4,top:5,bottom:-3});key.shadow.bias=-.0003;scene.add(key);const rim=new T.DirectionalLight('#abd0c7',1.7);rim.position.set(-3,3,-4);scene.add(rim);
+ const scene=new T.Scene();const {key,rim}=studioLights(scene,{shadows:true,mobile});scene.fog=new T.Fog('#142b23',13,30);const camera=new T.PerspectiveCamera(34,1,.015,60),target=new T.Vector3(),desired=new T.Vector3();
  const floor=mobile?mesh(scene,new T.CircleGeometry(12,64),material('#10261d',{roughness:.46,metalness:.12})):new Reflector(new T.CircleGeometry(12,64),{color:0x142c21,textureWidth:256,textureHeight:256,multisample:0,clipBias:.003});if(!floor.parent)scene.add(floor);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;
  const ring=mesh(scene,new T.RingGeometry(1.2,1.208,80),new T.MeshBasicMaterial({color:'#bba66e',side:T.DoubleSide,transparent:true,opacity:.22}));ring.rotation.x=-Math.PI/2;
  const nameCanvas=document.createElement('canvas');nameCanvas.width=1024;nameCanvas.height=160;const nc=nameCanvas.getContext('2d');nc.font='700 66px system-ui';nc.textAlign='center';nc.textBaseline='middle';nc.fillStyle='#bcb386';nc.fillText(name,512,80,970);const nameTexture=new T.CanvasTexture(nameCanvas);nameTexture.colorSpace=T.SRGBColorSpace;const namePlate=mesh(scene,new T.PlaneGeometry(2.4,.37),new T.MeshBasicMaterial({map:nameTexture,transparent:true,opacity:.30,depthWrite:false}));namePlate.name='studio-floor-name';namePlate.rotation.x=-Math.PI/2;
  const particles=new T.BufferGeometry(),pp=new Float32Array(24*3);for(let i=0;i<pp.length;i++)pp[i]=Math.sin(i*43.31)*(i%3===1?2:3);particles.setAttribute('position',new T.BufferAttribute(pp,3));const dust=new T.Points(particles,new T.PointsMaterial({size:.008,color:'#d4c9a4',transparent:true,opacity:.18,depthWrite:false}));dust.visible=!reduced;scene.add(dust);
  let current=validateStyle(appearance),baseline={...current},activePart=cameras[part]?part:'horse',model=null,before=null,pending=true,disposed=false,visible=true,raf=0,last=0,time=0,width=1,height=1,angle=.88,tilt=.06,zoom=1,compare=false,mirror=false,exploded=false,lighting=0,gesture=null,helmetOverride=null,pointer={x:0,y:0};
- function make(value){const s=styleColors(value),group=new T.Group(),c=document.createElement('canvas');c.width=c.height=256;paintSilks(c.getContext('2d'),256,256,s);const tx=new T.CanvasTexture(c);tx.colorSpace=T.SRGBColorSpace;tx.anisotropy=2;
-  const j=createJockey({custom:s,standing:!isHorse(activePart),silk:material('#fff',{map:tx}),breeches:material(s.breechesColor,{roughness:.85}),gloves:material(s.glovesColor,{roughness:.55}),helmet:material(s.helmetColor,{roughness:.35,clearcoat:.45})});let h=null;
+ function make(value){const group=new T.Group(),j=studioJockey(value,{standing:!isHorse(activePart)});let h=null;
   if(isHorse(activePart)){h=createHorse(value,value.number);j.rider.position.copy(h.seat);group.add(h.group);}group.add(j.rider);group.userData={j,h,horse:isHorse(activePart)};scene.add(group);return group;
  }
  function clearModel(m){if(m){scene.remove(m);disposeTree(m);}}

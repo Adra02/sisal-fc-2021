@@ -1,53 +1,24 @@
-/* Independent local neon controller. No football data or network requests. */
+/* Local animated borders: no account preferences, API requests or CSS masks. */
 (() => {
  'use strict';
- const ns='http://www.w3.org/2000/svg',tracked=new Map(),preferenceKey='sisal_neon_motion_v2',reduced=matchMedia('(prefers-reduced-motion: reduce)');
- let mode='auto',scheduled=false,serial=0,control=null;
- const supportsMotion=typeof document.createElement('i').animate==='function';
- const allowsMotion=()=>!reduced.matches;
- const resize='ResizeObserver'in window?new ResizeObserver(items=>{for(const item of items)geometry(item.target);}):null;
- const visible='IntersectionObserver'in window?new IntersectionObserver(items=>{for(const item of items){const info=tracked.get(item.target);if(info){info.visible=item.isIntersecting;apply(item.target,info);}}},{rootMargin:'24px'}):null;
- function blocker(frame){
-  const top=[...document.querySelectorAll('dialog[open]')].at(-1);if(top&&!top.contains(frame))return true;
-  const modal=document.querySelector('#modalRoot .modal');if(modal&&!modal.contains(frame))return true;
-  const race=document.querySelector('.sr-host');return !!(race&&race.getBoundingClientRect().width);
+ const tracked=new Map(),reduced=matchMedia('(prefers-reduced-motion: reduce)');let pending=false,raf=0,last=0,serial=0;
+ function blocked(frame){const dialog=[...document.querySelectorAll('dialog[open]')].at(-1),modal=document.querySelector('#modalRoot .modal'),race=document.querySelector('.sr-host');return !!((dialog&&!dialog.contains(frame))||(modal&&!modal.contains(frame))||(race&&race.getBoundingClientRect().width));}
+ function drawBorder(ctx,w,h,r,phase,moving){
+  ctx.clearRect(0,0,w,h);ctx.beginPath();if(ctx.roundRect)ctx.roundRect(2,2,w-4,h-4,Math.max(2,r-1));else ctx.rect(2,2,w-4,h-4);ctx.lineWidth=1;ctx.strokeStyle='rgba(88,236,166,.27)';ctx.stroke();
+  if(!moving||!ctx.createConicGradient)return;
+  const gradient=ctx.createConicGradient(0,w/2,h/2),stops=[[0,[77,255,169,0]],[.57,[77,255,169,0]],[.67,[77,255,169,.035]],[.77,[77,255,169,.17]],[.86,[98,255,187,.5]],[.93,[218,255,237,1]],[.96,[120,255,198,.72]],[1,[77,255,169,0]]],shift=((phase/(Math.PI*2))%1+1)%1;
+  const rgba=c=>'rgba('+c.join(',')+')',sample=t=>{for(let i=1;i<stops.length;i++)if(t<=stops[i][0]){const [a,c]=stops[i-1],[b,d]=stops[i],q=(t-a)/(b-a);return c.map((v,k)=>v+(d[k]-v)*q);}return stops.at(-1)[1];},boundary=rgba(sample((1-shift)%1));gradient.addColorStop(0,boundary);for(const [at,color]of stops.slice(0,-1).map(([at,color])=>[(at+shift)%1,color]).sort((a,b)=>a[0]-b[0]))if(at>0&&at<1)gradient.addColorStop(at,rgba(color));gradient.addColorStop(1,boundary);
+
+  ctx.strokeStyle=gradient;ctx.lineWidth=2.5;ctx.shadowBlur=5;ctx.shadowColor='rgba(62,255,153,.65)';ctx.stroke();ctx.shadowBlur=0;
  }
- function apply(frame,info){
-  const running=supportsMotion&&allowsMotion()&&!document.hidden&&info.visible&&!blocker(frame);
-  frame.dataset.neonState=running?'running':!supportsMotion?'unsupported':!allowsMotion()?(reduced.matches&&mode==='auto'?'reduced':'off'):document.hidden?'hidden':!info.visible?'outside':'covered';
-  for(const a of info.animations){if(running){if(a.playState!=='running')a.play();}else if(a.playState!=='paused')a.pause();}
-  frame.classList.toggle('sisal-edge-visible',running);
- }
- function geometry(frame){
-  const info=tracked.get(frame);if(!info)return;const r=frame.getBoundingClientRect();if(r.width<4||r.height<4)return;
-  const size=Math.ceil(Math.hypot(r.width,r.height))+8;const energy=info.svg.querySelector('.sisal-edge-energy');if(energy){energy.style.width=energy.style.height=size+'px';energy.style.marginLeft=energy.style.marginTop=-size/2+'px';}
-  const radius=Math.max(2,parseFloat(getComputedStyle(frame).borderTopLeftRadius)||12);info.svg.setAttribute('viewBox',`0 0 ${r.width} ${r.height}`);
-  for(const rect of []){rect.setAttribute('x','1.5');rect.setAttribute('y','1.5');rect.setAttribute('width',String(r.width-3));rect.setAttribute('height',String(r.height-3));rect.setAttribute('rx',String(Math.min(radius,r.width/2,r.height/2)));}
-  // Initial visibility is calculated directly too: no permanently paused border
-  // while waiting for an observer callback or after a hidden tab is revealed.
-  info.visible=r.bottom>0&&r.right>0&&r.top<innerHeight&&r.left<innerWidth;apply(frame,info);
- }
- function attach(target,table=false){
-  if(target.classList.contains('sisal-edge-host')||target.closest('.sisal-edge-frame'))return;
-  let frame=target;if(table){frame=document.createElement('div');frame.className='sisal-edge-frame';target.before(frame);frame.append(target);}frame.classList.add('sisal-edge-host');
-  const svg=document.createElement('div'),animations=[];svg.classList.add('sisal-edge-light');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');svg.setAttribute('preserveAspectRatio','none');
-  const duration=10500+(serial%3)*1400,phase=(serial++*2300)%duration;
-  const energy=document.createElement('i');energy.className='sisal-edge-energy';svg.append(energy);
-  if(supportsMotion){const a=energy.animate([{transform:'rotate(0deg)'},{transform:'rotate(360deg)'}],{duration,iterations:Infinity,easing:'linear'});a.pause();a.currentTime=phase;animations.push(a);}
-  frame.append(svg);tracked.set(frame,{svg,animations,visible:false});resize?.observe(frame);visible?.observe(frame);geometry(frame);
- }
- function refresh(){
-  scheduled=false;for(const [frame,info]of tracked)if(!frame.isConnected){resize?.unobserve(frame);visible?.unobserve(frame);info.animations.forEach(a=>a.cancel());tracked.delete(frame);}
-  for(const wrap of document.querySelectorAll('#content .table-wrap,#content .scroll-x,#content .trend-wrap'))attach(wrap,true);
-  for(const table of document.querySelectorAll('#content table,#modalRoot table,#ac-panel table')){if(!table.closest('.sisal-edge-host'))attach(table,true);}
-  for(const block of document.querySelectorAll('#content .cc-team-cover,#content .cc-race-cover,#content>.hero,#content .card,#content .rich-card,.news-main,#ac-panel .ac-preview')){if(block.querySelector('.sisal-edge-frame,.cc-team-cover,.cc-race-cover')||block.classList.contains('top3-racing'))continue;attach(block);}
-  for(const [frame]of tracked)geometry(frame);
- }
- function schedule(){if(!scheduled){scheduled=true;requestAnimationFrame(refresh);}}
- function boot(){
-  document.addEventListener('toggle',schedule,true);document.addEventListener('click',schedule,true);refresh();for(const e of ['sisal-content-rendered','sisal-workspace-layout','sisal-appearance-saved'])window.addEventListener(e,schedule);window.addEventListener('resize',schedule,{passive:true});document.addEventListener('visibilitychange',schedule);reduced.addEventListener?.('change',()=>{schedule();});
-  new MutationObserver(records=>{if(records.some(r=>!r.target.closest?.('.sisal-edge-light,.sr-host')&&(r.type==='attributes'||[...r.addedNodes,...r.removedNodes].some(n=>n.nodeType===1&&!n.classList.contains('sisal-edge-light')))))schedule();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','hidden']});
-  window.SisalFuture={refresh:schedule};
- }
+ function geometry(frame,info){const r=frame.getBoundingClientRect();info.visible=r.width>4&&r.height>4&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;if(!r.width||!r.height)return;info.width=r.width;info.height=r.height;info.radius=parseFloat(getComputedStyle(frame).borderTopLeftRadius)||12;const dpr=Math.min(devicePixelRatio||1,1.5),w=Math.ceil(r.width*dpr),h=Math.ceil(r.height*dpr);if(info.canvas.width!==w||info.canvas.height!==h){info.canvas.width=w;info.canvas.height=h;info.ctx?.setTransform(dpr,0,0,dpr,0,0);} }
+ function render(now){raf=0;if(now-last<32){wake();return;}last=now;let running=false;for(const [frame,info]of tracked){if(!frame.isConnected)continue;const active=info.visible&&!document.hidden&&!blocked(frame),moving=active&&!reduced.matches&&!!info.ctx?.createConicGradient;frame.dataset.neonState=!info.ctx?'unsupported':moving?'running':reduced.matches?'reduced':document.hidden?'hidden':!info.visible?'outside':'covered';if(active&&info.ctx)drawBorder(info.ctx,info.width,info.height,info.radius,now/info.duration*Math.PI*2+info.phase,!reduced.matches);running||=moving;}if(running)wake();}
+ function wake(){if(!raf&&!document.hidden)raf=requestAnimationFrame(render);}
+ const resize='ResizeObserver'in window?new ResizeObserver(items=>{for(const item of items){const info=tracked.get(item.target);if(info)geometry(item.target,info);}wake();}):null;
+ const intersection='IntersectionObserver'in window?new IntersectionObserver(items=>{for(const item of items){const info=tracked.get(item.target);if(info)info.visible=item.isIntersecting;}wake();}):null;
+ function attach(target,wrap=false){if(target.closest('.sisal-edge-host'))return;let frame=target;if(wrap){frame=document.createElement('div');frame.className='sisal-edge-frame';target.before(frame);frame.append(target);}frame.classList.add('sisal-edge-host');const canvas=document.createElement('canvas');canvas.className='sisal-border-canvas';canvas.setAttribute('aria-hidden','true');let ctx;try{ctx=canvas.getContext('2d');}catch{}frame.append(canvas);const info={canvas,ctx,duration:11000+(serial%3)*1300,phase:serial++*1.7,visible:false,width:0,height:0,radius:12};tracked.set(frame,info);resize?.observe(frame);intersection?.observe(frame);geometry(frame,info);}
+ function refresh(){pending=false;for(const [frame,info]of tracked)if(!frame.isConnected){resize?.unobserve(frame);intersection?.unobserve(frame);info.canvas.width=info.canvas.height=1;tracked.delete(frame);}for(const wrap of document.querySelectorAll('#content .table-wrap,#content .scroll-x,#content .trend-wrap'))attach(wrap,true);for(const table of document.querySelectorAll('#content table,#modalRoot table,#ac-panel table'))if(!table.closest('.sisal-edge-host'))attach(table,true);for(const block of document.querySelectorAll('#content .cc-team-cover,#content .cc-race-cover,#content .card,#content .rich-card,.news-main,#ac-panel .ac-card,#ac-panel .ac-preview,.club-notifications')){if(!block.querySelector('.sisal-edge-host')&&!block.closest('.sr-host'))attach(block);}for(const [frame,info]of tracked)geometry(frame,info);wake();}
+ function schedule(){if(!pending){pending=true;requestAnimationFrame(refresh);}}
+ function boot(){refresh();for(const event of ['sisal-content-rendered','sisal-workspace-layout','sisal-appearance-saved','resize'])window.addEventListener(event,schedule);document.addEventListener('toggle',schedule,true);document.addEventListener('click',schedule,true);document.addEventListener('scroll',schedule,{passive:true,capture:true});document.addEventListener('visibilitychange',schedule);reduced.addEventListener?.('change',schedule);new MutationObserver(records=>{if(records.some(r=>!r.target.closest?.('.sisal-border-canvas,.sr-host')&&(r.type==='attributes'||[...r.addedNodes,...r.removedNodes].some(n=>n.nodeType===1&&!n.classList.contains('sisal-border-canvas')))))schedule();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','hidden']});window.SisalFuture={refresh:schedule};}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();

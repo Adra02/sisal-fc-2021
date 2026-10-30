@@ -1,3 +1,4 @@
+import {createCanvas} from '@napi-rs/canvas';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
@@ -51,10 +52,11 @@ assert.throws(()=>validateEdition({...raw,stories:raw.stories.slice(0,4)},facts)
 for(const element of [w.document.querySelector('.club-brand'),w.document.querySelector('.cc-rail-brand')]){assert(element);assert.notEqual(element.tagName,'BUTTON');element.click();}
 assert(!w.document.querySelector('.arena-dialog,.sisal-ritual'));
 // Functional controller check with observer geometry simulated; visual geometry is checked in browser separately.
+w.HTMLCanvasElement.prototype.getContext=function(){return this._ctx||(this._ctx=createCanvas(1024,768).getContext('2d'))};
 let observers=[];w.ResizeObserver=class{constructor(fn){observers.push(this);this.fn=fn;}observe(){}unobserve(){}};w.IntersectionObserver=class{constructor(fn){this.fn=fn;}observe(el){this.fn([{target:el,isIntersecting:true}]);}unobserve(){}};
 api.set(team,'team');root.innerHTML=api.html('team');const textBefore=root.textContent,callsBefore=reads;w.eval(await fs.readFile('sisal-future.js','utf8'));w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await new Promise(r=>setTimeout(r,50));
-assert(root.querySelector('.sisal-edge-light'));assert.equal(root.textContent,textBefore,'border effect cannot alter data labels or values');assert.equal(reads,callsBefore,'visual effect has no API reads');const count=root.querySelectorAll('.sisal-edge-light').length;w.SisalFuture.refresh();await new Promise(r=>setTimeout(r,40));assert.equal(root.querySelectorAll('.sisal-edge-light').length,count,'decorator idempotent');
-assert.equal(root.querySelectorAll('td .sisal-edge-light,th .sisal-edge-light').length,0);for(const svg of root.querySelectorAll('.sisal-edge-light')){assert.equal(svg.getAttribute('aria-hidden'),'true');assert(svg.querySelector('.sisal-edge-energy'));}
+assert(root.querySelector('.sisal-border-canvas'));assert.equal(root.textContent,textBefore,'border effect cannot alter data labels or values');assert.equal(reads,callsBefore,'visual effect has no API reads');const count=root.querySelectorAll('.sisal-border-canvas').length;w.SisalFuture.refresh();await new Promise(r=>setTimeout(r,40));assert.equal(root.querySelectorAll('.sisal-border-canvas').length,count,'decorator idempotent');
+assert.equal(root.querySelectorAll('td .sisal-border-canvas,th .sisal-border-canvas').length,0);for(const svg of root.querySelectorAll('.sisal-border-canvas')){assert.equal(svg.getAttribute('aria-hidden'),'true');assert.equal(svg.tagName,'CANVAS');}
 for(const f of ['sisal-future.css','club-modern.css']){const style=w.document.createElement('style');style.textContent=await fs.readFile(f,'utf8');w.document.head.append(style);assert(style.sheet?.cssRules.length>5,f+' parses');}
 for(const f of ['api/editorial.js','lib/paper-job.js','lib/paper-auto.js','lib/editorial.js','lib/paper-portrait.js','editorial-ui.js','paper-interactions.js','jockey-portrait.js','sisal-future.js','sisal-pro.js','index-inline.js'])execFileSync(process.execPath,['--check',f]);
 assert(!(await fs.readFile('sw.js','utf8')).includes('arena-'));assert.equal(errors.length,0,errors.map(e=>e.message).join('\n'));await new Promise(r=>setTimeout(r,30));dom.window.close();
