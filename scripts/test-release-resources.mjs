@@ -17,4 +17,4 @@ assert.deepEqual(missing,[],'all recursive local modules, assets and service-wor
 assert.equal(new Set(shell).size,shell.length,'no duplicate shell requests');
 const html=await fs.readFile('index.html','utf8');assert(html.includes('./club-modern.css?v=club-57'));assert(!html.includes('club-experience'));assert(!shell.some(f=>f.includes('arena-')||f.includes('arena.css')));
 for(const f of ['index.html','sw.js','account.js','studio-viewer.js','race-3d.js','jockey-portrait.js'])assert(!(await fs.readFile(f,'utf8')).includes('studio-4'),f+' has no stale shared model version');
-console.log(`PASS release resource closure: ${seen.size} local resources/imports, ${shell.length} service-worker shell entries, consistent Studio 9 / Club 57 cache and entry points.`);
+console.log(`PASS release resource closure: ${seen.size} local resources/imports, ${shell.length} service-worker shell entries, consistent Studio 9 / Club 58 cache and entry points.`);
