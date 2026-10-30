@@ -1,6 +1,6 @@
 {
   "name": "sisal-fc-2021-fc27-command-center",
-  "version": "32.1.58",
+  "version": "32.1.59",
   "private": true,
   "type": "module",
   "engines": {
@@ -39,7 +39,7 @@
     "test:release53": "npm run test:release54",
     "test:release55": "npm run test:release54 && node scripts/test-neon55.mjs && node scripts/test-pitch55.mjs",
     "test:release57": "npm run test:release55 && node scripts/test-studio57.mjs && node scripts/test-portrait-v5.mjs",
-    "test:neon": "node scripts/test-neon58.mjs"
+    "test:neon": "node scripts/test-neon59.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.9",

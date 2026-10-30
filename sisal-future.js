@@ -1,157 +1,98 @@
-/* Club 58: one thin comet follows the real rounded perimeter of each panel.
- * No conic gradients, CSS masks, network calls or saved animation switches. */
+/* Club 59: native SVG perimeter lights. No Canvas, WebGL, CSS masks or frame loop. */
 (() => {
  'use strict';
- const tracked=new Map(),reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')||{matches:false};
- const panelSelector=[
-  '#content .card','#content .rich-card','#content .match-card',
-  '#content .cc-team-cover','#content .cc-race-cover',
-  '#modalRoot .card','#modalRoot .rich-card',
-  '#ac-panel .ac-card','#ac-panel .ac-preview','.news-main','.club-notifications'
- ].join(',');
- let pending=0,animation=0,serial=0;
- const modulo=(n,d)=>((n%d)+d)%d;
- const smooth=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
-
- // Clockwise, in CSS pixels. Different corner radii (e.g. tab panels) are kept.
- function perimeter(w,h,radii){
-  const inset=1.4,x=inset,y=inset,right=w-inset,bottom=h-inset;
-  const limit=Math.max(0,Math.min((w-2*inset)/2,(h-2*inset)/2));
-  const [tl,tr,br,bl]=(Array.isArray(radii)?radii:[radii,radii,radii,radii]).map(r=>Math.max(0,Math.min(limit,r-inset)));
-  const parts=[];let length=0;
-  function line(ax,ay,bx,by){const size=Math.hypot(bx-ax,by-ay);if(size>0){parts.push({start:length,size,point:q=>[ax+(bx-ax)*q,ay+(by-ay)*q],project:(px,py)=>Math.max(0,Math.min(1,((px-ax)*(bx-ax)+(py-ay)*(by-ay))/(size*size)))});length+=size;}}
-  function arc(cx,cy,r,a){if(r>0){const size=Math.PI*r/2;parts.push({start:length,size,point:q=>[cx+r*Math.cos(a+q*Math.PI/2),cy+r*Math.sin(a+q*Math.PI/2)],project:(px,py)=>{const angle=modulo(Math.atan2(py-cy,px-cx)-a,Math.PI*2);if(angle<=Math.PI/2)return angle/(Math.PI/2);return angle<Math.PI*1.25?1:0;}});length+=size;}}
-  line(x+tl,y,right-tr,y);arc(right-tr,y+tr,tr,-Math.PI/2);
-  line(right,y+tr,right,bottom-br);arc(right-br,bottom-br,br,0);
-  line(right-br,bottom,x+bl,bottom);arc(x+bl,bottom-bl,bl,Math.PI/2);
-  line(x,bottom-bl,x,y+tl);arc(x+tl,y+tl,tl,Math.PI);
-  return {length,radius:Math.max(tl,tr,br,bl),nearest(px,py){let best=Infinity,along=0;for(const p of parts){const q=p.project(px,py),[x,y]=p.point(q),distance=Math.hypot(px-x,py-y);if(distance<best){best=distance;along=p.start+q*p.size;}}return [along,best];},point(distance){const d=modulo(distance,length);const p=parts.find(v=>d<v.start+v.size)||parts.at(-1);return p.point((d-p.start)/p.size);}};
+ const NS='http://www.w3.org/2000/svg',tracked=new Map();
+ const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)')||{matches:false};
+ const panelsSelector=['#content .card','#content .rich-card','#content .match-card','#content .cc-team-cover','#content .cc-race-cover','#modalRoot .card','#modalRoot .rich-card','#ac-panel .ac-card','#ac-panel .ac-preview','.news-main','.club-notifications'].join(',');
+ let queued=0,serial=0;
+ const criticalStyle='position:absolute!important;right:auto!important;bottom:auto!important;pointer-events:none!important;z-index:8!important;display:block!important;overflow:visible!important;max-width:none!important;max-height:none!important;border:0!important;border-radius:0!important;box-shadow:none!important;opacity:1!important;visibility:visible!important;';
+ function svgNode(name,attributes={}){const e=document.createElementNS(NS,name);for(const [key,value]of Object.entries(attributes))e.setAttribute(key,String(value));return e;}
+ function roundedPath(w,h,radii,inset){
+  const max=Math.max(0,Math.min(w,h)/2-inset),[a,b,c,d]=radii.map(r=>Math.max(0,Math.min(max,r-inset)));
+  const x=inset,y=inset,X=w-inset,Y=h-inset,arc=(r,x,y)=>r?'A'+r+' '+r+' 0 0 1 '+x+' '+y:'L'+x+' '+y;
+  return 'M'+(x+a)+' '+y+'H'+(X-b)+arc(b,X,y+b)+'V'+(Y-c)+arc(c,X-c,Y)+'H'+(x+d)+arc(d,x,Y-d)+'V'+(y+a)+arc(a,x+a,y)+'Z';
  }
- // Rasterize the narrow rim once into distance/coverage samples. Each pixel
- // is blended exactly once: no segment caps, overlapping strokes or color seams.
- function borderStrips(ctx,w,h,dpr,path){
-  const W=Math.ceil(w*dpr),H=Math.ceil(h*dpr),cap=Math.min(Math.floor(H/2),Math.ceil((path.radius+5)*dpr)),side=Math.min(Math.floor(W/2),Math.ceil(5*dpr));
-  const rects=[[0,0,W,cap],[0,H-cap,W,cap],[0,cap,side,H-2*cap],[W-side,cap,side,H-2*cap]],aa=1/dpr;
-  return rects.filter(([, ,rw,rh])=>rw>0&&rh>0).map(([x,y,rw,rh])=>{
-   const image=ctx.createImageData(rw,rh),samples=[];
-   for(let py=0;py<rh;py++)for(let px=0;px<rw;px++){
-    const [along,distance]=path.nearest((x+px+.5)/dpr,(y+py+.5)/dpr);
-    if(distance>3.6)continue;
-    const coverage=half=>Math.max(0,Math.min(1,(half+aa/2-distance)/aa));
-    samples.push((py*rw+px)*4,along,coverage(.4)*.19,coverage(.675),Math.exp(-distance*distance/2)*.13);
-   }
-   return {x,y,image,samples:new Float32Array(samples)};
-  });
+ function perimeterLength(w,h,radii,inset){const limit=Math.max(0,Math.min(w,h)/2-inset),sum=radii.reduce((n,r)=>n+Math.max(0,Math.min(limit,r-inset)),0);return 2*(w+h-4*inset)+(Math.PI/2-2)*sum;}
+ function hiddenByParent(frame){if(frame.closest('[hidden]'))return true;for(let p=frame.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS'&&!p.open)return true;return false;}
+ function activeLayer(){const dialog=[...document.querySelectorAll('dialog[open]')].at(-1);if(dialog)return dialog;for(const selector of ['.sr-host','#modalRoot .modal']){const e=document.querySelector(selector);if(e?.getBoundingClientRect().width)return e;}return null;}
+ function createLight(frame,info){
+  const svg=svgNode('svg',{'class':'sisal-border-svg','aria-hidden':'true',focusable:'false',role:'presentation',preserveAspectRatio:'none'});
+  svg.style.cssText=criticalStyle;frame.append(svg);info.svg=svg;info.key='';info.css='';info.motion=false;
  }
- function drawBorder(ctx,w,h,radii,phase,moving,path=perimeter(w,h,radii),dpr=1){
-  if(w<6||h<6)return;
-  if(!path.strips||path.dpr!==dpr){path.strips=borderStrips(ctx,w,h,dpr,path);path.dpr=dpr;}
-  const tail=Math.min(260,Math.max(125,path.length*.17)),nose=18,head=modulo(phase,1)*path.length;
-  for(const strip of path.strips){
-   const data=strip.image.data,s=strip.samples;
-   for(let i=0;i<s.length;i+=5){
-    const at=s[i],behind=modulo(head-s[i+1],path.length),ahead=path.length-behind;
-    const light=!moving?0:behind<=tail?smooth(1-behind/tail):ahead<=nose?1-smooth(ahead/nose):0;
-    const base=s[i+2],core=s[i+3],glow=s[i+4],alpha=(core*.98+(1-core)*glow)*light,total=alpha+base*(1-alpha),white=light*light*light;
-    data[at]=total?((87+140*white)*alpha+91*base*(1-alpha))/total:0;
-    data[at+1]=total?(255*alpha+237*base*(1-alpha))/total:0;
-    data[at+2]=total?((165+77*white)*alpha+167*base*(1-alpha))/total:0;
-    data[at+3]=total*255;
-   }
-   ctx.putImageData(strip.image,strip.x,strip.y);
+ function draw(svg,w,h,radii,info){
+  const inset=1.8,path=roundedPath(w,h,radii,inset),length=perimeterLength(w,h,radii,inset);
+  const duration=Math.max(8,Math.min(16,length/140)),uid='sisal-neon59-'+info.serial;
+  let previous=0;try{previous=svg.getCurrentTime?.()||0;}catch{}
+  const defs=svgNode('defs'),gradient=svgNode('radialGradient',{id:uid+'-light'});
+  for(const [offset,color,opacity]of [[0,'#d4ffe5',1],[.035,'#bcffdb',1],[.14,'#7dffb7',.92],[.35,'#58ffa3',.5],[.62,'#51ff9c',.14],[.84,'#51ff9c',.025],[1,'#51ff9c',0]])gradient.append(svgNode('stop',{offset,'stop-color':color,'stop-opacity':opacity}));
+  defs.append(gradient);
+  // Ring clips are real SVG geometry. The inner hole protects all table data.
+  // Both rings live inside the panel padding box, clear of clipped outer borders.
+  for(const [name,width]of [['core',1.4],['halo',4.6]]){
+   const clip=svgNode('clipPath',{id:uid+'-'+name,clipPathUnits:'userSpaceOnUse'});
+   clip.append(svgNode('path',{d:roundedPath(w,h,radii,inset-width/2)+roundedPath(w,h,radii,inset+width/2),'clip-rule':'evenodd','fill-rule':'evenodd'}));defs.append(clip);
   }
+  svg.replaceChildren(defs);svg.setAttribute('viewBox','0 0 '+w+' '+h);
+  svg.append(svgNode('path',{'class':'sisal-neon-base',d:path,fill:'none',stroke:'#69eaa1','stroke-opacity':.4,'stroke-width':.85}));
+  const spots=h>innerHeight*.8?2:1;
+  for(const [layer,opacity]of [['halo',.17],['core',1]]){
+   const group=svgNode('g',{'clip-path':'url(#'+uid+'-'+layer+')',opacity});
+   for(let i=0;i<spots;i++){
+    const spot=svgNode('circle',{cx:0,cy:0,r:135,fill:'url(#'+uid+'-light)'});
+    spot.append(svgNode('animateMotion',{path,dur:duration+'s',begin:-((info.serial*.381966+i/spots)%1)*duration+'s',repeatCount:'indefinite',calcMode:'paced'}));group.append(spot);
+   }
+   svg.append(group);
+  }
+  info.motion=typeof svg.pauseAnimations==='function'&&typeof svg.unpauseAnimations==='function';
+  // Preserve native timeline on resize. There is no JS requestAnimationFrame loop.
+  try{if(previous)svg.setCurrentTime(previous);}catch{}
  }
- function hiddenByParent(frame){
-  if(frame.closest('[hidden]'))return true;
-  for(let p=frame.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS'&&!p.open)return true;
-  return false;
- }
- function geometry(frame,info){
+ function update(frame,info,front){
   const rect=frame.getBoundingClientRect(),style=getComputedStyle(frame);
-  info.visible=!hiddenByParent(frame)&&style.display!=='none'&&style.visibility!=='hidden'&&rect.width>4&&rect.height>4&&rect.bottom>0&&rect.top<innerHeight&&rect.right>0&&rect.left<innerWidth;
-  if(!rect.width||!rect.height)return;
-  const w=frame.offsetWidth||rect.width,h=frame.offsetHeight||rect.height;
-  const radii=['TopLeft','TopRight','BottomRight','BottomLeft'].map(c=>parseFloat(style['border'+c+'Radius'])||0);
-  const key=[w,h,...radii].join(':');
-  // A budget for high-DPI / very tall tables. The animation draws only the rim.
-  const dpr=Math.min(devicePixelRatio||1,2,Math.sqrt(2200000/(w*h)));
-  const bw=Math.ceil(w*dpr),bh=Math.ceil(h*dpr);
-  if(info.canvas.width!==bw||info.canvas.height!==bh){info.canvas.width=bw;info.canvas.height=bh;info.dirty=true;}
-  info.dpr=dpr;
-  if(info.key!==key){info.ctx?.clearRect(0,0,bw,bh);info.width=w;info.height=h;info.radii=radii;info.path=perimeter(w,h,radii);info.key=key;info.dirty=true;}
-  // Include the panel border itself, instead of painting an inset table frame.
-  const css='width:'+w+'px;height:'+h+'px;left:'+(-(parseFloat(style.borderLeftWidth)||0))+'px;top:'+(-(parseFloat(style.borderTopWidth)||0))+'px;';
-  if(info.css!==css){info.canvas.style.cssText=css;info.css=css;}
- }
- function frontLayer(){
-  const dialog=[...document.querySelectorAll('dialog[open]')].at(-1);if(dialog)return dialog;
-  for(const selector of ['.sr-host','#modalRoot .modal']){const el=document.querySelector(selector);if(el?.getBoundingClientRect().width)return el;}
-  return null;
- }
- function render(now){
-  animation=0;let running=false;const front=frontLayer();
-  for(const [frame,info]of tracked){
-   if(!frame.isConnected)continue;
-   const active=info.visible&&!document.hidden&&(!front||front.contains(frame));
-   const moving=active&&!reduced.matches&&!!info.ctx;
-   const state=!info.ctx?'unsupported':moving?'running':reduced.matches?'reduced':document.hidden?'hidden':!info.visible?'outside':'covered';
-   if(frame.dataset.neonState!==state){frame.dataset.neonState=state;info.dirty=true;}
-   if(active&&info.ctx&&(moving||info.dirty)){
-    const duration=Math.max(8000,Math.min(18000,info.path.length/105*1000));
-    drawBorder(info.ctx,info.width,info.height,info.radii,now/duration+info.phase,moving,info.path,info.dpr);info.dirty=false;
-   }
-   running ||= moving;
+  const borders=['Top','Right','Bottom','Left'].map(s=>parseFloat(style['border'+s+'Width'])||0);
+  // client dimensions exclude borders and scrollbars, unlike offsetWidth.
+  const w=frame.clientWidth||rect.width-borders[1]-borders[3],h=frame.clientHeight||rect.height-borders[0]-borders[2];
+  if(w>8&&h>8){
+   const radii=['TopLeft','TopRight','BottomRight','BottomLeft'].map((c,i)=>Math.max(0,(parseFloat(style['border'+c+'Radius'])||0)-Math.max(borders[Math.floor(i/2)*2],borders[i===0||i===3?3:1])));
+   const key=[w,h,...radii].join(':');if(info.key!==key){draw(info.svg,w,h,radii,info);info.key=key;}
+   // Scrollable dialogs retain the rim around their visible viewport.
+   const css=criticalStyle+'width:'+w+'px!important;height:'+h+'px!important;left:'+(frame.scrollLeft||0)+'px!important;top:'+(frame.scrollTop||0)+'px!important;';
+   if(info.css!==css){info.svg.style.cssText=css;info.css=css;}
   }
-  if(running)wake();
+  const visible=w>8&&h>8&&!hiddenByParent(frame)&&style.display!=='none'&&style.visibility!=='hidden'&&rect.width>0&&rect.height>0&&rect.bottom>0&&rect.right>0&&rect.top<innerHeight&&rect.left<innerWidth;
+  const active=visible&&!document.hidden&&(!front||front.contains(frame));
+  const state=!active?document.hidden?'hidden':!visible?'outside':'covered':reduced.matches?'reduced':info.motion?'running':'static';
+  if(info.state!==state){
+   info.state=state;frame.dataset.neonState=state;frame.dataset.neonEngine='svg';
+   try{if(state==='running')info.svg.unpauseAnimations();else info.svg.pauseAnimations?.();}catch{frame.dataset.neonState='static';}
+  }
  }
- function wake(){if(!animation&&!document.hidden)animation=requestAnimationFrame(render);}
- const resize='ResizeObserver'in window?new ResizeObserver(items=>{for(const {target}of items){const info=tracked.get(target);if(info)geometry(target,info);}wake();}):null;
- const intersection='IntersectionObserver'in window?new IntersectionObserver(items=>{for(const {target}of items){const info=tracked.get(target);if(info)geometry(target,info);}wake();}):null;
- function newCanvas(frame,info){
-  const canvas=document.createElement('canvas');canvas.className='sisal-border-canvas';canvas.setAttribute('aria-hidden','true');canvas.setAttribute('role','presentation');frame.append(canvas);
-  info.canvas=canvas;info.css='';info.key='';info.ctx=null;try{info.ctx=canvas.getContext('2d');}catch{}info.dirty=true;
- }
+ const resize='ResizeObserver'in window?new ResizeObserver(()=>schedule()):null;
+ const intersection='IntersectionObserver'in window?new IntersectionObserver(()=>schedule()):null;
  function attach(frame){
   if(tracked.has(frame))return;
   const positioned=getComputedStyle(frame).position==='static'||!getComputedStyle(frame).position;
   frame.classList.add('sisal-edge-host');if(positioned)frame.classList.add('sisal-edge-relative');
-  const info={phase:modulo(serial++*.381966,1),visible:false,width:0,height:0,positioned};newCanvas(frame,info);tracked.set(frame,info);resize?.observe(frame);intersection?.observe(frame);
+  const info={serial:serial++,positioned,oldPosition:frame.style.getPropertyValue('position'),oldPriority:frame.style.getPropertyPriority('position')};if(positioned)frame.style.setProperty('position','relative');createLight(frame,info);tracked.set(frame,info);resize?.observe(frame);intersection?.observe(frame);
  }
- function detach(frame,info){resize?.unobserve(frame);intersection?.unobserve(frame);info.canvas.remove();info.canvas.width=info.canvas.height=1;frame.classList.remove('sisal-edge-host','sisal-edge-relative');delete frame.dataset.neonState;tracked.delete(frame);}
- function wrap(target){
-  if(target.parentElement?.classList.contains('sisal-edge-frame'))return target.parentElement;
-  const frame=document.createElement('div');frame.className='sisal-edge-frame';target.before(frame);frame.append(target);return frame;
- }
+ function detach(frame,info){if(info.positioned&&frame.style.getPropertyValue('position')==='relative'){if(info.oldPosition)frame.style.setProperty('position',info.oldPosition,info.oldPriority);else frame.style.removeProperty('position');}resize?.unobserve(frame);intersection?.unobserve(frame);info.svg.remove();frame.classList.remove('sisal-edge-host','sisal-edge-relative');delete frame.dataset.neonState;delete frame.dataset.neonEngine;tracked.delete(frame);}
+ function wrap(target){if(target.parentElement?.classList.contains('sisal-edge-frame'))return target.parentElement;const frame=document.createElement('div');frame.className='sisal-edge-frame';target.before(frame);frame.append(target);return frame;}
  function refresh(){
-  pending=0;
-  const panels=[...document.querySelectorAll(panelSelector)].filter(p=>!p.closest('.sr-host'));
-  // Animate each complete leaf panel. Nested panels get their own rim, never
-  // a second inset rim on the same table and never on its scrolling contents.
+  queued=0;const panels=[...document.querySelectorAll(panelsSelector)].filter(p=>!p.closest('.sr-host'));
   const desired=new Set(panels.filter(p=>!panels.some(other=>other!==p&&p.contains(other))));
-  for(const target of document.querySelectorAll('#content table,#modalRoot table,#ac-panel table,#content .trend-wrap')){
-   if(target.closest('.sr-host')||[...desired].some(p=>p.contains(target)))continue;
-   desired.add(wrap(target.closest('.table-wrap,.scroll-x,.trend-wrap')||target));
-  }
+  for(const target of document.querySelectorAll('#content table,#modalRoot table,#ac-panel table,#content .trend-wrap'))if(!target.closest('.sr-host')&&![...desired].some(p=>p.contains(target)))desired.add(wrap(target.closest('.table-wrap,.scroll-x,.trend-wrap')||target));
   for(const [frame,info]of tracked)if(!frame.isConnected||!desired.has(frame))detach(frame,info);
   for(const frame of desired)attach(frame);
-  for(const [frame,info]of tracked){
-   // Other app modules can replace innerHTML without replacing the panel.
-   if(info.canvas.parentElement!==frame)newCanvas(frame,info);
-   geometry(frame,info);
-  }
-  // Render once even when reduced motion/hidden mode stops the loop.
-  if(animation)cancelAnimationFrame(animation);animation=0;render(performance.now());
+  const front=activeLayer();for(const [frame,info]of tracked){if(info.svg.parentElement!==frame){createLight(frame,info);info.state='';}update(frame,info,front);}
  }
- function schedule(){if(!pending)pending=requestAnimationFrame(refresh);}
+ function schedule(){if(!queued)queued=requestAnimationFrame(refresh);}
  function boot(){
   refresh();
   for(const event of ['sisal-content-rendered','sisal-workspace-layout','sisal-appearance-saved','resize','pageshow'])window.addEventListener(event,schedule);
   for(const event of ['toggle','close','click','visibilitychange','transitionend'])document.addEventListener(event,schedule,true);
   document.addEventListener('scroll',schedule,{passive:true,capture:true});
   if(reduced.addEventListener)reduced.addEventListener('change',schedule);else reduced.addListener?.(schedule);
-  new MutationObserver(records=>{
-   if(records.some(r=>!r.target.closest?.('.sisal-border-canvas,.sr-host')&&(r.type==='attributes'||[...r.addedNodes,...r.removedNodes].some(n=>n.nodeType===1&&(!n.classList.contains('sisal-border-canvas')||!n.isConnected)))))schedule();
-  }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','hidden','class','style']});
+  new MutationObserver(records=>{if(records.some(r=>!r.target.closest?.('.sisal-border-svg,.sr-host')&&(r.type==='attributes'||[...r.addedNodes,...r.removedNodes].some(n=>n.nodeType===1&&(!n.classList.contains('sisal-border-svg')||!n.isConnected)))))schedule();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','hidden','class','style']});
   window.SisalFuture={refresh:schedule};
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
