@@ -1,8 +1,9 @@
 import {placeLabels,leaderLine} from './scene-labels.js?v=studio-9';
-import {spectatorPose} from './race-crowd.js?v=studio-9';
-import {animateGallop,dustSample} from './horse-gait.js?v=studio-9';
+import {sampleSpectator,fitLimb} from './race-crowd.js?v=club-61';
+import {refineRace} from './race-detail.js?v=club-61';
+import {animateGallop,dustSample} from './horse-gait.js?v=club-61';
 import {createHorse} from './horse-model.js?v=club-56';
-import {createJockey} from './jockey-model.js?v=club-53';
+import {createJockey} from './jockey-model.js?v=club-61';
 import {signaturePose} from './race-signature.js?v=studio-9';
 import {styleColors,paintSilks} from './horse-style.js?v=studio-9';
 /* Sisal Race / local WebGL scene. No network/API/photo downloads. */
@@ -27,7 +28,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 ¬
   let renderScale=Math.min(devicePixelRatio||1,mobile?1.25:1.75);
   renderer.setPixelRatio(renderScale);
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
-  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
+  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.96;
   const canvas=renderer.domElement;canvas.setAttribute('aria-label','Corsa 3D: animazione della classifica ultime 5, con pari merito');host.appendChild(canvas);
   const scene=new T.Scene(),night=['night','stadium'].includes(profile.lighting);
   const sunset=profile.lighting==='sunset';
@@ -48,8 +49,8 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 ¬
     const map=texture((c,x,y)=>{c.fillStyle=background;c.fillRect(0,0,x,y);c.fillStyle=color;c.font='600 42px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(text,x/2,y/2,x-35)},w,h);
     return mesh(p,geo(new T.PlaneGeometry(...size)),mat('#ffffff',{map,roughness:1}),[0,0,0]);
   }
-  scene.add(new T.HemisphereLight(night?'#9ec4ff':'#edf5ff','#554934',night?1.5:1.9));
-  const sun=new T.DirectionalLight(night?'#bbd6ff':sunset?'#ffc286':'#fff0d6',night?2.5:3);sun.position.set(-15,24,18);sun.castShadow=true;sun.shadow.mapSize.set(matchMedia('(pointer: coarse)').matches?1024:2048,matchMedia('(pointer: coarse)').matches?1024:2048);Object.assign(sun.shadow.camera,{left:-28,right:28,top:20,bottom:-20,near:1,far:90});sun.shadow.normalBias=.018;sun.shadow.bias=-.00015;scene.add(sun,sun.target);
+  scene.add(new T.HemisphereLight(night?'#9ec4ff':'#edf5ff','#554934',night?1.0:1.25));
+  const sun=new T.DirectionalLight(night?'#bbd6ff':sunset?'#ffc286':'#fff0d6',night?2.6:3.15);sun.position.set(-15,24,18);sun.castShadow=true;sun.shadow.mapSize.set(matchMedia('(pointer: coarse)').matches?1024:2048,matchMedia('(pointer: coarse)').matches?1024:2048);Object.assign(sun.shadow.camera,{left:-28,right:28,top:20,bottom:-20,near:1,far:90});sun.shadow.normalBias=.018;sun.shadow.bias=-.00015;scene.add(sun,sun.target);
   const rim=new T.DirectionalLight('#d3e7ef',.75);rim.position.set(10,9,-18);scene.add(rim);
   cube(scene,mats.grass,[35,-.25,0],[220,.4,130]);
   const dirtMap=texture((c,w,h)=>{c.fillStyle='#b19676';c.fillRect(0,0,w,h);let seed=24;for(let i=0;i<18000;i++){seed=(seed*1664525+1013904223)>>>0;const x=seed%w;seed=(seed*1664525+1013904223)>>>0;const y=seed%h;c.fillStyle=i%2?'#8e765b':'#c0a480';c.fillRect(x,y,1+(i%3),1)}},512,512);dirtMap.wrapS=dirtMap.wrapT=T.RepeatWrapping;dirtMap.repeat.set(24,3);mats.dirt.map=dirtMap;mats.dirt.color.set('#ddcfb9');
@@ -59,10 +60,10 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 ¬
   for(let x=-10;x<106;x+=18){const b=sign('SISAL FC 2021',512,128,scene,[7,1.4]);b.position.set(x,.85,-7.3)}
   // Grandstand: real stepped volumes, seats and architectural canopy.
   const seatMats=['#207653','#42946d','#c6ba97'].map(x=>mat(x));
-  for(let row=0;row<5;row++){cube(scene,mats.dark,[36,row*.65, -13-row*1.35],[105,.65,1.8]);for(let i=0;i<68;i++)cube(scene,seatMats[(i+row)%3],[-15+i*1.5,.6+row*.65,-13-row*1.35],[.8,.45,.65])}
+  for(let row=0;row<5;row++){cube(scene,mats.dark,[36,row*.65, -13-row*1.35],[105,.65,1.8]);for(let i=0;i<68;i++)if(i%16!==2)cube(scene,seatMats[(i+row)%3],[-15+i*1.5,.6+row*.65,-13-row*1.35],[.8,.45,.65])}
   cube(scene,mats.dark,[36,6.4,-16],[110,.28,10]);for(let x=-14;x<90;x+=12)link(scene,mats.metal,[x,0,-20],[x,6.4,-20],.15);
   const banner=sign('S I S A L   /   R A C I N G   C L U B',1024,128,scene,[40,1.9]);banner.position.set(30,4.9,-11.8);
-  for(let i=0;i<22;i++){const x=-35+i*8,z=-33-(i%3)*7;link(scene,mats.leather,[x,0,z],[x,4,z],.22);ball(scene,mats.grass,[x,6,z],[2.4,3.6,2.4])}
+  for(let i=0;i<22;i++){const x=-35+i*8,z=-33-(i%3)*7;link(scene,mats.leather,[x,0,z],[x,4,z],.22);/* crowns are instanced by refineRace */}
   // Seated spectators, instanced by body part: detailed silhouettes at low draw-call cost.
   const people=[];
   const shirts=['#ddd5c1','#3b645a','#9e5346','#45617e','#d7a251','#353b49','#9e8aaf'];
@@ -72,7 +73,8 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 ¬
     const p=spectatorProfile(random,row*68+col);
     const fabric=new T.Color(shirts[Math.floor(p.shirt*shirts.length)]);fabric.offsetHSL((random()-.5)*.07,(random()-.5)*.15,(random()-.5)*.1);
     const skin=new T.Color(skins[Math.floor(p.skin*skins.length)]);skin.offsetHSL(0,0,(random()-.5)*.05);
-    people.push({...p,x:-15+col*1.5+(random()-.5)*.2,y:.72+row*.65,z:-12.95-row*1.35,shirtColor:fabric.getHex(),skinColor:skin.getHex(),hairColor:['#302721','#806544','#bfac83','#1c1a1a'][p.hair],trouserColor:new T.Color().setHSL(.55+p.trousers*.12,.12,.15+p.trousers*.17).getHex()});
+    const seatJitter=(random()-.5)*.2;if(col%16===2)continue;
+    people.push({...p,x:-15+col*1.5+seatJitter,y:.91+row*.65,z:-12.95-row*1.35,shirtColor:fabric.getHex(),skinColor:skin.getHex(),hairColor:['#302721','#806544','#bfac83','#1c1a1a'][p.hair],trouserColor:new T.Color().setHSL(.55+p.trousers*.12,.12,.15+p.trousers*.17).getHex()});
   }
   // Small instanced limbs keep the original polygon budget; faces have their own mesh.
   const humanGeo=geo(new T.SphereGeometry(1,mobile?6:8,mobile?4:6)),faceGeo=geo(new T.SphereGeometry(1,mobile?10:12,mobile?8:10)),humanMat=mat('#ffffff',{roughness:.86});
@@ -86,32 +88,35 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 ¬
   const upVector=new T.Vector3(0,1,0),limbDirection=new T.Vector3();
   function personPart(kind,index,x,y,z,sx,sy,sz,angle,color,initial,yaw=0){dummy.position.set(x,y,z);dummy.scale.set(sx,sy,sz);dummy.rotation.set(0,yaw,angle);dummy.updateMatrix();crowdParts[kind].setMatrixAt(index,dummy.matrix);if(initial)crowdParts[kind].setColorAt(index,crowdColor.set(color))}
   function crowdLimb(kind,index,a,b,r,color,initial){limbDirection.set(b[0]-a[0],b[1]-a[1],b[2]-a[2]);const length=limbDirection.length();dummy.position.set((a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2);dummy.scale.set(r,length/2+r*.3,r);dummy.quaternion.setFromUnitVectors(upVector,limbDirection.normalize());dummy.updateMatrix();crowdParts[kind].setMatrixAt(index,dummy.matrix);if(initial)crowdParts[kind].setColorAt(index,crowdColor.set(color))}
+  const crowdStart=[0,0,0],crowdHint=[0,0,0],crowdTarget=[0,0,0],crowdJoint={joint:[0,0,0],end:[0,0,0]};
   function updateCrowd(time,cheer,initial=false,focusX=20){
     people.forEach((p,i)=>{
-      const far=Math.abs(p.x-focusX)>32,rate=far?6:mobile?20:40,tick=Math.floor(time*rate);if(!initial&&p.lastPoseTick===tick&&p.lastPoseRate===rate)return;p.lastPoseTick=tick;p.lastPoseRate=rate;
-      const pose=spectatorPose(p,time,cheer,reduced);
+      const far=Math.abs(p.x-focusX)>32;
+      const pose=sampleSpectator(p,time,cheer,reduced,far?10:mobile?18:24);
       const {clock,beat,sway,action,rise,lean}=pose;
       const y=p.y+rise,x=p.x+sway,z=p.z;
       const faceY=y+.84*p.height,look=clamp(Math.atan2(focusX-x,20)*.38+pose.look,-.55,.55),headX=x+Math.sin(look)*.016,headZ=z+lean;
-      const facePoint=(side,depth)=>[headX+Math.cos(look)*side+Math.sin(look)*depth,headZ-Math.sin(look)*side+Math.cos(look)*depth];
+      const sinLook=Math.sin(look),cosLook=Math.cos(look);
       personPart('torso',i,x,y+.36,z+lean*.4,.215*p.width,.35*p.height,.145,sway,p.shirtColor,initial);
       personPart('neck',i,x,y+.69*p.height,z+lean*.5,.056,.075,.054,0,p.skinColor,initial);
       personPart('head',i,headX,faceY,headZ,.128*p.width,.165*p.height,.124,sway,p.skinColor,initial,look);
       personPart('hair',i,headX,faceY+.105,headZ-.022,.130*p.width,p.hair===2?.105:.075,.123,sway,p.hairColor,initial,look);
-      const nose=facePoint(0,.122);personPart('nose',i,nose[0],faceY-.012,nose[1],.022,.035,.033,0,p.skinColor,initial,look);
-      const mouth=facePoint(0,.116);personPart('mouth',i,mouth[0],faceY-.067,mouth[1],.027,.005+(action===2?cheer*.009:0),.009,0,'#704839',initial,look);
+      personPart('nose',i,headX+sinLook*.122,faceY-.012,headZ+cosLook*.122,.022,.035,.033,0,p.skinColor,initial,look);
+      personPart('mouth',i,headX+sinLook*.116,faceY-.067,headZ+cosLook*.116,.027,.005+(action===2?cheer*.009:0),.009,0,'#704839',initial,look);
       personPart('hat',i,headX,faceY+.15,headZ+.012,p.hat?.145:0,.048,p.hat?.16:0,sway,p.shirtColor,initial,look);
       personPart('scarf',i,x,y+.49,z+.139+lean*.4,.046,.19,.022,sway,i%3===0?'#e3d5b4':p.shirtColor,initial);
       for(const sign of [-1,1]){const j=i*2+(sign===1?1:0),legX=x+sign*.125*p.width;
-        const eye=facePoint(sign*.044,.117);personPart('eyes',j,eye[0],faceY+.023,eye[1],.011,.007,.009,0,'#292b29',initial,look);
-        const hip=[legX,y+.04,z],knee=[legX,p.y-.01+rise*.5,z+.3],ankle=[legX,p.y-.49,z+.38];
-        crowdLimb('thighs',j,hip,knee,.09*p.width,p.trouserColor,initial);
+        personPart('eyes',j,headX+cosLook*sign*.044+sinLook*.117,faceY+.023,headZ-sinLook*sign*.044+cosLook*.117,.011,.007,.009,0,'#292b29',initial,look);
+        crowdStart[0]=crowdTarget[0]=crowdHint[0]=legX;crowdStart[1]=y+.04;crowdStart[2]=z;crowdTarget[1]=p.y-.49;crowdTarget[2]=z+.38;crowdHint[1]=p.y-.01+rise*.5;crowdHint[2]=z+.3;
+        const leg=fitLimb(crowdStart,crowdTarget,crowdHint,.36*p.height+.03,.46*p.height+.03,crowdJoint),knee=leg.joint,ankle=leg.end;
+        crowdLimb('thighs',j,crowdStart,knee,.09*p.width,p.trouserColor,initial);
         crowdLimb('calves',j,knee,ankle,.068,p.trouserColor,initial);
         personPart('shoes',j,legX,p.y-.52,z+.44,.087,.063,.17,0,i%4===0?'#dbd5c7':'#202524',initial);
-        const shoulder=[x+sign*.18*p.width,y+.59*p.height,z+lean*.6];
+        crowdStart[0]=x+sign*.18*p.width;crowdStart[1]=y+.59*p.height;crowdStart[2]=z+lean*.6;
         const gesture=pose.hands[sign===1?1:0];
-        const elbow=gesture.elbow.map((v,k)=>v*(k===1?p.height:1)+[x,y,z+lean*.6][k]),hand=gesture.hand.map((v,k)=>v*(k===1?p.height:1)+[x,y,z+lean*.6][k]);
-        crowdLimb('upperArms',j,shoulder,elbow,.064*p.width,p.shirtColor,initial);
+        for(let k=0;k<3;k++){const origin=k===0?x:k===1?y:z+lean*.6,scale=k===1?p.height:1;crowdHint[k]=gesture.elbow[k]*scale+origin;crowdTarget[k]=gesture.hand[k]*scale+origin;}
+        const arm=fitLimb(crowdStart,crowdTarget,crowdHint,.29*p.height,.27*p.height,crowdJoint),elbow=arm.joint,hand=arm.end;
+        crowdLimb('upperArms',j,crowdStart,elbow,.064*p.width,p.shirtColor,initial);
         crowdLimb('forearms',j,elbow,hand,.052,p.skinColor,initial);
         personPart('hands',j,...hand,.055,.065,.035,beat*.1,p.skinColor,initial);
       }
@@ -142,7 +147,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 ¬
     const custom=styleColors(entry.appearance||{});
     const mount=createHorse(entry.appearance||{},String(introOrder.indexOf(index)+1));body.add(mount.group);
     const canvas=document.createElement('canvas');canvas.width=canvas.height=512;paintSilks(canvas.getContext('2d'),512,512,custom);const tex=new T.CanvasTexture(canvas);tex.colorSpace=T.SRGBColorSpace;textures.add(tex);
-    const silk=mat('#ffffff',{map:tex,roughness:.72});
+    const silk=new T.MeshPhysicalMaterial({color:'#ffffff',map:tex,roughness:.75,sheen:.25,sheenRoughness:.8});resources.add(silk);
     const {rider,head,arms}=createJockey({mat,mats,silk,breeches:mat(custom.breechesColor),gloves:mat(custom.glovesColor),helmet:mat(custom.helmetColor),custom,index});
     rider.position.copy(mount.seat);body.add(rider);
     const noseTip=mount.group.getObjectByName('horse-nose');if(noseTip)noseTip.name=`horse-nose-${index}`;
@@ -156,6 +161,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 ¬
   for(const o of [...scene.children])if(o.isMesh&&o.geometry===box){let list=batches.get(o.material);if(!list)batches.set(o.material,list=[]);list.push(o)}
   for(const [material,list] of batches){const batch=new T.InstancedMesh(box,material,list.length);list.forEach((o,i)=>{o.updateMatrix();batch.setMatrixAt(i,o.matrix);scene.remove(o)});batch.castShadow=true;batch.receiveShadow=true;scene.add(batch)}
   const horses=entries.map(horse);
+  refineRace({horses,scene,renderer,texture,mat,mesh,cube,geo,box,trackHalf,night});
   // Rigid meshes share draws; moving horse joints keep their own parent groups.
   mergeRigidParts(scene,geo);
   const parents=[];scene.traverse(o=>{if(o.isGroup)parents.push(o)});
@@ -168,13 +174,13 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 ¬
   if(winningTie){const ringMat=new T.MeshBasicMaterial({color:'#f2d47c',transparent:true,opacity:.85,side:T.DoubleSide});resources.add(ringMat);for(const h of horses.filter(h=>h.entry.place===1)){const ring=mesh(h.root,geo(new T.RingGeometry(1.3,1.39,48)),ringMat,[0,.09,0]);ring.rotation.x=-Math.PI/2;ring.visible=false;ring.castShadow=false;tieRings.push(ring)}}
   const dustGeo=geo(new T.BufferGeometry()),dustPos=new Float32Array(entries.length*42*3);dustGeo.setAttribute('position',new T.BufferAttribute(dustPos,3));
   const dustTex=texture((c,w,h)=>{const g=c.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);g.addColorStop(0,'rgba(226,205,170,.6)');g.addColorStop(1,'rgba(226,205,170,0)');c.fillStyle=g;c.fillRect(0,0,w,h)},64,64);
-  const dustMat=new T.PointsMaterial({color:'#d7b996',size:.28,map:dustTex,transparent:true,opacity:.19,depthWrite:false});resources.add(dustMat);const dust=new T.Points(dustGeo,dustMat);scene.add(dust);
+  const dustMat=new T.PointsMaterial({color:'#d7b996',size:.28,map:dustTex,transparent:true,opacity:.19,depthWrite:false});resources.add(dustMat);const dust=new T.Points(dustGeo,dustMat);dust.frustumCulled=false;scene.add(dust);
   const confettiCount=180,confettiData=Array.from({length:confettiCount},(_,i)=>({side:i%2?1:-1,vx:(random()-.5)*5,vz:2+random()*4,vy:4+random()*5,spin:random()*8,delay:random()*.3}));
   const confetti=new T.InstancedMesh(geo(new T.PlaneGeometry(.12,.23)),mat('#ffffff',{side:T.DoubleSide,metalness:.35,roughness:.4}),confettiCount);
   confetti.instanceMatrix.setUsage(T.DynamicDrawUsage);confetti.frustumCulled=false;confetti.visible=false;scene.add(confetti);
   for(let i=0;i<confettiCount;i++)confetti.setColorAt(i,new T.Color(['#edc76b','#f6efd2','#35ad84'][i%3]));
   let celebrationAt=null,lastCrowdUpdate=-1;
-  const ui=document.createElement('div');ui.className='sr-overlay';ui.innerHTML='<div class="sr-broadcast"><span>‚óè SISAL RACING</span><b>ULTIME 5 ¬∑ REVEAL</b></div><div class="sr-count" aria-live="polite">3</div><div class="sr-bottom"><span class="sr-caption">AI CANCELLI</span><div class="sr-positions"></div><div class="sr-meter"><i></i></div></div><div class="sr-controls"><button type="button" data-camera>Cambia visuale</button><button type="button" data-audio aria-pressed="false">Attiva audio</button><button type="button" data-skip>Mostra classifica</button></div>';host.appendChild(ui);
+  const ui=document.createElement('div');ui.className='sr-overlay';ui.innerHTML='<div class="sr-broadcast"><span>‚óè SISAL RACING</span><b>ULTIME 5 ¬∑ REVEAL</b></div><div class="sr-count" aria-live="polite">3</div><div class="sr-bottom"><span class="sr-caption">IN PARTENZA</span><div class="sr-positions"></div><div class="sr-meter"><i></i></div></div><div class="sr-controls"><button type="button" data-camera>Cambia visuale</button><button type="button" data-audio aria-pressed="false">Attiva audio</button><button type="button" data-skip>Mostra classifica</button></div>';host.appendChild(ui);
   const motif=document.createElement('div');motif.className='sr-signature-motif';motif.setAttribute('aria-hidden','true');ui.append(motif);
   const winnerBanner=document.createElement('div');winnerBanner.className='sr-winner-banner';winnerBanner.setAttribute('role','status');winnerBanner.hidden=true;ui.appendChild(winnerBanner);
   const tiePanel=document.createElement('div');tiePanel.className='sr-tie-finish';tiePanel.hidden=true;tiePanel.setAttribute('role','status');ui.appendChild(tiePanel);
@@ -309,7 +315,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 ¬
       audio?.gallop?.(i,!replayActive&&clock>=start&&coast<.85,(Math.PI/(2*h.motion.speed))/(photoFinish?.48:1));
 
       h.mount.group.userData.react?.(reduced?0:clock);h.medalGroup.visible=h.crossed&&h.entry.place<=3;h.medalGroup.rotation.z=reduced?0:Math.sin(clock*2.4)*.08*Math.exp(-Math.max(0,elapsed-choreography[i].finishAt)*.2);
-      h.rider.rotation.z=gait.riderLean;h.rider.userData.locomotion?.(amp,phase);
+      h.rider.rotation.z=gait.riderLean;h.rider.userData.locomotion?.(amp,phase,gait.riderLift);
       h.rider.userData.idle?.(presenting?introElapsed:clock,{x:0,y:0},reduced);
       h.head.rotation.z+=reduced?0:Math.sin(phase+h.motion.riderPhase)*.012*amp;
       // A gradual one-handed salute after crossing, with a distinct delay,
@@ -332,7 +338,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 ¬
     }
     const celebrationAge=celebrationAt===null?-1:elapsed-celebrationAt;
     const crowdClock=replayActive?start+elapsed:clock;
-    const crowdRate=reduced?12:mobile?30:60,crowdTick=Math.floor(crowdClock*crowdRate);
+    const crowdRate=reduced?12:60,crowdTick=Math.floor(crowdClock*crowdRate);
     if(crowdTick!==lastCrowdUpdate){lastCrowdUpdate=crowdTick;const energy=celebrationAge>=0?.8+.2*smooth(clamp(celebrationAge/1.5,0,1)):.25+.55*smooth(clamp((p-.72)/.28,0,1));updateCrowd(crowdClock,energy,false,horses.reduce((a,h)=>a+h.root.position.x,0)/horses.length);host.dataset.crowdFrame=String(lastCrowdUpdate)}
     tieRings.forEach(r=>{r.visible=elapsed>=duration&&celebrationAt!==null&&ceremonyAge<0;r.scale.setScalar(reduced?1:1+.08*Math.sin(crowdClock*5))});
     confetti.visible=!replayActive&&celebrationAge>=0&&celebrationAge<4&&!reduced;
@@ -378,7 +384,7 @@ export async function runRace(host,entries,{profile={},audio=null,title='TOP 3 ¬
         const liveTied=crossed?entries.filter(e=>e.place===entries[i].place).length>1:ordered.filter(other=>!visuallyCrossed(other.i)&&Math.abs(other.progress-progress)<1e-8).length>1;
         labels[i].style.order=position;labels[i].dataset.position=String(livePlace)+(liveTied?' =':'');
       });meter.style.width=`${p*100}%`;
-      caption.textContent=clock<start?'AI CANCELLI':p<.82?'RETTILINEO ¬∑ CORSA DELLA TOP 3':p<.91?'ULTIMI METRI':p<1?'TESTA A TESTA ¬∑ FOTOFINISH':'ARRIVO';
+      caption.textContent=clock<start?'IN PARTENZA':p<.82?'RETTILINEO ¬∑ CORSA DELLA TOP 3':p<.91?'ULTIMI METRI':p<1?'TESTA A TESTA ¬∑ FOTOFINISH':'ARRIVO';
     }
     if(!replayActive&&elapsed>=lastArrival+.65&&!finished){finished=true;onFinish();}
     if(finished){count.textContent='';caption.textContent=`1¬∞ ${winners.map(e=>e.name).join(' + ')}${winningTie?' ¬∑ EX AEQUO':''}`;}

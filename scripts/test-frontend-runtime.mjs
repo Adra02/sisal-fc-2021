@@ -13,7 +13,7 @@ const ready=new Promise((resolve,reject)=>{
  w.addEventListener('sisal-content-rendered',()=>{if(w.document.querySelector('#liveStatus').textContent.includes('Archivio centrale non disponibile')){clearTimeout(timeout);resolve();}});
 });
 await w.eval(await fs.readFile('index-inline.js','utf8'));await ready;
-assert.equal(requests,1);assert(registered.includes('sw.js?v=club-60'));
+assert.equal(requests,1);assert(registered.includes('sw.js?v=club-61'));
 assert(w.document.querySelector('#content').textContent.trim().length>0);
 assert(w.document.querySelector('#liveStatus').textContent.includes('Archivio centrale non disponibile'));
 for(const b of w.document.querySelectorAll('.bottomnav [data-tab]')){b.click();assert(w.document.querySelector('#content').textContent.trim().length>0,b.dataset.tab+' opens even without data');}

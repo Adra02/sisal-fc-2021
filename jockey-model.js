@@ -60,14 +60,24 @@ export function createJockey({mat=material,mats={},silk,breeches,gloves,helmet,c
  tube(chest,mat(custom.accentColor,{roughness:.9}),[[.10,.10,0],[.14,-.12,0],[.13,-.34,0]],.0018,20).name='zipper-tape';
  const arms=[bones.find(b=>b.name==='rShoulder'),bones.find(b=>b.name==='lShoulder')];arms.forEach((b,i)=>{b.userData.restRotation=b.rotation.clone();b.name=`jockey-arm-${index}-${i?'salute':'reins'}`;});
  rider.userData.reinHands=['lWrist','rWrist'].map(name=>{const hand=new T.Object3D();hand.name='rein-grip-'+name;hand.position.set(.025,-.006,0);bones.find(b=>b.name===name).add(hand);return hand;});
- let idleTime=0,gaitWeight=0,gaitPhase=0;
- rider.userData.locomotion=(weight,phase)=>{gaitWeight=standing?0:T.MathUtils.clamp(weight,0,1);gaitPhase=phase;};
+ let idleTime=0,gaitWeight=0,gaitPhase=0,gaitLift=0;
+ rider.userData.locomotion=(weight,phase,lift=0)=>{gaitWeight=standing?0:T.MathUtils.clamp(weight,0,1);gaitPhase=phase;gaitLift=standing?0:lift;};
  rider.userData.pose=(kind,age,reduced=false,weight=1)=>{
   const frame=poses[kind]||poses.salute,w=T.MathUtils.clamp(weight,0,1);rider.userData.reinRelease=kind==='arms'?[w,w]:kind==='salute'||kind==='crowd'?[0,w]:[0,0];
   bones.forEach((b,i)=>{b.position.copy(rest[i].p).lerp(poses.racing[i].p,gaitWeight).lerp(frame[i].p,w);b.quaternion.copy(rest[i].q).slerp(poses.racing[i].q,gaitWeight).slerp(frame[i].q,w);});
   if(!reduced){chest.position.y+=Math.sin(idleTime*1.65)*.002;const wrist=bones.find(b=>b.name==='rWrist');wrist.rotation.x+=Math.sin(age*4)*.10*w;}
   head.rotation.z=(standing?0:.17)+gaitWeight*.24*(1-w);
-  if(!reduced)chest.position.y+=Math.sin(gaitPhase+.4)*.006*gaitWeight*(1-w);
+  if(!reduced){
+   const riding=gaitWeight*(1-w),spring=Math.sin(gaitPhase-.35);
+   // The pelvis absorbs the mount's suspension, the torso follows with delay,
+   // and wrists stay quiet. Gestures retain their own authored hand poses.
+   bones[0].position.y+=gaitLift*(1-w);
+   bones[0].position.x+=spring*.006*riding;
+   chest.position.y+=Math.sin(gaitPhase+.4)*.009*riding;
+   chest.rotation.z+=Math.sin(gaitPhase-.7)*.012*riding;
+   for(const name of ['lKnee','rKnee'])bones.find(b=>b.name===name).rotation.z+=spring*.018*riding;
+   head.rotation.z-=Math.sin(gaitPhase-.7)*.009*riding;
+  }
   if(w>0){head.rotation.z=(standing?0:.17)+(kind==='bow'?-.14*w:0);head.rotation.y=kind==='crowd'?.3*w:0;}
  };
  rider.userData.idle=(time,pointer={x:0,y:0},reduced=false)=>{idleTime=time;head.rotation.y=reduced?0:T.MathUtils.lerp(head.rotation.y,pointer.x*.18,.09);head.rotation.z=(standing?0:.17)-(reduced?0:pointer.y*.04);if(head.userData.eyes)for(const eye of head.userData.eyes)eye.rotation.y=reduced?0:pointer.x*.10;const phase=time%5.4,blink=!reduced&&phase<.16?Math.sin(phase/.16*Math.PI):0;if(blink>0||head.userData.wasBlink){head.userData.blink?.(blink);head.userData.wasBlink=blink>0;}};
